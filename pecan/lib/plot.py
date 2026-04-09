@@ -158,7 +158,7 @@ class Matplotlib3DPlotMethod(MatplotlibPlotMethod):
         settings.log(lambda: "Drawing voxels...")
 
         fig = self.pt.figure()
-        ax = fig.gca(projection="3d")
+        ax = fig.add_subplot(projection="3d")
 
         if color_by_axis is not None:
             ax.voxels(voxels, facecolors=colors)
