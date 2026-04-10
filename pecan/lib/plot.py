@@ -174,6 +174,14 @@ class Matplotlib3DPlotMethod(MatplotlibPlotMethod):
         ax.yaxis.set_ticklabels([])
         ax.zaxis.set_ticklabels([])
 
+    # Both tight_layout and the more modern constrained_layout don't appear to take 3d plots well, throwing a warning instead of adjusting the layout during the tests.
+    # Because of that, we skip the layout call for this plotting method by overriding show() and save()
+    def show(self):
+        self.pt.show()
+
+    def save(self, path):
+        self.pt.savefig(path)
+
 
 class BuchiPlotter:
     PLOT_METHOD_MAP = {
