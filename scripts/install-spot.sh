@@ -8,7 +8,7 @@ fi
 
 date
 
-SPOT_VERSION="2.9.8"
+SPOT_VERSION="2.14.5"
 
 # download/uncompress spot
 
@@ -23,8 +23,9 @@ if ! python3 -c "import spot"; then
 
     cd "spot-$SPOT_VERSION"
 
-    ./configure --prefix ~/.local
-    make -j 4
+    # some distros may write-protect relevant directories, sudo-ing circumvents this issue
+    sudo ./configure --prefix ~/.local
+    sudo make -j 4
     sudo make install
 else
     echo "Skipped installing spot---already found."

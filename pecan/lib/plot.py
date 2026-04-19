@@ -158,7 +158,7 @@ class Matplotlib3DPlotMethod(MatplotlibPlotMethod):
         settings.log(lambda: "Drawing voxels...")
 
         fig = self.pt.figure()
-        ax = fig.gca(projection="3d")
+        ax = fig.add_subplot(projection="3d")
 
         if color_by_axis is not None:
             ax.voxels(voxels, facecolors=colors)
@@ -173,6 +173,14 @@ class Matplotlib3DPlotMethod(MatplotlibPlotMethod):
         ax.xaxis.set_ticklabels([])
         ax.yaxis.set_ticklabels([])
         ax.zaxis.set_ticklabels([])
+
+    # Both tight_layout and the more modern constrained_layout don't appear to take 3d plots well, throwing a warning instead of adjusting the layout during the tests.
+    # Because of that, we skip the layout call for this plotting method by overriding show() and save()
+    def show(self):
+        self.pt.show()
+
+    def save(self, path):
+        self.pt.savefig(path)
 
 
 class BuchiPlotter:
