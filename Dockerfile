@@ -1,4 +1,4 @@
-FROM ubuntu:24.04
+FROM ubuntu:26.04
 
 # Setup basic environment
 RUN apt-get update
@@ -15,7 +15,7 @@ RUN apt-get install -y python3 python3-dev python3-pip graphviz
 RUN pip3 install --break-system-packages pytest
 RUN rm -rf /var/lib/apt/lists/*
 
-ENV PYTHONIOENCODING utf-8
+ENV PYTHONIOENCODING=utf-8
 
 # Install misc
 RUN apt-get update

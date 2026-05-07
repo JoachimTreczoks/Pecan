@@ -1,5 +1,5 @@
 argparse
-lark-parser
+lark
 colorama
 IPython
 matplotlib
