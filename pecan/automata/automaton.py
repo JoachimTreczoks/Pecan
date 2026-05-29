@@ -4,6 +4,7 @@
 from typing import Literal
 
 from pecan.utility import VarMap
+from pecan.lang.ir.prog import VarRef
 
 class Automaton:
     def __init__(self, aut_type_name : str):
@@ -30,10 +31,10 @@ class Automaton:
         """Returns an automaton representing the complement of this automaton"""
         raise NotImplementedError
 
-    def substitute(self, arg_map : dict, env_var_map : VarMap) -> Automaton:
+    def substitute(self, arg_map : dict[str, str], env_var_map : VarMap) -> Automaton:
         raise NotImplementedError
 
-    def project(self, var_refs : list, env_var_map : VarMap) -> Automaton:
+    def project(self, var_refs : set[VarRef], env_var_map : VarMap) -> Automaton:
         raise NotImplementedError
 
     def is_empty(self) -> bool:
@@ -48,7 +49,7 @@ class Automaton:
     def num_edges(self) -> int:
         raise NotImplementedError
 
-    def accepting_word(self) -> dict:
+    def accepting_word(self) -> dict | None:
         raise NotImplementedError
 
     def to_str(self) -> str:
@@ -121,10 +122,10 @@ class TrueAutomaton(Automaton):
     def complement(self) -> Automaton:
         return FalseAutomaton()
 
-    def substitute(self, arg_map : dict, env_var_map : VarMap) -> Automaton:
+    def substitute(self, arg_map : dict[str, str], env_var_map : VarMap) -> Automaton:
         return self
 
-    def project(self, var_refs : list, env_var_map : VarMap) -> Automaton:
+    def project(self, var_refs : set[VarRef], env_var_map : VarMap) -> Automaton:
         return self
 
     def is_empty(self) -> bool:
@@ -159,10 +160,10 @@ class FalseAutomaton(Automaton):
     def complement(self) -> Automaton:
         return TrueAutomaton()
 
-    def substitute(self, arg_map : dict, env_var_map : VarMap) -> Automaton:
+    def substitute(self, arg_map : dict[str, str], env_var_map : VarMap) -> Automaton:
         return self
 
-    def project(self, var_refs : list, env_var_map : VarMap) -> Automaton:
+    def project(self, var_refs : set[VarRef], env_var_map : VarMap) -> Automaton:
         return self
 
     def is_empty(self) -> bool:

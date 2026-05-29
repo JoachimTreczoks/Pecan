@@ -5,7 +5,7 @@ import itertools as it
 from collections import deque
 from typing import Literal
 
-from pecan.automata.automaton import Automaton, FalseAutomaton
+from pecan.automata.automaton import Automaton
 from pecan.settings import settings
 
 import PySimpleAutomata.NFA as NFA
@@ -97,14 +97,14 @@ class FiniteAutomaton(Automaton):
     def __init__(self, aut : dict, var_map : dict):
         super().__init__('finite')
 
-        self.aut = aut
-        self.var_map = var_map
-        self.special_attr = None
+        self.aut : dict = aut
+        self.var_map : dict = var_map
+        self.special_attr : Literal['false', 'true', None] = None
 
     def get_var_map(self) -> dict:
         return self.var_map
 
-    def augment_vars(self, other : FiniteAutomaton) -> tuple[FiniteAutomaton, FiniteAutomaton, dict]:
+    def augment_vars(self, other : FiniteAutomaton) -> tuple[dict, dict, dict]:
         """Merges the variable maps of `self` and `other`.
 
         Parameters
@@ -114,11 +114,11 @@ class FiniteAutomaton(Automaton):
 
         Returns
         -------
-        new_l : FiniteAutomaton
-                Modified automaton based on `self`, with the merged variable map
+        new_l : dict
+                Modified automaton based on `self` with the merged variable map, in NFA representation
 
-        new_r : FiniteAutomaton
-                Modified automaton based on `other`, with the merged variable map
+        new_r : dict
+                Modified automaton based on `other` with the merged variable map, in NFA representation
 
         new_var_map : dict
                       Merged variable map combining those of `self` and `other`
@@ -136,7 +136,7 @@ class FiniteAutomaton(Automaton):
 
         return new_l, new_r, new_var_map
 
-    def with_var_map(self, new_var_map : dict) -> FiniteAutomaton:
+    def with_var_map(self, new_var_map : dict) -> dict:
         """Replaces the variable map of `self` with `new_var_map`.
 
         Parameters
@@ -147,7 +147,7 @@ class FiniteAutomaton(Automaton):
         Returns
         -------
         FiniteAutomaton
-                        Modified automaton based on `self`, with the new variable map
+                        Modified automaton based on `self` with the new variable map, in NFA representation
         """
         alphabets = list(range(len(new_var_map)))
         for v, (idx, alphabet) in new_var_map.items():
@@ -276,7 +276,7 @@ class FiniteAutomaton(Automaton):
 
         return FiniteAutomaton(aut, new_var_map)
 
-    def project(self, var_refs : list, env_var_map : dict) -> FiniteAutomaton:
+    def project(self, var_refs : set, env_var_map : dict) -> FiniteAutomaton:
         from pecan.lang.ir.prog import VarRef
 
         # print('Projecting', self.var_map, var_refs)
@@ -341,7 +341,7 @@ class FiniteAutomaton(Automaton):
 
         return FiniteAutomaton(new_aut, self.var_map)
 
-    def accepting_word(self) -> dict:
+    def accepting_word(self) -> dict | None:
         # mostly copied from PySimpleAutomata's emptiness checking code
 
         # BFS

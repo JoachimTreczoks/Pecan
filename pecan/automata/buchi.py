@@ -3,14 +3,15 @@
 
 import buddy
 import spot
-from typing import Literal
+from typing import Literal, Callable
 
 from pecan.automata.automaton import Automaton, FalseAutomaton
 from pecan.tools.shuffle_automata import ShuffleAutomata
 from pecan.utility import VarMap
 from pecan.settings import settings
+from pecan.lang.ir.prog import VarRef
 
-def merge(merge_f : function, aut_a : BuchiAutomaton, aut_b : BuchiAutomaton) -> BuchiAutomaton:
+def merge(merge_f : Callable[[spot.twa_graph, spot.twa_graph], spot.twa_graph], aut_a : BuchiAutomaton, aut_b : BuchiAutomaton) -> BuchiAutomaton:
     if aut_a.num_states() < aut_b.num_states():
         merged_var_map, subs = aut_b.get_var_map().merge_with(aut_a.get_var_map())
         # print('merge(a into b)', merged_var_map, subs)
@@ -60,10 +61,10 @@ class BuchiAutomaton(Automaton):
         super().__init__('buchi')
 
         # The interal automaton representation
-        self.aut = aut
+        self.aut : spot.twa_graph = aut
 
         # Maps pecan variables to internal variables
-        self.var_map = var_map
+        self.var_map : VarMap = var_map
 
     def get_var_map(self) -> VarMap:
         return self.var_map
@@ -126,7 +127,7 @@ class BuchiAutomaton(Automaton):
         settings.set_simplification_level(level_before)
         return res
 
-    def substitute(self, arg_map : dict, env_var_map : VarMap) -> BuchiAutomaton:
+    def substitute(self, arg_map : dict[str, str], env_var_map : VarMap) -> BuchiAutomaton:
         new_var_map = VarMap()
         ap_subs = {}
 
@@ -148,7 +149,7 @@ class BuchiAutomaton(Automaton):
 
         return BuchiAutomaton(self.aut, new_var_map).ap_substitute(ap_subs)
 
-    def ap_substitute(self, ap_subs : dict) -> BuchiAutomaton:
+    def ap_substitute(self, ap_subs : dict[str, str]) -> BuchiAutomaton:
         # If we try something like [x/x]P, just don't do anything
         ap_subs = {k: v for k, v in ap_subs.items() if k != v}
 
@@ -182,8 +183,7 @@ class BuchiAutomaton(Automaton):
 
         return BuchiAutomaton(new_aut, new_var_map) #.postprocess()
 
-    def project(self, var_refs : list, env_var_map : VarMap) -> BuchiAutomaton:
-        from pecan.lang.ir.prog import VarRef
+    def project(self, var_refs : set[VarRef], env_var_map : VarMap) -> BuchiAutomaton:
         aps = []
         pecan_var_names = []
 
@@ -208,7 +208,7 @@ class BuchiAutomaton(Automaton):
 
         return result
 
-    def ap_project(self, aps : list) -> BuchiAutomaton:
+    def ap_project(self, aps : list[str]) -> BuchiAutomaton:
         if not aps:
             return self
 
@@ -276,7 +276,7 @@ class BuchiAutomaton(Automaton):
 
         return self
 
-    def postprocess(self, level : str=None) -> BuchiAutomaton:
+    def postprocess(self, level : str | None=None) -> BuchiAutomaton:
         settings.log(3, lambda: 'Empty: {}'.format(self.is_empty()))
         # settings.log(3, lambda: 'Universal: {}'.format(spot.is_universal(self.get_aut())))
 
@@ -325,7 +325,7 @@ class BuchiAutomaton(Automaton):
         self.get_aut().merge_edges()
         return self
 
-    def accepting_word(self) -> dict:
+    def accepting_word(self) -> dict | None:
         acc_word = self.get_aut().accepting_word()
 
         if acc_word is None:
@@ -357,7 +357,7 @@ class BuchiAutomaton(Automaton):
 
         return result
 
-    def to_binary(self, var_names : list, bdd_list : list) -> dict:
+    def to_binary(self, var_names : list[str], bdd_list : list[buddy.bdd]) -> dict:
         var_vals = {k: [] for k in var_names}
 
         for bdd in bdd_list[::-1]:
@@ -373,7 +373,7 @@ class BuchiAutomaton(Automaton):
 
         return var_vals
 
-    def process_formula(self, next_vals : dict, formula : buddy.bdd) -> None:
+    def process_formula(self, next_vals : dict[str, bool], formula : buddy.bdd) -> None:
         if formula._is(spot.op_ap):
             next_vals[formula.ap_name()] = True
         elif formula._is(spot.op_Not):
