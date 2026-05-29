@@ -20,11 +20,11 @@ class Automaton:
     # In practice, it will probably be more efficient to implement all three
     def conjunction(self, other : Automaton) -> Automaton:
         """Returns an automaton representing the conjunction of this automaton and `other`"""
-        return self.complement(self.disjunction(self.complement(self), self.complement(other)))
+        return self.complement().disjunction(other.complement()).complement()
 
     def disjunction(self, other : Automaton) -> Automaton:
         """Returns an automaton representing the disjunction of this automaton and `other`"""
-        return self.complement(self.conjunction(self.complement(self), self.complement(other)))
+        return self.complement().conjunction(other.complement()).complement()
 
     def complement(self) -> Automaton:
         """Returns an automaton representing the complement of this automaton"""
