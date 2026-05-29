@@ -34,9 +34,6 @@ class AutLiteral(Predicate):
         return transformer.transform_AutLiteral(self)
 
     def show(self):
-        return repr(self)
-
-    def show(self):
         return 'AUTOMATON LITERAL'
 
 class SpotFormula(Predicate):
