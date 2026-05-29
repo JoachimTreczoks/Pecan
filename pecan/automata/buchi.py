@@ -9,7 +9,10 @@ from pecan.automata.automaton import Automaton, FalseAutomaton
 from pecan.tools.shuffle_automata import ShuffleAutomata
 from pecan.utility import VarMap
 from pecan.settings import settings
-from pecan.lang.ir.prog import VarRef
+
+# We want to import the `VarRef` class for `BuchiAutomaton.project()`,
+# but to avoid circular imports while allowing proper type annotations, we need to do it like this
+import pecan.lang.ir.prog as prog
 
 def merge(merge_f : Callable[[spot.twa_graph, spot.twa_graph], spot.twa_graph], aut_a : BuchiAutomaton, aut_b : BuchiAutomaton) -> BuchiAutomaton:
     if aut_a.num_states() < aut_b.num_states():
@@ -183,12 +186,12 @@ class BuchiAutomaton(Automaton):
 
         return BuchiAutomaton(new_aut, new_var_map) #.postprocess()
 
-    def project(self, var_refs : set[VarRef], env_var_map : VarMap) -> BuchiAutomaton:
+    def project(self, var_refs : set[prog.VarRef], env_var_map : VarMap) -> BuchiAutomaton:
         aps = []
         pecan_var_names = []
 
         for v in var_refs:
-            if type(v) is VarRef:
+            if type(v) is prog.VarRef:
                 aps.extend(self.var_map[v.var_name])
                 pecan_var_names.append(v.var_name)
 
