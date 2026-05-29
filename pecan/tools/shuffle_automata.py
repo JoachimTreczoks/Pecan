@@ -69,5 +69,5 @@ class ShuffleAutomata:
         elif acc == spot.mark_t([]):
             return spot.mark_t([])
         else:
-            raise Exception('Unexpected acceptance condition on edge: {}'.format(e.acc))
+            raise Exception('Unexpected acceptance condition on edge: {}'.format(acc))
 
