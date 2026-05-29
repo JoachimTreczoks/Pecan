@@ -3,7 +3,7 @@
 
 from typing import Literal
 
-from pecan.utility import Varmap
+from pecan.utility import VarMap
 import pecan.lang.ir.prog as prog
 
 class Automaton:
@@ -31,10 +31,10 @@ class Automaton:
         """Returns an automaton representing the complement of this automaton"""
         raise NotImplementedError
 
-    def substitute(self, arg_map : dict[str, str], env_var_map : utility.VarMap) -> Automaton:
+    def substitute(self, arg_map : dict[str, str], env_var_map : VarMap) -> Automaton:
         raise NotImplementedError
 
-    def project(self, var_refs : set[prog.VarRef], env_var_map : utility.VarMap) -> Automaton:
+    def project(self, var_refs : set[prog.VarRef], env_var_map : VarMap) -> Automaton:
         raise NotImplementedError
 
     def is_empty(self) -> bool:
@@ -122,10 +122,10 @@ class TrueAutomaton(Automaton):
     def complement(self) -> Automaton:
         return FalseAutomaton()
 
-    def substitute(self, arg_map : dict[str, str], env_var_map : utility.VarMap) -> Automaton:
+    def substitute(self, arg_map : dict[str, str], env_var_map : VarMap) -> Automaton:
         return self
 
-    def project(self, var_refs : set[prog.VarRef], env_var_map : utility.VarMap) -> Automaton:
+    def project(self, var_refs : set[prog.VarRef], env_var_map : VarMap) -> Automaton:
         return self
 
     def is_empty(self) -> bool:
@@ -160,10 +160,10 @@ class FalseAutomaton(Automaton):
     def complement(self) -> Automaton:
         return TrueAutomaton()
 
-    def substitute(self, arg_map : dict[str, str], env_var_map : utility.VarMap) -> Automaton:
+    def substitute(self, arg_map : dict[str, str], env_var_map : VarMap) -> Automaton:
         return self
 
-    def project(self, var_refs : set[prog.VarRef], env_var_map : utility.VarMap) -> Automaton:
+    def project(self, var_refs : set[prog.VarRef], env_var_map : VarMap) -> Automaton:
         return self
 
     def is_empty(self) -> bool:
