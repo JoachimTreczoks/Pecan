@@ -8,7 +8,7 @@ import spot
 from pecan.automata.buchi import BuchiAutomaton
 from pecan.utility import VarMap
 
-def from_spot_aut(base_aut):
+def from_spot_aut(base_aut : spot.automaton) -> BuchiAutomaton:
     # In this case, we have no information about the encoding, so we just assume that each variable maps 1-1 in the HOA file specified.
     var_map = VarMap()
 
@@ -17,7 +17,7 @@ def from_spot_aut(base_aut):
 
     return BuchiAutomaton(base_aut, var_map)
 
-def load_hoa(path):
+def load_hoa(path : str) -> BuchiAutomaton:
     with open(path, 'r') as f:
         lines = f.readlines()
 

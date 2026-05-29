@@ -6,7 +6,8 @@ import itertools as it
 
 from pecan.automata.finite import FiniteAutomaton
 
-def load_finite(filename, args):
+def load_finite(filename : str, args : list[str]) -> FiniteAutomaton:
+    
     # Finite automata are stored by default as Python dictionaries, which makes loading them quite simple
     with open(filename, 'r') as f:
         aut = ast.literal_eval(f.read())

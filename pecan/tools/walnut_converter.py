@@ -103,7 +103,7 @@ class BinaryAutomaton:
 
         return new_state
 
-    def encode(self, inp : int) -> Iterator[tuple[str, buddy.bdd]]:
+    def encode(self, inp : list[int]) -> Iterator[tuple[str, buddy.bdd]]:
         for base, formal, sym in zip(self.input_alphabets, self.formal_arg_names, inp):
             yield bin(sym)[2:].rjust(base_len(base), '0'), self.bdds[formal]
 
@@ -136,12 +136,12 @@ def parse_bases(line : str) -> list[int]:
 
     return bases
 
-def convert_aut(filename : str, inp_names : list[str]) -> BuchiAutomaton:
+def convert_aut(filename : str, input_names : list[str]) -> BuchiAutomaton:
     with open(filename, 'r') as f:
-        return convert_walnut_lines(f.readlines(), inp_names)
+        return convert_walnut_lines(f.readlines(), input_names)
 
 # TODO: It would be nice if we used a real parser for all this stuff
-def convert_walnut_lines(lines : list[str], inp_names : list[str]) -> BuchiAutomaton:
+def convert_walnut_lines(lines : list[str], input_names : list[str]) -> BuchiAutomaton:
     cur_state = None
     aut = None
 
@@ -159,10 +159,10 @@ def convert_walnut_lines(lines : list[str], inp_names : list[str]) -> BuchiAutom
             # It's the alphabet line,
             bases = parse_bases(line)
 
-            if len(bases) != len(inp_names):
-                raise Exception('Got {} input alphabets but {} formal arguments!'.format(len(bases), len(inp_names)))
+            if len(bases) != len(input_names):
+                raise Exception('Got {} input alphabets but {} formal arguments!'.format(len(bases), len(input_names)))
 
-            aut = BinaryAutomaton(bases, inp_names)
+            aut = BinaryAutomaton(bases, input_names)
         elif '->' in line:
             if cur_state is None:
                 raise Exception('Transition "{}" not inside any state! (line: {})'.format(line, lineno))
