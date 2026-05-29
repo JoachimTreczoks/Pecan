@@ -8,10 +8,13 @@ from pecan.lang.type_inference import TypeInferer
 from pecan.lang.ast_to_ir import ASTToIR
 from pecan.lang.typed_ir_lowering import TypedIRLowering
 from pecan.lang.optimizer.optimizer import UntypedOptimizer, Optimizer
+from pecan.lang.ast.prog import Program
 
 from pecan.settings import settings
 
-def make_search_paths(filename=None):
+from typing import Any
+
+def make_search_paths(filename : str | None=None) -> list[str]:
     own_path = os.path.dirname(os.path.realpath(__file__))
     std_library_path = os.path.join(own_path, '..', 'library')
     automata_library_path = os.path.join(own_path, '..', 'library', 'automata')
@@ -27,12 +30,12 @@ def make_search_paths(filename=None):
 
     return search_paths
 
-def load(pecan_file, *args, **kwargs):
+def load(pecan_file : str, *args : tuple, **kwargs : Any) -> Program:
     with open(pecan_file, 'r', encoding='utf-8') as f:
         kwargs['filename'] = pecan_file
         return from_source(f.read(), *args, **kwargs)
 
-def from_source(source_code, *args, **kwargs):
+def from_source(source_code : str, *args : tuple, **kwargs : Any) -> Program:
     prog = pecan_parser.parse(source_code)
 
     settings.log(4, lambda: 'Parsed program:')
