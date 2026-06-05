@@ -3,7 +3,6 @@
 
 import itertools as it
 from collections import deque
-from typing import Literal
 
 from pecan.automata.automaton import Automaton
 from pecan.settings import settings
@@ -11,6 +10,10 @@ from pecan.settings import settings
 import PySimpleAutomata.NFA as NFA
 
 # import foma.foma.python.foma as foma
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING :
+    from typing import Literal
 
 class FiniteAutomaton(Automaton):
     """

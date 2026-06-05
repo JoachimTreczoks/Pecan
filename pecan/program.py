@@ -8,11 +8,13 @@ from pecan.lang.type_inference import TypeInferer
 from pecan.lang.ast_to_ir import ASTToIR
 from pecan.lang.typed_ir_lowering import TypedIRLowering
 from pecan.lang.optimizer.optimizer import UntypedOptimizer, Optimizer
-from pecan.lang.ast.prog import Program
 
 from pecan.settings import settings
 
-from typing import Any
+from typing import TYPE_CHECKING
+if TYPE_CHECKING :
+    from typing import Any
+    from pecan.lang.ast.prog import Program
 
 def make_search_paths(filename : str | None=None) -> list[str]:
     own_path = os.path.dirname(os.path.realpath(__file__))

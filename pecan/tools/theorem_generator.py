@@ -3,10 +3,12 @@ import string
 
 import spot
 
-from pecan.lang.ast import *
 from pecan import program
 
-from typing import Literal, Iterator
+from typing import TYPE_CHECKING
+if TYPE_CHECKING :
+    from typing import Literal, Iterator
+    from pecan.lang.ast import *
 
 def truth_val(prog : Program, pred) -> Literal['false', 'true', 'sometimes']:
     evaluated = pred.evaluate(prog)

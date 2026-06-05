@@ -1,13 +1,11 @@
 #!/usr/bin/env python3.6
 # -*- coding=utf-8 -*-
 
-from typing import Literal
-
-from pecan.utility import VarMap
-
-import typing
-if typing.TYPE_CHECKING :
+from typing import TYPE_CHECKING
+if TYPE_CHECKING :
+    from typing import Literal
     from pecan.lang.ir.prog import VarRef
+    from pecan.utility import VarMap
 
 class Automaton:
     def __init__(self, aut_type_name : str):

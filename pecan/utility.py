@@ -4,8 +4,10 @@
 import copy
 import os
 
-from _collections_abc import dict_items
-from typing import Callable
+from typing import TYPE_CHECKING
+if TYPE_CHECKING :
+    from _collections_abc import dict_items
+    from typing import Callable
 
 # From: https://stackoverflow.com/a/6222692/1498618
 def touch(filename : str) -> None:

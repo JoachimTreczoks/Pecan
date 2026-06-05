@@ -8,7 +8,9 @@ import spot
 from pecan.automata.buchi import BuchiAutomaton
 from pecan.utility import VarMap
 
-from typing import Iterator
+from typing import TYPE_CHECKING
+if TYPE_CHECKING :
+    from typing import Iterator
 
 class Transition:
     def __init__(self, input_line : str):

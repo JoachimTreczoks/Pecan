@@ -3,15 +3,15 @@
 
 import buddy
 import spot
-from typing import Literal, Callable
 
 from pecan.automata.automaton import Automaton, FalseAutomaton
 from pecan.tools.shuffle_automata import ShuffleAutomata
 from pecan.utility import VarMap
 from pecan.settings import settings
 
-import typing
-if typing.TYPE_CHECKING :
+from typing import TYPE_CHECKING
+if TYPE_CHECKING :
+    from typing import Literal, Callable
     from pecan.lang.ir.prog import VarRef
 
 def merge(merge_f : Callable[[spot.twa_graph, spot.twa_graph], spot.twa_graph], aut_a : BuchiAutomaton, aut_b : BuchiAutomaton) -> BuchiAutomaton:
