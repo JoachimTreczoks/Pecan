@@ -4,7 +4,10 @@
 from typing import Literal
 
 from pecan.utility import VarMap
-import pecan.lang.ir.prog as prog
+
+import typing
+if typing.TYPE_CHECKING :
+    from pecan.lang.ir.prog import VarRef
 
 class Automaton:
     def __init__(self, aut_type_name : str):
@@ -34,7 +37,7 @@ class Automaton:
     def substitute(self, arg_map : dict[str, str], env_var_map : VarMap) -> Automaton:
         raise NotImplementedError
 
-    def project(self, var_refs : set[prog.VarRef], env_var_map : VarMap) -> Automaton:
+    def project(self, var_refs : set[VarRef], env_var_map : VarMap) -> Automaton:
         raise NotImplementedError
 
     def is_empty(self) -> bool:
@@ -125,7 +128,7 @@ class TrueAutomaton(Automaton):
     def substitute(self, arg_map : dict[str, str], env_var_map : VarMap) -> Automaton:
         return self
 
-    def project(self, var_refs : set[prog.VarRef], env_var_map : VarMap) -> Automaton:
+    def project(self, var_refs : set[VarRef], env_var_map : VarMap) -> Automaton:
         return self
 
     def is_empty(self) -> bool:
@@ -163,7 +166,7 @@ class FalseAutomaton(Automaton):
     def substitute(self, arg_map : dict[str, str], env_var_map : VarMap) -> Automaton:
         return self
 
-    def project(self, var_refs : set[prog.VarRef], env_var_map : VarMap) -> Automaton:
+    def project(self, var_refs : set[VarRef], env_var_map : VarMap) -> Automaton:
         return self
 
     def is_empty(self) -> bool:
