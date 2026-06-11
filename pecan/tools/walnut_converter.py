@@ -10,7 +10,7 @@ from pecan.utility import VarMap
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING :
-    from typing import Iterator
+    from collections.abc import Iterator
 
 class Transition:
     def __init__(self, input_line : str):

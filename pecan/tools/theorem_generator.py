@@ -7,7 +7,8 @@ from pecan import program
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING :
-    from typing import Literal, Iterator
+    from collections.abc import Iterator
+    from typing import Literal
     from pecan.lang.ast import *
 
 def truth_val(prog : Program, pred) -> Literal['false', 'true', 'sometimes']:

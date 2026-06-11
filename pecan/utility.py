@@ -6,8 +6,7 @@ import os
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING :
-    from _collections_abc import dict_items
-    from typing import Callable
+    from collections.abc import Callable, ItemsView
 
 # From: https://stackoverflow.com/a/6222692/1498618
 def touch(filename : str) -> None:
@@ -43,7 +42,7 @@ class VarMap:
     def __setitem__(self, item : str, value : list[str]) -> None:
         self.var_reps[item] = value
 
-    def items(self) -> dict_items[str, list[str]]:
+    def items(self) -> ItemsView[str, list[str]]:
         return self.var_reps.items()
 
     def pop(self, key : str) -> list[str]:
