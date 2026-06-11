@@ -1,62 +1,59 @@
 #!/usr/bin/env python3.6
 # -*- coding=utf-8 -*-
 
-from colorama import Fore, Style
-
-import time
-import os
-from functools import reduce
-
-import spot
+from typing import TYPE_CHECKING
+if TYPE_CHECKING :
+    from pecan.lang.ast_transformer import AstTransformer;
+    from pecan.lang.ast.prog import Program, VarRef
 
 class ASTNode:
     def __init__(self):
         self.is_int = False
 
-    def transform(self, transformer):
+    def transform(self, transformer : AstTransformer) -> ASTNode:
         return NotImplementedError('Transform not implemented for {}'.format(self.__class__.__name__))
 
-    def evaluate_node(self, prog):
+    def evaluate_node(self, prog : Program):
         raise NotImplementedError
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self.show()
 
 class Expression(ASTNode):
     def __init__(self):
         super().__init__()
-        self.is_int = True
+        self.is_int : bool = True
 
     # This should be overriden by all expressions
-    def show(self):
+    def show(self) -> str:
         raise NotImplementedError
 
 class UnaryExpression(Expression):
-    def __init__(self, a):
+    def __init__(self, a : VarRef):
         super().__init__()
-        self.a = a
+        self.a : VarRef = a
 
 class BinaryExpression(Expression):
-    def __init__(self, a, b):
+    def __init__(self, a : VarRef, b : VarRef):
         super().__init__()
-        self.a = a
-        self.b = b
-        self.is_int = a.is_int and b.is_int
+        self.a : VarRef = a
+        self.b : VarRef = b
+        self.is_int : bool = a.is_int and b.is_int
 
 class Predicate(ASTNode):
     def __init__(self):
         super().__init__()
 
-class TypeHint(ASTNode):
+class TypeHint(ASTNode): # TODO: type hinting
     def __init__(self, expr_a, expr_b, body):
         super().__init__()
         self.expr_a = expr_a
         self.expr_b = expr_b
         self.body = body
 
-    def transform(self, transformer):
+    def transform(self, transformer : AstTransformer) -> TypeHint:
         return transformer.transform_TypeHint(self)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '(typ({}) = typ({}) in {})'.format(self.expr_a, self.expr_b, self.body)
 
