@@ -161,7 +161,7 @@ class Settings:
 
                 if self.stdlib_prog is None:
                     self.stdlib_prog = loader(prog.locate_file('std.pn'), *args, **kwargs)
-                    self.stdlib_prog.evaluate()
+                    self.stdlib_prog.evaluate_prog()
 
                 prog.include(self.stdlib_prog)
             finally:

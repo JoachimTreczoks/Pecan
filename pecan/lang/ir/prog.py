@@ -6,10 +6,11 @@ from colorama import Fore, Style
 import os
 from functools import reduce
 import time
-from typing import Tuple
 
 from lark import Lark, Transformer, v_args
 import spot
+
+from typing import TypedDict
 
 from pecan.automata.automaton import FalseAutomaton
 from pecan.tools.hoa_loader import from_spot_aut
@@ -17,96 +18,107 @@ from pecan.lang.ir.base import *
 from pecan.settings import settings
 from pecan.utility import VarMap
 
-class VarRef(IRExpression):
-    def __init__(self, var_name):
-        super().__init__()
-        self.var_name = var_name
-        self.is_int = False
+from pecan.lang.ir.bool import BoolConst
 
-    def evaluate(self, prog):
+from typing import TYPE_CHECKING
+if TYPE_CHECKING :
+    from typing import Any
+    from pecan.lang.ir_transformer import IRTransformer
+    from pecan.lang.ir.base import IREvaluation
+
+class VarRef(IRExpression):
+    def __init__(self, var_name : str):
+        super().__init__()
+        self.var_name : str = var_name
+        self.is_int : bool = False
+
+    def evaluate(self, prog) -> IREvaluation:
         # The automata accepts everything (because this isn't a predicate)
         from pecan.lang.ir.bool import BoolConst
-        return BoolConst(True).evaluate(prog), self
+        return BoolConst(True).evaluate(prog).with_ref(self)
 
-    def transform(self, transformer):
+    def transform(self, transformer : IRTransformer) -> VarRef:
         return transformer.transform_VarRef(self)
 
-    def show(self):
+    def show(self) -> str:
         return str(self.var_name)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self.show()
 
-    def __eq__(self, other):
+    def __eq__(self, other : Any) -> bool:
         return other is not None and type(other) is self.__class__ and self.var_name == other.var_name
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(self.var_name)
 
 class AutLiteral(IRPredicate):
-    def __init__(self, aut, display_node=None):
+    def __init__(self, aut : Automaton | IREvaluation, display_node = None):
         super().__init__()
-        self.aut = aut
-        self.is_int = False
+        if isinstance(aut, Automaton):
+            self.aut : Automaton = aut
+        elif isinstance(aut, IREvaluation):
+            self.aut : Automaton = aut.aut
+        self.is_int : bool = False
         self.display_node = display_node
 
-    def evaluate(self, prog):
-        return self.aut
+    def evaluate(self, prog : Program) -> IREvaluation:
+        return IREvaluation(self.aut)
 
-    def transform(self, transformer):
+    def transform(self, transformer : IRTransformer) -> AutLiteral:
         return transformer.transform_AutLiteral(self)
 
-    def show(self):
+    def show(self) -> str:
         return repr(self)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         if self.display_node is not None:
             return 'AutLiteral({})'.format(repr(self.display_node))
         else:
             return 'AUTOMATON LITERAL'
 
-    def __eq__(self, other):
+    def __eq__(self, other : Any) -> bool:
         return other is not None and type(other) is self.__class__ and self.aut == other.aut
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((self.aut))
 
 class SpotFormula(IRPredicate):
-    def __init__(self, formula_str):
+    def __init__(self, formula_str : str):
         super().__init__()
-        self.formula_str = formula_str
+        self.formula_str : str = formula_str
 
-    def evaluate(self, prog):
+    def evaluate(self, prog : Program) -> IREvaluation:
         try:
-            return from_spot_aut(spot.translate(self.formula_str))
+            return IREvaluation(from_spot_aut(spot.translate(self.formula_str)))
         except:
-            return from_spot_aut(spot.parse_word(self.formula_str).as_automaton())
+            return IREvaluation(from_spot_aut(spot.parse_word(self.formula_str).as_automaton()))
 
-    def transform(self, transformer):
+    def transform(self, transformer : IRTransformer) -> SpotFormula:
         return transformer.transform_SpotFormula(self)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return 'LTL({})'.format(self.formula_str)
 
-    def __eq__(self, other):
+    def __eq__(self, other : Any) -> bool:
         return other is not None and type(other) is self.__class__ and self.formula_str == other.formula_str
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((self.formula_str))
 
 class Match:
-    def __init__(self, pred_name=None, pred_args=None, match_any=False):
+    def __init__(self, pred_name : None | str = None, pred_args : list[VarRef] | None = None, match_any=False):
         if pred_args is None:
             pred_args = []
 
-        self.pred_name = pred_name
-        self.pred_args = pred_args
-        self.match_any = match_any
+        self.pred_name : None | str = pred_name
+        self.pred_args : list[VarRef] = pred_args
+        self.match_any : bool = match_any
 
     def arity(self):
         return len(self.pred_args)
 
-    def unify(self, other):
+    def unify(self, other : Match) -> Match:
         if other.match_any:
             return self
         if self.match_any:
@@ -131,11 +143,11 @@ class Match:
 
         return Match(self.pred_name, new_args)
 
-    def call_with(self, pred_name, unification, rest_args):
+    def call_with(self, pred_name, unification, rest_args : list[VarRef]) -> Call:
         if self.match_any:
             raise Exception(f'Predicate not found: {pred_name}')
         i = 0
-        final_args = []
+        final_args : list[VarRef] = []
         for arg in self.pred_args:
             if arg.var_name == 'any':
                 if i >= len(rest_args):
@@ -147,6 +159,8 @@ class Match:
             else:
                 final_args.append(VarRef(unification.get(arg.var_name, arg.var_name)))
 
+        if not self.pred_name:
+            raise Exception('Missing predicate name')
         return Call(self.pred_name, final_args)
 
     def __repr__(self):
@@ -159,55 +173,61 @@ class Match:
         return hash((self.pred_name, self.pred_args, self.match_any))
 
 class Call(IRPredicate):
-    def __init__(self, name, args):
+    def __init__(self, name : str, args : list[VarRef]):
         super().__init__()
-        self.name = name
-        self.args = args
+        self.name : str = name
+        self.args : list[VarRef] = args
 
-    def arity(self):
+    def arity(self) -> int:
         return len(self.args)
 
-    def match(self):
+    def match(self) -> Match:
         return Match(self.name, self.args)
 
-    def with_args(self, new_args):
+    def with_args(self, new_args : list[VarRef]) -> Call:
         return Call(self.name, new_args)
 
-    def add_arg(self, new_arg):
+    def add_arg(self, new_arg : VarRef) -> Call:
         return Call(self.name, self.args + [new_arg]).with_type(self.get_type())
 
-    def subs_last(self, new_arg):
+    def subs_last(self, new_arg : VarRef) -> Call:
         return self.with_args(self.args[:-1] + [new_arg]).with_type(self.get_type())
 
-    def evaluate_node(self, prog):
+    def evaluate_node(self, prog : Program) -> IREvaluation:
         return prog.call(self.name, self.args)
 
-    def transform(self, transformer):
+    def transform(self, transformer : IRTransformer) -> Call:
         return transformer.transform_Call(self)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '{}({})'.format(self.name, ', '.join(map(repr, self.args)))
 
-    def __eq__(self, other):
+    def __eq__(self, other : Any) -> bool:
         return other is not None and type(other) is self.__class__ and self.name == other.name and self.args == other.args
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((self.name, tuple(self.args)))
 
-class NamedPred(IRNode):
-    def __init__(self, name, args, arg_restrictions, body, restriction_env=None, body_evaluated=None, arg_name_map=None):
-        super().__init__()
-        self.name = name
+class NamedPred(Call):
+    def __init__(self, name : str,
+                 args : list[VarRef],
+                 arg_restrictions,
+                 body : IRPredicate,
+                 restriction_env=None,
+                 body_evaluated=None,
+                 arg_name_map=None):
+        super().__init__(name, args)
+        #self.name : str = name
 
-        self.args = args
-        self.arg_restrictions = arg_restrictions
-        self.body = body
+        #self.args : list[VarRef] = args
+        self.arg_restrictions : dict = arg_restrictions
+        self.body : IRPredicate = body
 
         self.restriction_env = restriction_env or {}
         self.body_evaluated = body_evaluated
         self.arg_name_map = arg_name_map or {}
 
-    def evaluate(self, prog):
+    def evaluate(self, prog : Program) -> IREvaluation:
         # Here we keep track of all restrictions that were in scope when we are evaluated;
         # this essentially builds a closure. Otherwise, if we forget a variable after the declaration of this predicate,
         # then we will lose the restriction when we are called. This would cause our behavior to depend on lexically
@@ -228,16 +248,18 @@ class NamedPred(IRNode):
         finally:
             prog.exit_scope()
 
-    def transform(self, transformer):
+        return BoolConst(True).evaluate(prog) # Dummy return value, to allow keeping notation simple throughout the rest of the IR codebase
+
+    def transform(self, transformer : IRTransformer) -> NamedPred:
         return transformer.transform_NamedPred(self)
 
-    def arity(self):
+    def arity(self) -> int:
         return len(self.args)
 
-    def match(self):
-        return Match(self.name, ['any'] * self.arity())
+    def match(self) -> Match:
+        return Match(self.name, [VarRef('any')] * self.arity())
 
-    def call(self, prog, arg_names=None):
+    def call(self, prog : Program, arg_names : list[VarRef] | None = None) -> IREvaluation:
         prog.enter_scope(dict(self.restriction_env))
 
         try:
@@ -266,16 +288,16 @@ class NamedPred(IRNode):
         finally:
             prog.exit_scope()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         if self.body_evaluated is None:
             return '{}({}) := {}'.format(self.name, ', '.join(map(repr, self.args)), self.body)
         else:
             return '{}({}) := {} (evaluated)'.format(self.name, ', '.join(map(repr, self.args)), self.body)
 
-    def __eq__(self, other):
+    def __eq__(self, other : Any) -> bool:
         return other is not None and type(other) is self.__class__ and self.name == other.name and self.args == other.args and self.arg_restrictions == other.arg_restrictions and self.body == other.body and self.restriction_env == other.restriction_env
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((self.name, tuple(self.args)))
 
 class Program(IRNode):
@@ -283,29 +305,29 @@ class Program(IRNode):
         super().__init__()
 
         self.defs = defs
-        self.preds = kwargs.get('preds', {})
-        self.context = kwargs.get('context', {})
-        self.restrictions = kwargs.get('restrictions', [{}])
-        self.global_restrictions = kwargs.get('global_restrictions', {})
-        self.types = kwargs.get('types', {})
-        self.eval_level = kwargs.get('eval_level', 0)
-        self.result = kwargs.get('result', None)
-        self.search_paths = kwargs.get('search_paths', [])
+        self.preds : dict[str, Call | NamedPred] = kwargs.get('preds', {})
+        self.context : dict[str, str] = kwargs.get('context', {})
+        self.restrictions : list[dict[str, list[Call]]] = kwargs.get('restrictions', [{}])
+        self.global_restrictions : dict[str, list[Call]] = kwargs.get('global_restrictions', {})
+        self.types : dict[str, dict[str, Call]] = kwargs.get('types', {})
+        self.eval_level : int = kwargs.get('eval_level', 0)
+        self.result : None | Result = kwargs.get('result', None)
+        self.search_paths : list[str] = kwargs.get('search_paths', [])
 
-        self.praline_envs = kwargs.get('praline_envs', [])
-        self.praline_defs = kwargs.get('praline_defs', {})
-        self.praline_aliases = kwargs.get('praline_aliases', {})
+        self.praline_envs : list = kwargs.get('praline_envs', [])
+        self.praline_defs : dict = kwargs.get('praline_defs', {})
+        self.praline_aliases : dict = kwargs.get('praline_aliases', {})
 
         # The current to-process index in self.defs
         # This is used for emitting new definitions via Praline (see Program.emit_definition and pecan.lib.praline.builtins.Emit)
         self.idx = None
-        self.emit_offset = 0
+        self.emit_offset : int = 0
 
-        self.aut_stats = {}
+        self.aut_stats : dict[str, AutomatonStats] = {}
 
-        self.var_map = []
+        self.var_map : list[VarMap] = []
 
-        self.generated_files = kwargs.get('generated_files', [])
+        self.generated_files : list[str] = kwargs.get('generated_files', [])
 
         from pecan.lang.type_inference import TypeInferer
         self.type_inferer = TypeInferer(self)
@@ -314,11 +336,11 @@ class Program(IRNode):
         self.aut_stats[name] = { 'states': 0, 'edges': 0, 'runtime': 0 }
         return self
 
-    def finish_max_aut(self, name : str) -> Tuple[int, int, float]:
+    def finish_max_aut(self, name : str) -> tuple[int, int, float]:
         stats = self.aut_stats.pop(name)
         return stats['states'], stats['edges'], stats['runtime']
 
-    def update_max_aut(self, sn : int, en : int, runtime : float):
+    def update_max_aut(self, sn : int, en : int, runtime : float) -> None:
         for name in self.aut_stats:
             if sn > self.aut_stats[name]['states']:
                 self.aut_stats[name]['states'] = sn
@@ -326,10 +348,10 @@ class Program(IRNode):
 
             self.aut_stats[name]['runtime'] = max(self.aut_stats[name]['runtime'], runtime)
 
-    def get_var_map(self):
+    def get_var_map(self) -> VarMap:
         return self.var_map[-1]
 
-    def enter_praline_env(self, new_env=None):
+    def enter_praline_env(self, new_env = None) -> None:
         if new_env is None:
             self.praline_envs.append({})
         else:
@@ -338,7 +360,7 @@ class Program(IRNode):
     def exit_praline_env(self):
         return self.praline_envs.pop()
 
-    def praline_lookup(self, name):
+    def praline_lookup(self, name : str):
         if name in self.praline_envs[-1]:
             return self.praline_envs[-1][name]
 
@@ -351,39 +373,39 @@ class Program(IRNode):
 
         raise Exception('Unknown symbol: "{}"'.format(name))
 
-    def praline_env_clone(self):
+    def praline_env_clone(self) -> dict:
         return dict(self.praline_envs[-1])
 
-    def define_alias(self, name, alias):
+    def define_alias(self, name : str, alias) -> None:
         self.praline_aliases[name] = alias
 
-    def lookup_alias(self, name):
+    def lookup_alias(self, name : str):
         if name in self.praline_aliases:
             return self.praline_aliases[name]
         else:
             raise Exception('Unknown alias name: {}'.format(name))
 
-    def praline_define(self, name, val):
+    def praline_define(self, name : str, val) -> None:
         self.praline_defs[name] = val
 
-    def praline_local_define(self, name, val):
+    def praline_local_define(self, name : str, val) -> None:
         self.praline_envs[-1][name] = val
 
     def praline_local_define_all(self, env):
         self.praline_envs[-1].update(env)
 
-    def praline_local_cleanup(self, names):
+    def praline_local_cleanup(self, names : list[str]):
         for name in names:
             self.praline_envs[-1].pop(name)
 
-    def copy_defaults(self, other_prog):
+    def copy_defaults(self, other_prog : Program) -> Program:
         self.context = other_prog.context
         self.eval_level = other_prog.eval_level
         self.result = other_prog.result
         self.search_paths.extend(other_prog.search_paths)
         return self
 
-    def include(self, other_prog):
+    def include(self, other_prog : Program) -> None:
         # Note: Intentionally do NOT merge restrictions, because it would be super confusing if variable restrictions "leaked" from imports
         self.preds.update(other_prog.preds)
         self.context.update(other_prog.context)
@@ -394,21 +416,21 @@ class Program(IRNode):
 
         self.generated_files.extend(other_prog.generated_files)
 
-    def add_generated_file(self, path):
+    def add_generated_file(self, path : str):
         self.generated_files.append(path)
 
-    def get_generated_files(self):
+    def get_generated_files(self) -> list[str]:
         return self.generated_files
 
-    def include_with_restrictions(self, other_prog):
+    def include_with_restrictions(self, other_prog : Program):
         self.include(other_prog)
 
         self.global_restrictions.update(other_prog.global_restrictions)
 
-    def declare_type(self, pred_ref, val_dict):
+    def declare_type(self, pred_ref : str, val_dict):
         self.types[pred_ref] = val_dict
 
-    def type_infer(self, node):
+    def type_infer(self, node : IRNode):
         return self.type_inferer.reset().transform(node)
 
     def emit_definition(self, d):
@@ -439,8 +461,8 @@ class Program(IRNode):
             settings.log(0, lambda: self.preds[d.name])
         else:
             return d.evaluate(self)
-
-    def evaluate(self, old_env=None):
+        
+    def evaluate_prog(self, old_env : None | Program = None) -> Program:
         from pecan.lib.praline.builtins import builtins
 
         for builtin in builtins:
@@ -474,22 +496,22 @@ class Program(IRNode):
         # Clear all restrictions. All relevant restrictions will be held inside the restriction_env of the relevant predicates.
         # Having them also in our restrictions list just leads to double restricting, which is a waste of computation time
         self.restrictions.clear()
-        self.idx = None
+        self.idx = None # TODO : this can probably be changed to default to 0
 
         self.result = Result('\n'.join(msgs), succeeded)
 
         return self
 
-    def transform(self, transformer):
+    def transform(self, transformer : IRTransformer) -> Program:
         return transformer.transform_Program(self)
 
-    def forget(self, var_name):
+    def forget(self, var_name : str) -> None:
         self.restrictions[-1].pop(var_name)
 
-    def forget_global(self, var_name):
+    def forget_global(self, var_name : str) -> None:
         self.global_restrictions.pop(var_name)
 
-    def global_restrict(self, var_name, pred):
+    def global_restrict(self, var_name : str, pred : Call) -> None:
         if pred is not None and pred not in self.get_restrictions(var_name):
             if type(pred) is not Call or not pred.args:
                 raise Exception('Unexpected predicate used as restriction (must be Call with the first argument as the variable to restrict): {}'.format(pred))
@@ -499,7 +521,7 @@ class Program(IRNode):
             else:
                 self.global_restrictions[var_name] = [pred]
 
-    def restrict(self, var_name, pred):
+    def restrict(self, var_name : str, pred : Call) -> None:
         if pred is not None and pred not in self.get_restrictions(var_name, local_only=True):
             if type(pred) is not Call or not pred.args:
                 raise Exception('Unexpected predicate used as restriction (must be Call with the first argument as the variable to restrict): {}'.format(pred))
@@ -509,7 +531,7 @@ class Program(IRNode):
             else:
                 self.restrictions[-1][var_name] = [pred]
 
-    def get_restriction_env(self, local_only=False):
+    def get_restriction_env(self, local_only : bool = False) -> dict:
         result = {}
         if not local_only:
             result.update(self.global_restrictions)
@@ -517,32 +539,32 @@ class Program(IRNode):
 
         return result
 
-    def enter_scope(self, new_restrictions=None):
+    def enter_scope(self, new_restrictions : dict | None = None) -> None:
         if new_restrictions is None:
             new_restrictions = {}
         self.restrictions.append(dict(new_restrictions))
 
-    def exit_scope(self):
+    def exit_scope(self) -> None:
         if self.restrictions:
             self.restrictions.pop(-1)
         else:
             raise Exception('Cannot exit the last scope!')
 
-    def enter_var_map_scope(self, var_map=None):
+    def enter_var_map_scope(self, var_map : None | VarMap = None) -> None:
         self.var_map.append(var_map or VarMap())
 
-    def exit_var_map_scope(self):
+    def exit_var_map_scope(self) -> VarMap:
         return self.var_map.pop()
 
-    def get_restrictions(self, var_name: str, local_only=False):
+    def get_restrictions(self, var_name: str, local_only : bool = False):
         result = []
         # for scope in self.restrictions:
-        for r in self.get_restriction_env(local_only=local_only).get(var_name, []):
+        for r in self.get_restriction_env(local_only).get(var_name, []):
             if not r in result:
                 result.append(r)
         return result
 
-    def call(self, pred_name, args=None):
+    def call(self, pred_name : str, args : list[VarRef] | None = None) -> IREvaluation:
         try:
             if not args:
                 if pred_name in self.preds:
@@ -557,14 +579,14 @@ class Program(IRNode):
             else:
                 raise e
 
-    def unify_with(self, a, b, unification):
+    def unify_with(self, a : str, b : str, unification : dict[str, str]) -> bool:
         if b in unification:
             return unification[b] == a
         else:
             unification[b] = a
             return True
 
-    def unify_type(self, t1, t2, unification):
+    def unify_type(self, t1 : Call | VarRef, t2 : Call | VarRef, unification : dict[str, str]) -> bool:
         if type(t1) is VarRef and type(t2) is VarRef:
             return self.unify_with(t1.var_name, t2.var_name, unification)
         elif type(t1) is Call and type(t2) is Call:
@@ -579,7 +601,7 @@ class Program(IRNode):
         else:
             return False
 
-    def try_unify_type(self, t1, t2, unification):
+    def try_unify_type(self, t1 : Call | VarRef, t2 : Call | VarRef, unification : dict[str, str]) -> bool:
         old_unification = dict(unification)
         result = self.unify_type(t1, t2, unification)
         if result:
@@ -590,13 +612,13 @@ class Program(IRNode):
             unification.update(old_unification)
             return False
 
-    def lookup_pred_by_name(self, pred_name):
+    def lookup_pred_by_name(self, pred_name : str) -> Call:
         if pred_name in self.preds:
             return self.preds[pred_name]
         else:
             raise Exception(f'Predicate {pred_name} not found (known predicates: {self.preds.keys()}!')
 
-    def lookup_call(self, pred_name, arg, unification):
+    def lookup_call(self, pred_name : str, arg : VarRef, unification) -> Match:
         if arg.get_type() is None:
             return Match(match_any=True)
 
@@ -610,7 +632,7 @@ class Program(IRNode):
 
         return Match(match_any=True)
 
-    def lookup_dynamic_call(self, pred_name, args):
+    def lookup_dynamic_call(self, pred_name : str, args : list[VarRef]) -> Call:
         matches = []
         unification = {}
         for arg in args:
@@ -630,11 +652,11 @@ class Program(IRNode):
             return final_match.call_with(pred_name, unification, args)
 
     # Dynamic dispatch based on argument types
-    def dynamic_call(self, pred_name, args):
+    def dynamic_call(self, pred_name : str, args : list[VarRef]):
         final_call = self.lookup_dynamic_call(pred_name, args)
         return self.lookup_pred_by_name(final_call.name).call(self, final_call.args)
 
-    def locate_file(self, filename):
+    def locate_file(self, filename : str) -> str:
         for path in self.search_paths:
             try_path = os.path.join(path, filename)
             if os.path.exists(try_path):
@@ -642,24 +664,24 @@ class Program(IRNode):
 
         raise FileNotFoundError(filename)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return repr(self.defs)
 
 class Result:
-    def __init__(self, msg, succeeded):
-        self.msg = msg
-        self.__succeeded = succeeded
+    def __init__(self, msg : str, succeeded : bool):
+        self.msg : str = msg
+        self.__succeeded : bool = succeeded
 
-    def succeeded(self):
+    def succeeded(self) -> bool:
         return self.__succeeded
 
-    def failed(self):
+    def failed(self) -> bool:
         return not self.succeeded()
 
-    def message(self):
+    def message(self) -> str:
         return self.msg
 
-    def result_str(self):
+    def result_str(self) -> str:
         if settings.get_show_progress():
             if self.succeeded():
                 return f'{Fore.GREEN}{self.msg}{Style.RESET_ALL}'
@@ -669,18 +691,23 @@ class Result:
             return self.msg
 
 class Restriction(IRNode):
-    def __init__(self, restrict_vars, pred):
+    def __init__(self, restrict_vars : list[VarRef], pred : Call):
         super().__init__()
-        self.restrict_vars = restrict_vars
-        self.pred = pred
+        self.restrict_vars : list[VarRef] = restrict_vars
+        self.pred : Call = pred
 
-    def evaluate(self, prog):
+    def evaluate(self, prog : Program) -> None:
         for var in self.restrict_vars:
             prog.global_restrict(var.var_name, self.pred.add_arg(var))
+        #return BoolConst(True).evaluate(prog) # Dummy return value, to allow keeping notation simple throughout the rest of the IR codebase
 
-    def transform(self, transformer):
+    def transform(self, transformer : IRTransformer) -> Restriction:
         return transformer.transform_Restriction(self)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return 'Restrict {} are {}.'.format(', '.join(map(repr, self.restrict_vars)), self.pred)
 
+class AutomatonStats(TypedDict):
+    states : int
+    edges : int
+    runtime : float

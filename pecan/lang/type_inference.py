@@ -40,7 +40,7 @@ class InferredType(Type):
 class RestrictionType(Type):
     def __init__(self, restriction: Call):
         super().__init__()
-        self.restriction = restriction
+        self.restriction : Call = restriction
 
     def get_restriction(self):
         return self.restriction
@@ -133,8 +133,8 @@ class TypeEnv:
                 # Unification didn't easily succeed, so drop down to actually using some theorem proving power to check
                 # if the types are compatible (e.g., subtyping check)
                 temp_var = VarRef(self.prog.fresh_name())
-                aut_a = t_a.subs_last(temp_var).evaluate(self.prog)
-                aut_b = t_b.subs_last(temp_var).evaluate(self.prog)
+                aut_a = t_a.subs_last(temp_var).evaluate(self.prog).aut
+                aut_b = t_b.subs_last(temp_var).evaluate(self.prog).aut
 
                 if aut_a.contains(aut_b) and aut_b.contains(aut_a):
                     return t_a

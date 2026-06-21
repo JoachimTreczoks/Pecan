@@ -39,7 +39,7 @@ def run_repl(env):
                 prog = program.from_source(prog_str)
                 settings.log(0, lambda: str(prog))
                 prog.include_with_restrictions(env)
-                env = prog.evaluate()
+                env = prog.evaluate_prog()
         except KeyboardInterrupt:
             print('') # newline to go "below" the prompt
             print("Use 'exit' to exit Pecan.")
@@ -126,7 +126,7 @@ def main():
         try:
             prog = program.load(args.file)
             if not settings.get_extract_implications():
-                env = prog.evaluate()
+                env = prog.evaluate_prog()
         except UnexpectedToken as e:
             print(e)
             return None
@@ -144,7 +144,7 @@ def main():
     if args.interactive:
         if env is None:
             prog = program.from_source('')
-            env = prog.evaluate()
+            env = prog.evaluate_prog()
 
         prog = run_repl(env)
 

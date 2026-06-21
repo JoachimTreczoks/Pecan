@@ -14,6 +14,15 @@ from pecan.lang.ir import *
 
 from pecan.settings import settings
 
+from pecan.lang.ir.base import IRNode
+from pecan.lang.ir.prog import AutLiteral, Call, NamedPred, Result
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING :
+    from typing import Any, Literal
+    from pecan.lang.ir_transformer import IRTransformer
+    from pecan.lang.ir.prog import Program
+
 class DirectiveSaveAut(IRNode):
     def __init__(self, filename, pred_name):
         super().__init__()
@@ -25,19 +34,19 @@ class DirectiveSaveAut(IRNode):
 
         prog.add_generated_file(self.filename)
 
-        prog.call(self.pred_name).save(self.filename)
+        prog.call(self.pred_name).aut.save(self.filename)
         return None
 
-    def transform(self, transformer):
+    def transform(self, transformer : IRTransformer) -> DirectiveSaveAut:
         return transformer.transform_DirectiveSaveAut(self)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '#save_aut({}, {})'.format(str(self.filename), self.pred_name)
 
-    def __eq__(self, other):
+    def __eq__(self, other : Any) -> bool:
         return other is not None and type(other) is self.__class__ and self.filename == other.filename and self.pred_name == other.pred_name
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((self.filename, self.pred_name))
 
 class DirectiveSaveAutImage(IRNode):
@@ -46,11 +55,11 @@ class DirectiveSaveAutImage(IRNode):
         self.filename = filename
         self.pred_name = pred_name
 
-    def evaluate(self, prog):
+    def evaluate(self, prog : Program) -> None:
         # TODO: Support formats other than SVG?
         settings.log(lambda: f'[INFO] Saving {self.pred_name} as an SVG in {self.filename}')
 
-        evaluated = prog.call(self.pred_name)
+        evaluated = prog.call(self.pred_name).aut
         with open(self.filename, 'wb') as f:
             f.write(evaluated.show().data.encode('utf-8')) # Write the raw svg data into the file
 
@@ -58,16 +67,16 @@ class DirectiveSaveAutImage(IRNode):
 
         return None
 
-    def transform(self, transformer):
+    def transform(self, transformer : IRTransformer) -> DirectiveSaveAutImage:
         return transformer.transform_DirectiveSaveAutImage(self)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '#save_aut_img({}, {})'.format(repr(self.filename), self.pred_name)
 
-    def __eq__(self, other):
+    def __eq__(self, other : Any) -> bool:
         return other is not None and type(other) is self.__class__ and self.filename == other.filename and self.pred_name == other.pred_name
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((self.filename, self.pred_name))
 
 class DirectiveContext(IRNode):
@@ -76,20 +85,20 @@ class DirectiveContext(IRNode):
         self.context_key = context_key
         self.context_val = context_val
 
-    def evaluate(self, prog):
+    def evaluate(self, prog : Program) -> None:
         prog.context[self.context_key] = self.context_val
         return None
 
-    def transform(self, transformer):
+    def transform(self, transformer : IRTransformer) -> DirectiveContext:
         return transformer.transform_DirectiveContext(self)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '#context({}, {})'.format(self.context_key, self.context_val)
 
-    def __eq__(self, other):
+    def __eq__(self, other : Any) -> bool:
         return other is not None and type(other) is self.__class__ and self.context_key == other.context_key and self.context_val == other.context_val
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((self.context_key, self.context_val))
 
 class DirectiveEndContext(IRNode):
@@ -97,33 +106,33 @@ class DirectiveEndContext(IRNode):
         super().__init__()
         self.context_key = context_key
 
-    def evaluate(self, prog):
+    def evaluate(self, prog : Program) -> None:
         prog.context.pop(self.context_key)
         return None
 
-    def transform(self, transformer):
+    def transform(self, transformer : IRTransformer) -> DirectiveEndContext:
         return transformer.transform_DirectiveEndContext(self)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '#end_context({})'.format(self.context_key)
 
-    def __eq__(self, other):
+    def __eq__(self, other : Any) -> bool:
         return other is not None and type(other) is self.__class__ and self.context_key == other.context_key
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(self.context_key)
 
 # Asserts that pred_name is truth_val: i.e., that pred_name is 'true' (always), 'false' (always), or 'sometimes' true
 class DirectiveAssertProp(IRNode):
-    def __init__(self, truth_val, pred_name):
+    def __init__(self, truth_val : Literal['false', 'true', 'sometimes'], pred_name : str):
         super().__init__()
-        self.truth_val = truth_val
-        self.pred_name = pred_name
+        self.truth_val : Literal['false', 'true', 'sometimes'] = truth_val
+        self.pred_name : str = pred_name
 
-    def pred_truth_value(self, prog):
+    def pred_truth_value(self, prog : Program) -> Literal['false', 'true', 'sometimes']:
         return Call(self.pred_name, []).evaluate(prog).truth_value()
 
-    def evaluate(self, prog):
+    def evaluate(self, prog : Program) -> Result:
         settings.log(lambda: f'[INFO] Checking if {self.pred_name} is {self.display_truth_val()}.')
 
         pred_truth_value = self.pred_truth_value(prog)
@@ -137,32 +146,32 @@ class DirectiveAssertProp(IRNode):
 
         return result
 
-    def transform(self, transformer):
+    def transform(self, transformer : IRTransformer) -> DirectiveAssertProp:
         return transformer.transform_DirectiveAssertProp(self)
 
-    def display_truth_val(self):
+    def display_truth_val(self) -> Literal['false', 'true', 'sometimes true']:
         if self.truth_val == 'sometimes':
             return 'sometimes true'
         else:
             return self.truth_val # 'true' or 'false'
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '#assert_prop({}, {})'.format(self.truth_val, self.pred_name)
 
-    def __eq__(self, other):
+    def __eq__(self, other : Any) -> bool:
         return other is not None and type(other) is self.__class__ and self.truth_val == other.truth_val and self.pred_name == other.pred_name
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((self.truth_val, self.pred_name))
 
 class DirectiveLoadAut(IRNode):
-    def __init__(self, filename, aut_format, pred):
+    def __init__(self, filename : str, aut_format : str, pred):
         super().__init__()
-        self.filename = filename
-        self.aut_format = aut_format
+        self.filename : str = filename
+        self.aut_format : str = aut_format
         self.pred = pred
 
-    def evaluate(self, prog):
+    def evaluate(self, prog : Program) -> None:
         # TODO: Support argument restrictions on loaded automata
         start_time = time.time()
         realpath = prog.locate_file(self.filename)
@@ -188,17 +197,17 @@ class DirectiveLoadAut(IRNode):
 
         return None
 
-    def transform(self, transformer):
+    def transform(self, transformer : IRTransformer) -> DirectiveLoadAut:
         return transformer.transform_DirectiveLoadAut(self)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '#load({}, {}, {})'.format(self.filename, self.aut_format, repr(self.pred))
 
-    def __eq__(self, other):
+    def __eq__(self, other : Any) -> bool:
         return other is not None and type(other) is self.__class__ and \
                self.filename == other.filename and self.aut_format == other.aut_format and self.pred == other.pred
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((self.filename, self.aut_format, self.pred))
 
 class DirectiveImport(IRNode):
@@ -206,25 +215,25 @@ class DirectiveImport(IRNode):
         super().__init__()
         self.filename = filename
 
-    def evaluate(self, prog):
+    def evaluate(self, prog : Program) -> None:
         realpath = prog.locate_file(self.filename)
         from pecan.program import load
         new_prog = load(realpath).copy_defaults(prog)
-        new_prog.evaluate()
+        new_prog.evaluate_prog()
         prog.include(new_prog)
         return None
 
-    def transform(self, transformer):
+    def transform(self, transformer : IRTransformer) -> DirectiveImport:
         return transformer.transform_DirectiveImport(self)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '#import({})'.format(repr(self.filename))
 
-    def __eq__(self, other):
+    def __eq__(self, other : Any) -> bool:
         return other is not None and type(other) is self.__class__ and \
                self.filename == other.filename
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(self.filename)
 
 class DirectiveForget(IRNode):
@@ -232,21 +241,21 @@ class DirectiveForget(IRNode):
         super().__init__()
         self.var_name = var_name
 
-    def evaluate(self, prog):
+    def evaluate(self, prog : Program) -> None:
         prog.forget_global(self.var_name)
         return None
 
-    def transform(self, transformer):
+    def transform(self, transformer : IRTransformer) -> DirectiveForget:
         return transformer.transform_DirectiveForget(self)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '#forget({})'.format(repr(self.var_name))
 
-    def __eq__(self, other):
+    def __eq__(self, other : Any) -> bool:
         return other is not None and type(other) is self.__class__ and \
                self.var_name == other.var_name
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(self.var_name)
 
 class DirectiveStructure(IRNode):
@@ -255,21 +264,21 @@ class DirectiveStructure(IRNode):
         self.pred_ref = pred_ref
         self.val_dict = val_dict
 
-    def evaluate(self, prog):
+    def evaluate(self, prog : Program) -> None:
         prog.declare_type(self.pred_ref, self.val_dict)
         return None
 
-    def transform(self, transformer):
+    def transform(self, transformer : IRTransformer) -> DirectiveStructure:
         return transformer.transform_DirectiveStructure(self)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return 'Structure {} defining {}.'.format(self.pred_ref, self.val_dict)
 
-    def __eq__(self, other):
+    def __eq__(self, other : Any) -> bool:
         return other is not None and type(other) is self.__class__ and \
                self.pred_ref == other.pred_ref and self.val_dict == other.val_dict
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((self.pred_ref, self.val_dict))
 
 class DirectiveShuffle(IRNode):
@@ -280,13 +289,13 @@ class DirectiveShuffle(IRNode):
         self.pred_b = pred_b
         self.output_pred = output_pred
 
-    def transform(self, transformer):
+    def transform(self, transformer : IRTransformer) -> DirectiveShuffle:
         return transformer.transform_DirectiveShuffle(self)
 
-    def evaluate(self, prog):
+    def evaluate(self, prog : Program) -> None:
         # TODO: Support shuffling other kinds of automata, once we have them
-        a_aut = BuchiAutomaton.as_buchi(prog.call(self.pred_a.name, self.pred_a.args))
-        b_aut = BuchiAutomaton.as_buchi(prog.call(self.pred_b.name, self.pred_b.args))
+        a_aut = BuchiAutomaton.as_buchi(prog.call(self.pred_a.name, self.pred_a.args).aut)
+        b_aut = BuchiAutomaton.as_buchi(prog.call(self.pred_b.name, self.pred_b.args).aut)
 
         res = a_aut.shuffle(self.disjunction, b_aut)
 
@@ -294,6 +303,6 @@ class DirectiveShuffle(IRNode):
 
         return None
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '#shuffle({}, {}, {})'.format(self.pred_a, self.pred_b, self.output_pred)
 

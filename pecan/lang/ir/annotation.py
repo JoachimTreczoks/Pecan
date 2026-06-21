@@ -5,13 +5,20 @@ from pecan.lang.ir import *
 
 from pecan.settings import settings
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING :
+    from typing import Any
+    from pecan.lang.ir_transformer import IRTransformer
+    from pecan.lang.ir.base import IREvaluation, IRPredicate
+    from pecan.lang.ir.prog import Program
+
 class Annotation(IRPredicate):
-    def __init__(self, annotation_name, body):
+    def __init__(self, annotation_name : str, body):
         super().__init__()
-        self.annotation_name = annotation_name
+        self.annotation_name : str = annotation_name
         self.body = body
 
-    def evaluate_node(self, prog):
+    def evaluate_node(self, prog : Program) -> IREvaluation:
         if self.annotation_name == '@no_simplify':
             orig_level = settings.get_simplification_level()
             settings.set_simplification_level(0)
@@ -47,24 +54,24 @@ class Annotation(IRPredicate):
         elif self.annotation_name == '@merge_edges':
             return self.body.evaluate(prog).merge_edges()
         elif self.annotation_name == '@merge_states_loop':
-            aut = self.body.evaluate(prog)
-            n = aut.num_states() + 1
-            while aut.num_states() < n:
-                n = aut.num_states()
-                aut.merge_states()
-            return aut
+            evaluation = self.body.evaluate(prog)
+            n = evaluation.num_states() + 1
+            while evaluation.num_states() < n:
+                n = evaluation.num_states()
+                evaluation.merge_states()
+            return evaluation
         else:
             raise Exception('Unknown annotation: {}'.format(self.annotation_name))
 
-    def transform(self, transformer):
+    def transform(self, transformer : IRTransformer) -> Annotation:
         return transformer.transform_Annotation(self)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '{}[{}]'.format(self.annotation_name, self.body)
 
-    def __eq__(self, other):
+    def __eq__(self, other : Any) -> bool:
         return other is not None and type(other) is self.__class__ and self.annotation_name == other.annotation_name and self.body == other.body
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((self.annotation_name, self.body))
 

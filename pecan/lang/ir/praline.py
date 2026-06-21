@@ -10,17 +10,17 @@ class PralineTerm(IRNode):
         super().__init__()
         self.evaluated_value = None
 
-    def is_bool(self):
+    def is_bool(self) -> bool:
         return False
 
-    def is_int(self):
+    def is_int(self) -> bool:
         return False
 
-    def is_string(self):
+    def is_string(self) -> bool:
         return False
 
     # TODO: This function and the whole type system really ought to be improved
-    def typeof(self):
+    def typeof(self) -> Literal['bool', 'int', 'string', 'unknown']:
         if self.is_bool():
             return "bool"
         elif self.is_int():
@@ -30,41 +30,41 @@ class PralineTerm(IRNode):
         else:
             return "unknown"
 
-    def display(self):
+    def display(self) -> str:
         return repr(self)
 
 class PralineAlias(IRNode):
-    def __init__(self, name, directive_name, term):
+    def __init__(self, name : str, directive_name : str, term : PralineTerm):
         super().__init__()
-        self.name = name
-        self.directive_name = directive_name
-        self.term = term
+        self.name : str = name
+        self.directive_name : str = directive_name
+        self.term : PralineTerm = term
 
-    def evaluate(self, prog):
+    def evaluate(self, prog : Program):
         prog.define_alias(self.name, self)
 
-    def with_term(self, new_term):
+    def with_term(self, new_term : PralineTerm) -> PralineDirective:
         return PralineDirective(self.directive_name, PralineApp(self.term, new_term))
 
-    def transform(self, transformer):
+    def transform(self, transformer : IRTransformer) -> PralineAlias:
         return transformer.transform_PralineAlias(self)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return 'Alias "{}" ==> {} {} .'.format(self.name, self.directive_name, self.term)
 
-    def __eq__(self, other):
+    def __eq__(self, other : Any) -> bool:
         return other is not None and type(other) is self.__class__ and self.name == other.name and self.directive_name == other.directive_name and self.term == other.term
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((self.name, self.directive_name, self.term))
 
 class PralineDirective(IRNode):
-    def __init__(self, name, term):
+    def __init__(self, name : str, term : PralineTerm):
         super().__init__()
-        self.name = name
-        self.term = term
+        self.name : str = name
+        self.term : PralineTerm = term
 
-    def evaluate(self, prog):
+    def evaluate(self, prog : Program):
         if self.name == 'Execute':
             prog.enter_praline_env()
             self.term.evaluate(prog)
@@ -72,16 +72,16 @@ class PralineDirective(IRNode):
         else:
             return prog.lookup_alias(self.name).with_term(self.term).evaluate(prog)
 
-    def transform(self, transformer):
+    def transform(self, transformer : IRTransformer) -> PralineDirective:
         return transformer.transform_PralineDirective(self)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '{} {} .'.format(self.name, self.term)
 
-    def __eq__(self, other):
+    def __eq__(self, other : Any) -> bool:
         return other is not None and type(other) is self.__class__ and self.name == other.name and self.term == other.term
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((self.name, self.term))
 
 class PralineDef(IRNode):
@@ -91,86 +91,86 @@ class PralineDef(IRNode):
         self.args = args
         self.body = body
 
-    def evaluate(self, prog):
+    def evaluate(self, prog : Program) -> None:
         res = Closure({}, self.args, self.body)
         prog.praline_define(self.name.var_name, res)
 
-    def transform(self, transformer):
+    def transform(self, transformer : IRTransformer) -> PralineDef:
         return transformer.transform_PralineDef(self)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return 'Define {} {} := {} .'.format(self.name, self.args, self.body)
 
-    def __eq__(self, other):
+    def __eq__(self, other : Any) -> bool:
         return other is not None and type(other) is self.__class__ and self.name == other.name and self.args == other.args and self.body == other.body
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((self.name, self.args, self.body))
 
 class PralineVar(PralineTerm):
-    def __init__(self, var_name):
+    def __init__(self, var_name : str):
         super().__init__()
         self.var_name = var_name
 
-    def evaluate(self, prog):
+    def evaluate(self, prog : Program):
         return prog.praline_lookup(self.var_name).evaluate(prog)
 
-    def transform(self, transformer):
+    def transform(self, transformer : IRTransformer) -> PralineVar:
         return transformer.transform_PralineVar(self)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '{}'.format(self.var_name)
 
-    def __eq__(self, other):
+    def __eq__(self, other : Any) -> bool:
         return other is not None and type(other) is self.__class__ and self.var_name == other.var_name
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(self.var_name)
 
 class PralineApp(PralineTerm):
-    def __init__(self, receiver, arg):
+    def __init__(self, receiver : PralineTerm, arg : PralineTerm):
         super().__init__()
-        self.receiver = receiver
-        self.arg = arg
+        self.receiver : PralineTerm = receiver
+        self.arg : PralineTerm = arg
 
-    def evaluate(self, prog):
-        return self.receiver.evaluate(prog).apply(prog, self.arg.evaluate(prog)).evaluate(prog)
+    def evaluate(self, prog : Program):
+        return self.receiver.evaluate(prog).apply(prog, self.arg.evaluate(prog)).evaluate(prog) # self.receiver.evaluate -> Closure
 
-    def transform(self, transformer):
+    def transform(self, transformer : IRTransformer) -> PralineApp:
         return transformer.transform_PralineApp(self)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '({} {})'.format(self.receiver, self.arg)
 
-    def __eq__(self, other):
+    def __eq__(self, other : Any) -> bool:
         return other is not None and type(other) is self.__class__ and self.receiver == other.receiver and self.arg == other.arg
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((self.receiver, self.arg))
 
 class PralineBinaryOp(PralineTerm):
-    def __init__(self, a, b):
+    def __init__(self, a : PralineTerm, b : PralineTerm):
         super().__init__()
-        self.a = a
-        self.b = b
+        self.a : PralineTerm = a
+        self.b : PralineTerm = b
 
-    def __eq__(self, other):
+    def __eq__(self, other : Any) -> bool:
         return other is not None and type(other) is self.__class__ and self.a == other.a and self.b == other.b
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((self.a, self.b))
 
 class PralineAdd(PralineBinaryOp):
-    def __init__(self, a, b):
+    def __init__(self, a : PralineTerm, b : PralineTerm):
         super().__init__(a, b)
 
-    def transform(self, transformer):
+    def transform(self, transformer : IRTransformer) -> PralineAdd:
         return transformer.transform_PralineAdd(self)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '({} + {})'.format(self.a, self.b)
 
-    def evaluate(self, prog):
+    def evaluate(self, prog : Program):
         eval_a = self.a.evaluate(prog)
         eval_b = self.b.evaluate(prog)
 
@@ -180,16 +180,16 @@ class PralineAdd(PralineBinaryOp):
             raise TypeError('Both operands should be integers in "{}"'.format(self))
 
 class PralineDiv(PralineBinaryOp):
-    def __init__(self, a, b):
+    def __init__(self, a : PralineTerm, b : PralineTerm):
         super().__init__(a, b)
 
-    def transform(self, transformer):
+    def transform(self, transformer : IRTransformer) -> PralineDiv:
         return transformer.transform_PralineDiv(self)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '({} / {})'.format(self.a, self.b)
 
-    def evaluate(self, prog):
+    def evaluate(self, prog : Program):
         eval_a = self.a.evaluate(prog)
         eval_b = self.b.evaluate(prog)
 
@@ -199,16 +199,16 @@ class PralineDiv(PralineBinaryOp):
             raise TypeError('Both operands should be integers in "{}"'.format(self))
 
 class PralineSub(PralineBinaryOp):
-    def __init__(self, a, b):
+    def __init__(self, a : PralineTerm, b : PralineTerm):
         super().__init__(a, b)
 
-    def transform(self, transformer):
+    def transform(self, transformer : IRTransformer) -> PralineSub:
         return transformer.transform_PralineSub(self)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '({} - {})'.format(self.a, self.b)
 
-    def evaluate(self, prog):
+    def evaluate(self, prog : Program):
         eval_a = self.a.evaluate(prog)
         eval_b = self.b.evaluate(prog)
 
@@ -218,16 +218,16 @@ class PralineSub(PralineBinaryOp):
             raise TypeError('Both operands should be integers in "{}"'.format(self))
 
 class PralineMul(PralineBinaryOp):
-    def __init__(self, a, b):
+    def __init__(self, a : PralineTerm, b : PralineTerm):
         super().__init__(a, b)
 
-    def transform(self, transformer):
+    def transform(self, transformer : IRTransformer) -> PralineMul:
         return transformer.transform_PralineMul(self)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '({} * {})'.format(self.a, self.b)
 
-    def evaluate(self, prog):
+    def evaluate(self, prog : Program):
         eval_a = self.a.evaluate(prog)
         eval_b = self.b.evaluate(prog)
 
@@ -237,16 +237,16 @@ class PralineMul(PralineBinaryOp):
             raise TypeError('Both operands should be integers in "{}"'.format(self))
 
 class PralineExponent(PralineBinaryOp):
-    def __init__(self, a, b):
+    def __init__(self, a : PralineTerm, b : PralineTerm):
         super().__init__(a, b)
 
-    def transform(self, transformer):
+    def transform(self, transformer : IRTransformer) -> PralineExponent:
         return transformer.transform_PralineExponent(self)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '({} ^ {})'.format(self.a, self.b)
 
-    def evaluate(self, prog):
+    def evaluate(self, prog : Program):
         eval_a = self.a.evaluate(prog)
         eval_b = self.b.evaluate(prog)
 
@@ -258,27 +258,27 @@ class PralineExponent(PralineBinaryOp):
             raise TypeError('Both operands should be integers or strings in "{}", but they are ({} : {}) and ({} : {}), respectively.'.format(self, eval_a, eval_a.typeof(), eval_b, eval_b.typeof()))
 
 class PralineUnaryOp(PralineTerm):
-    def __init__(self, a):
+    def __init__(self, a : PralineTerm):
         super().__init__()
-        self.a = a
+        self.a : PralineTerm = a
 
-    def __eq__(self, other):
+    def __eq__(self, other : Any) -> bool:
         return other is not None and type(other) is self.__class__ and self.a == other.a
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((self.a))
 
 class PralineNeg(PralineUnaryOp):
-    def __init__(self, a):
+    def __init__(self, a : PralineTerm):
         super().__init__(a)
 
-    def transform(self, transformer):
+    def transform(self, transformer : IRTransformer) -> PralineNeg:
         return transformer.transform_PralineNeg(self)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '(-{})'.format(self.a)
 
-    def evaluate(self, prog):
+    def evaluate(self, prog : Program):
         temp = self.a.evaluate(prog)
 
         if not temp.is_int():
@@ -287,19 +287,19 @@ class PralineNeg(PralineUnaryOp):
         return PralineInt(-temp.get_value())
 
 class PralineList(PralineBinaryOp):
-    def __init__(self, head, tail):
+    def __init__(self, head : None | PralineTerm, tail : None | PralineTerm):
         super().__init__(head, tail)
 
-    def transform(self, transformer):
+    def transform(self, transformer : IRTransformer) -> PralineList:
         return transformer.transform_PralineList(self)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         if self.a is None:
             return '[]'
         else:
             return '({} :: {})'.format(self.a, self.b)
 
-    def display(self):
+    def display(self) -> str:
         elems = []
         cur = self
 
@@ -309,7 +309,7 @@ class PralineList(PralineBinaryOp):
 
         return '[{}]'.format(','.join([e.display() for e in elems]))
 
-    def evaluate(self, prog):
+    def evaluate(self, prog : Program):
         if self.a is not None:
             new_a = self.a.evaluate(prog)
         else:
@@ -323,18 +323,18 @@ class PralineList(PralineBinaryOp):
         return PralineList(new_a, new_b)
 
 class PralineMatch(PralineTerm):
-    def __init__(self, t, arms):
+    def __init__(self, t : PralineTerm, arms : list[PralineMatchArm]):
         super().__init__()
-        self.t = t
-        self.arms = arms
+        self.t : PralineTerm = t
+        self.arms : list[PralineMatchArm] = arms
 
-    def transform(self, transformer):
+    def transform(self, transformer : IRTransformer) -> PralineMatch:
         return transformer.transform_PralineMatch(self)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return 'match {} with\n{}\nend'.format(self.t, '\n'.join(map(repr, self.arms)))
 
-    def evaluate(self, prog):
+    def evaluate(self, prog : Program):
         eval_t = self.t.evaluate(prog)
 
         for arm in self.arms:
@@ -348,31 +348,31 @@ class PralineMatch(PralineTerm):
 
         raise Exception('Inexhaustive match arms in "{}" (got "{}")'.format(self, eval_t))
 
-    def __eq__(self, other):
+    def __eq__(self, other : Any) -> bool:
         return other is not None and type(other) is self.__class__ and self.t == other.t and self.arms == other.arms
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((self.t, self.arms))
 
 class PralineMatchArm(IRNode):
-    def __init__(self, pat, expr):
+    def __init__(self, pat : PralineMatchPat, expr : PralineTerm):
         super().__init__()
-        self.pat = pat
-        self.expr = expr
+        self.pat : PralineMatchPat = pat
+        self.expr : PralineTerm = expr
 
-    def match(self, term, prog):
+    def match(self, term : PralineTerm, prog : Program):
         return self.pat.match(term, prog)
 
-    def transform(self, transformer):
+    def transform(self, transformer : IRTransformer) -> PralineMatchArm:
         return transformer.transform_PralineMatchArm(self)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return 'case {} => {}'.format(self.pat, self.expr)
 
-    def __eq__(self, other):
+    def __eq__(self, other : Any) -> bool:
         return other is not None and type(other) is self.__class__ and self.pat == other.pat and self.expr == other.expr
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((self.pat, self.expr))
 
 class PralineMatchPat(IRNode):
@@ -380,26 +380,26 @@ class PralineMatchPat(IRNode):
         super().__init__()
 
 class PralineMatchInt(PralineMatchPat):
-    def __init__(self, val):
+    def __init__(self, val : int):
         super().__init__()
-        self.val = val
+        self.val : int = val
 
-    def match(self, term, prog):
+    def match(self, term : PralineInt, prog : Program) -> dict | None:
         if term.is_int() and term.get_value() == self.val:
             return {}
         else:
             return None
 
-    def transform(self, transformer):
+    def transform(self, transformer : IRTransformer) -> PralineMatchInt:
         return transformer.transform_PralineMatchInt(self)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return 'PralineMatchInt({})'.format(self.val)
 
-    def __eq__(self, other):
+    def __eq__(self, other : Any) -> bool:
         return other is not None and type(other) is self.__class__ and self.val == other.val
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((self.val))
 
 class PralineMatchPecan(PralineMatchPat):
@@ -407,7 +407,7 @@ class PralineMatchPecan(PralineMatchPat):
         super().__init__()
         self.pecan_term = pecan_term
 
-    def match(self, term, prog):
+    def match(self, term, prog : Program):
         evaluated_term = self.pecan_term.evaluate(prog)
         if not isinstance(term, PralinePecanLiteral):
             return None
@@ -481,48 +481,48 @@ class PralineMatchPecan(PralineMatchPat):
 
         return unif
 
-    def transform(self, transformer):
-        return transformer.transform_PralineMatchString(self)
+    def transform(self, transformer : IRTransformer) -> PralineMatchPecan:
+        return transformer.transform_PralineMatchPecan(self)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return 'PralineMatchPecan({})'.format(self.pecan_term)
 
-    def __eq__(self, other):
+    def __eq__(self, other : Any) -> bool:
         return other is not None and type(other) is self.__class__ and self.pecan_term == other.pecan_term
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(self.pecan_term)
 
 class PralineMatchString(PralineMatchPat):
-    def __init__(self, val):
+    def __init__(self, val : str):
         super().__init__()
-        self.val = val
+        self.val : str = val
 
-    def match(self, term, prog):
+    def match(self, term : PralineString, prog : Program) -> dict | None:
         if term.is_string() and term.get_value() == self.val:
             return {}
         else:
             return None
 
-    def transform(self, transformer):
+    def transform(self, transformer : IRTransformer) -> PralineMatchString:
         return transformer.transform_PralineMatchString(self)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return 'PralineMatchString({})'.format(self.val)
 
-    def __eq__(self, other):
+    def __eq__(self, other : Any) -> bool:
         return other is not None and type(other) is self.__class__ and self.val == other.val
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((self.val))
 
 class PralineMatchList(PralineMatchPat):
-    def __init__(self, head, tail):
+    def __init__(self, head : PralineTerm, tail : PralineTerm):
         super().__init__()
-        self.head = head
-        self.tail = tail
+        self.head : PralineTerm = head
+        self.tail : PralineTerm = tail
 
-    def match(self, term, prog):
+    def match(self, term : PralineList, prog : Program) -> dict | None:
         if not type(term) is PralineList:
             return None
 
@@ -546,36 +546,36 @@ class PralineMatchList(PralineMatchPat):
 
         return head_match_env
 
-    def transform(self, transformer):
+    def transform(self, transformer : IRTransformer) -> PralineMatchList:
         return transformer.transform_PralineMatchList(self)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return 'PralineMatchList({}, {})'.format(self.head, self.tail)
 
-    def __eq__(self, other):
+    def __eq__(self, other : Any) -> bool:
         return other is not None and type(other) is self.__class__ and self.head == other.head and self.tail == other.tail
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((self.head, self.tail))
 
 class PralineMatchTuple(PralineMatchPat):
-    def __init__(self, vals):
+    def __init__(self, vals : tuple):
         super().__init__()
-        self.vals = vals
+        self.vals : tuple = vals
 
-    def transform(self, transformer):
+    def transform(self, transformer : IRTransformer) -> PralineMatchTuple:
         return transformer.transform_PralineMatchTuple(self)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return 'PralineMatchTuple({})'.format(','.join(map(repr, self.vals)))
 
-    def __eq__(self, other):
+    def __eq__(self, other : Any) -> bool:
         return other is not None and type(other) is self.__class__ and self.vals == other.vals
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((self.vals))
 
-    def match(self, term, prog):
+    def match(self, term : PralineTuple, prog : Program) -> dict | None:
         if not type(term) is PralineTuple:
             return None
 
@@ -597,19 +597,19 @@ class PralineMatchVar(PralineMatchPat):
         super().__init__()
         self.var = var
 
-    def match(self, term, prog):
+    def match(self, term, prog : Program) -> dict:
         return {self.var: term}
 
-    def transform(self, transformer):
+    def transform(self, transformer : IRTransformer) -> PralineMatchVar:
         return transformer.transform_PralineMatchVar(self)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '{}'.format(self.var)
 
-    def __eq__(self, other):
+    def __eq__(self, other : Any) -> bool:
         return other is not None and type(other) is self.__class__ and self.var == other.var
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((self.var))
 
 class PralineIf(PralineTerm):
@@ -619,13 +619,13 @@ class PralineIf(PralineTerm):
         self.e1 = e1
         self.e2 = e2
 
-    def transform(self, transformer):
+    def transform(self, transformer : IRTransformer) -> PralineIf:
         return transformer.transform_PralineIf(self)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '(if {} then {} else {})'.format(self.cond, self.e1, self.e2)
 
-    def evaluate(self, prog):
+    def evaluate(self, prog : Program):
         cond_eval = self.cond.evaluate(prog)
         if cond_eval.is_bool():
             if cond_eval.get_value():
@@ -635,10 +635,10 @@ class PralineIf(PralineTerm):
         else:
             raise TypeError('cond should evaluate to a bool in "{}", got "{}"'.format(self, cond_eval))
 
-    def __eq__(self, other):
+    def __eq__(self, other : Any) -> bool:
         return other is not None and type(other) is self.__class__ and self.cond == other.cond and self.e1 == other.e1 and self.e2 == other.e2
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((self.cond, self.e1, self.e2))
 
 class PralinePecanLiteral(PralineTerm):
@@ -649,19 +649,19 @@ class PralinePecanLiteral(PralineTerm):
     def get_term(self):
         return self.pecan_term
 
-    def transform(self, transformer):
+    def transform(self, transformer : IRTransformer) -> PralinePecanLiteral:
         return transformer.transform_PralinePecanLiteral(self)
 
-    def evaluate(self, prog):
+    def evaluate(self, prog : Program) -> PralinePecanLiteral:
         return self
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '{{ {} }}'.format(self.pecan_term)
 
-    def __eq__(self, other):
+    def __eq__(self, other : Any) -> bool:
         return other is not None and type(other) is self.__class__ and self.pecan_term == other.pecan_term
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((self.pecan_term))
 
 class PralinePecanTerm(PralineTerm):
@@ -669,13 +669,13 @@ class PralinePecanTerm(PralineTerm):
         super().__init__()
         self.pecan_term = pecan_term
 
-    def transform(self, transformer):
+    def transform(self, transformer : IRTransformer) -> PralinePecanTerm:
         return transformer.transform_PralinePecanTerm(self)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '{{ {} }}'.format(self.pecan_term)
 
-    def evaluate(self, prog):
+    def evaluate(self, prog : Program) -> PralinePecanLiteral:
         from pecan.lang.ir_substitution import IRSubstitution
         from pecan.lang.praline_to_pecan import PralineToPecan
 
@@ -685,10 +685,10 @@ class PralinePecanTerm(PralineTerm):
         new_node = TypedIRLowering(prog).transform(prog.type_infer(temp_node))
         return PralinePecanLiteral(new_node)
 
-    def __eq__(self, other):
+    def __eq__(self, other : Any) -> bool:
         return other is not None and type(other) is self.__class__ and self.pecan_term == other.pecan_term
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((self.pecan_term))
 
 class PralineLambda(PralineTerm):
@@ -697,19 +697,19 @@ class PralineLambda(PralineTerm):
         self.params = params
         self.body = body
 
-    def transform(self, transformer):
+    def transform(self, transformer : IRTransformer) -> PralineLambda:
         return transformer.transform_PralineLambda(self)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '(\\ {} -> {})'.format(self.params, self.body)
 
-    def evaluate(self, prog):
+    def evaluate(self, prog : Program) -> Closure:
         return Closure(prog.praline_env_clone(), self.params, self.body)
 
-    def __eq__(self, other):
+    def __eq__(self, other : Any) -> bool:
         return other is not None and type(other) is self.__class__ and self.params == other.params and self.body == other.body
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((self.params, self.body))
 
 class PralineLetPecan(PralineTerm):
@@ -719,28 +719,28 @@ class PralineLetPecan(PralineTerm):
         self.pecan_term = pecan_term
         self.body = body
 
-    def transform(self, transformer):
+    def transform(self, transformer : IRTransformer) -> PralineLetPecan:
         return transformer.transform_PralineLetPecan(self)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '(let {} be {} in {})'.format(self.var_name, self.pecan_term, self.body)
 
-    def evaluate(self, prog):
+    def evaluate(self, prog : Program):
         result_node = self.pecan_term.evaluate(prog).evaluate(prog).pecan_term
 
         from pecan.lang.ir.prog import AutLiteral, VarRef
         from pecan.lang.ir.arith import PredicateExpr
-        expr = PredicateExpr(VarRef(self.var_name), AutLiteral(result_node.evaluate(prog)))
+        expr = PredicateExpr(VarRef(self.var_name), AutLiteral(result_node.evaluate(prog).aut))
         prog.praline_local_define(self.var_name, PralinePecanTerm(expr).evaluate(prog))
         result = self.body.evaluate(prog)
         prog.praline_local_cleanup([self.var_name])
 
         return result
 
-    def __eq__(self, other):
+    def __eq__(self, other : Any) -> bool:
         return other is not None and type(other) is self.__class__ and self.var_name == other.var_name and self.pecan_term == other.pecan_term and self.body == other.body
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((self.var_name, self.pecan_term, self.body))
 
 class PralineLet(PralineTerm):
@@ -750,22 +750,22 @@ class PralineLet(PralineTerm):
         self.expr = expr
         self.body = body
 
-    def transform(self, transformer):
+    def transform(self, transformer : IRTransformer) -> PralineLet:
         return transformer.transform_PralineLet(self)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '(let {} := {} in {})'.format(self.var_name, self.expr, self.body)
 
-    def evaluate(self, prog):
+    def evaluate(self, prog : Program):
         prog.praline_local_define(self.var_name, self.expr.evaluate(prog))
         result = self.body.evaluate(prog)
         prog.praline_local_cleanup([self.var_name])
         return result
 
-    def __eq__(self, other):
+    def __eq__(self, other : Any) -> bool:
         return other is not None and type(other) is self.__class__ and self.var_name == other.var_name and self.expr == other.expr and self.body == other.body
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((self.var_name, self.expr, self.body))
 
 class PralineTuple(PralineTerm):
@@ -773,22 +773,22 @@ class PralineTuple(PralineTerm):
         super().__init__()
         self.vals = vals
 
-    def transform(self, transformer):
+    def transform(self, transformer : IRTransformer) -> PralineTuple:
         return transformer.transform_PralineTuple(self)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '({})'.format(','.join(map(repr, self.vals)))
 
-    def evaluate(self, prog):
+    def evaluate(self, prog : Program):
         return PralineTuple([v.evaluate(prog) for v in self.vals])
 
-    def __eq__(self, other):
+    def __eq__(self, other : Any) -> bool:
         return other is not None and type(other) is self.__class__ and self.vals == other.vals
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((self.vals))
 
-    def display(self):
+    def display(self) -> str:
         return '({})'.format(','.join([v.display() for v in self.vals]))
 
 class Closure(PralineTerm):
@@ -798,7 +798,7 @@ class Closure(PralineTerm):
         self.args = args
         self.body = body
 
-    def evaluate(self, prog):
+    def evaluate(self, prog : Program):
         if self.args: # If we still require more arguments
             return self
         else: # Evaluate as though we are in the environment specified
@@ -807,13 +807,13 @@ class Closure(PralineTerm):
             prog.praline_local_cleanup(self.env.keys())
             return result
 
-    def transform(self, transformer):
+    def transform(self, transformer : IRTransformer) -> Closure:
         return transformer.transform_Closure(self)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return 'Closure({}, {}, {})'.format(self.env, self.args, self.body)
 
-    def apply(self, prog, arg):
+    def apply(self, prog : Program, arg):
         if not self.args:
             raise Exception('Closure accepts no arguments!')
 
@@ -828,10 +828,10 @@ class Closure(PralineTerm):
         else:
             return Closure(new_env, self.args[1:], self.body)
 
-    def __eq__(self, other):
+    def __eq__(self, other : Any) -> bool:
         return other is not None and type(other) is self.__class__ and self.env == other.env and self.args == other.args and self.body == other.body
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((self.args, self.body))
 
 class PralineInt(PralineTerm):
@@ -839,28 +839,28 @@ class PralineInt(PralineTerm):
         super().__init__()
         self.val = val
 
-    def transform(self, transformer):
+    def transform(self, transformer : IRTransformer) -> PralineInt:
         return transformer.transform_PralineInt(self)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return 'PralineInt({})'.format(self.val)
 
-    def evaluate(self, prog):
+    def evaluate(self, prog : Program) -> PralineInt:
         return self
 
-    def get_value(self):
+    def get_value(self) -> int:
         return self.val
 
-    def is_int(self):
+    def is_int(self) -> bool:
         return True
 
-    def __eq__(self, other):
+    def __eq__(self, other : Any) -> bool:
         return other is not None and type(other) is self.__class__ and self.val == other.val
 
-    def __hash__(self):
-        return hash((self.args, self.body))
+    def __hash__(self) -> int:
+        return hash(self.val)
 
-    def display(self):
+    def display(self) -> str:
         return '{}'.format(self.val)
 
 class PralineString(PralineTerm):
@@ -868,28 +868,28 @@ class PralineString(PralineTerm):
         super().__init__()
         self.val = val
 
-    def transform(self, transformer):
+    def transform(self, transformer : IRTransformer) -> PralineString:
         return transformer.transform_PralineString(self)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return 'PralineString({})'.format(self.val)
 
-    def evaluate(self, prog):
+    def evaluate(self, prog : Program):
         return self
 
-    def get_value(self):
+    def get_value(self) -> str:
         return self.val
 
-    def is_string(self):
+    def is_string(self) -> bool:
         return True
 
-    def __eq__(self, other):
+    def __eq__(self, other : Any) -> bool:
         return other is not None and type(other) is self.__class__ and self.val == other.val
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((self.val))
 
-    def display(self):
+    def display(self) -> str:
         return '{}'.format(self.val)
 
 class PralineBool(PralineTerm):
@@ -897,28 +897,28 @@ class PralineBool(PralineTerm):
         super().__init__()
         self.val = val
 
-    def transform(self, transformer):
+    def transform(self, transformer : IRTransformer) -> PralineBool:
         return transformer.transform_PralineBool(self)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return 'PralineBool({})'.format(self.val)
 
-    def evaluate(self, prog):
+    def evaluate(self, prog : Program) -> PralineBool:
         return self
 
-    def get_value(self):
+    def get_value(self) -> bool:
         return self.val
 
-    def is_bool(self):
+    def is_bool(self) -> bool:
         return True
 
-    def __eq__(self, other):
+    def __eq__(self, other : Any) -> bool:
         return other is not None and type(other) is self.__class__ and self.val == other.val
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((self.args, self.body))
 
-    def display(self):
+    def display(self) -> str:
         if self.val:
             return 'true'
         else:
@@ -930,39 +930,39 @@ class Builtin(PralineTerm):
         self.name = name
         self.args = args
 
-    def transform(self, transformer):
+    def transform(self, transformer : IRTransformer) -> Builtin:
         return transformer.transform_Builtin(self)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return 'BUILTIN({})'.format(self.name)
 
-    def __eq__(self, other):
+    def __eq__(self, other : Any) -> bool:
         return other is not None and type(other) is self.__class__ and self.name == other.name and self.args == other.args
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(self.name)
 
-    def definition(self):
+    def definition(self) -> PralineDef:
         return PralineDef(self.name, self.args, self)
 
 class PralineDo(PralineTerm):
-    def __init__(self, terms):
+    def __init__(self, terms : list[PralineTerm]):
         super().__init__()
-        self.terms = terms
+        self.terms : list[PralineTerm] = terms
 
-    def transform(self, transformer):
+    def transform(self, transformer : IRTransformer) -> PralineDo:
         return transformer.transform_PralineDo(self)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return 'do\n    {}'.format('\n    '.join(map(repr, self.terms)))
 
-    def __eq__(self, other):
+    def __eq__(self, other : Any) -> bool:
         return other is not None and type(other) is self.__class__ and self.terms == other.terms
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((self.terms))
 
-    def evaluate(self, prog):
+    def evaluate(self, prog : Program):
         result = None
 
         for term in self.terms:
@@ -971,32 +971,32 @@ class PralineDo(PralineTerm):
         return result
 
 class PralineAutomaton(PralineTerm):
-    def __init__(self, input_names, input_bases, states, state_map):
+    def __init__(self, input_names : list[str], input_bases, states : list[State], state_map : dict[str, int]):
         super().__init__()
-        self.input_names = input_names
+        self.input_names : list[str] = input_names
         self.input_bases = input_bases
         self.alphabet_line = ' '.join('{' + ','.join(map(str, range(base))) + '}' for base in input_bases)
 
-        self.states = states
-        self.state_map = state_map
+        self.states : list[State] = states
+        self.state_map : dict[str, int] = state_map
         self.state_idx = len(self.states)
 
-    def transform(self, transformer):
+    def transform(self, transformer : IRTransformer) -> PralineAutomaton:
         return transformer.transform_PralineAutomaton(self)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return 'PralineAutomaton({}, {}, {}, {})'.format(self.input_names, self.input_bases, self.state_map, self.states)
 
-    def __eq__(self, other):
+    def __eq__(self, other : Any) -> bool:
         return other is not None and type(other) is self.__class__ and self.input_bases == other.input_bases and self.alphabet_line == other.alphabet_line and self.states == other.states and self.state_idx == other.state_idx and self.state_map == other.state_map and self.input_names == other.input_names
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((self.alphabet_line, self.state_idx, len(self.states)))
 
-    def evaluate(self, prog):
+    def evaluate(self, prog : Program) -> PralineAutomaton:
         return self
 
-    def add_state(self, state_line):
+    def add_state(self, state_line : str):
         new_state = State(self.state_idx, state_line)
         self.states.append(new_state)
         self.state_map[new_state.label] = self.state_idx
@@ -1005,7 +1005,7 @@ class PralineAutomaton(PralineTerm):
 
         return self
 
-    def add_transition(self, state_label, transition_line):
+    def add_transition(self, state_label, transition_line) -> PralineAutomaton:
         if state_label not in self.state_map:
             raise Exception('No state "{}" in {}'.format(state_label, self))
 
@@ -1013,6 +1013,6 @@ class PralineAutomaton(PralineTerm):
 
         return self
 
-    def build(self):
+    def build(self) -> BuchiAutomaton:
         return build_aut(self.alphabet_line, self.states, self.state_map, self.input_names)
 

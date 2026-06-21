@@ -3,7 +3,7 @@
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING :
-    from typing import Literal
+    from typing import Literal, Self
     from pecan.lang.ir.prog import VarRef
     from pecan.utility import VarMap
 
@@ -57,11 +57,14 @@ class Automaton:
         raise NotImplementedError
 
     # Should return a string of SVG data
-    def show(self) -> str:
+    def show(self) -> str: # TODO: not literally str, check type
         raise NotImplementedError
 
     def save(self, filename : str) -> None:
         """Saves this automaton under the given filename"""
+        raise NotImplementedError
+    
+    def get_var_map(self) -> VarMap:
         raise NotImplementedError
 
     # -------------------------------------------------------------------
@@ -77,6 +80,9 @@ class Automaton:
         return self
 
     def merge_states(self) -> Automaton:
+        return self
+    
+    def postprocess(self, level : str | None = None) -> Self:
         return self
 
     # Allows conversion between types of automata, if desired

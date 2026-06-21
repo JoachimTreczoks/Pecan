@@ -14,7 +14,7 @@ from pecan.settings import settings
 from typing import TYPE_CHECKING
 if TYPE_CHECKING :
     from typing import Any
-    from pecan.lang.ast.prog import Program
+    from pecan.lang.ir.prog import Program
 
 def make_search_paths(filename : str | None=None) -> list[str]:
     own_path = os.path.dirname(os.path.realpath(__file__))

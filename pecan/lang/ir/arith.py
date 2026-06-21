@@ -1,10 +1,22 @@
 #!/usr/bin/env python3.6
 # -*- coding=utf-8 -*-
 
-from pecan.lang.ir import *
+#from pecan.lang.ir import *
+
+from pecan.lang.ir.base import BinaryIRExpression, BinaryIRPredicate, IREvaluation, IRExpression
+from pecan.lang.ir.bool import BoolConst, Complement, Conjunction, Disjunction
+from pecan.lang.ir.prog import Call, VarRef
+from pecan.lang.ir.quant import Exists
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING :
+    from typing import Any
+    from pecan.automata.automaton import Automaton
+    from pecan.lang.ir_transformer import IRTransformer
+    from pecan.lang.ir.prog import Program
 
 # From: https://stackoverflow.com/a/57027610/1498618
-def is_power_of_two(n):
+def is_power_of_two(n : int) -> bool:
     return (n != 0) and (n & (n-1) == 0)
 
 # TODO: memoize same expressions
@@ -12,34 +24,32 @@ class Add(BinaryIRExpression):
     def __init__(self, a, b):
         super().__init__(a, b)
 
-    def change_label(self, label): # for changing label to __constant#
+    def change_label(self, label : str) -> Add: # for changing label to __constant#
         self.label = label
         return self
 
-    def show(self):
+    def show(self) -> str:
         # The operands should always have the same type, but in the interest of debugging, we should display when this is not the case
         if self.a.get_type() == self.b.get_type():
             return '({} + {})'.format(self.a.show(), self.b.show())
         else:
             return '({} + {})'.format(self.a, self.b)
 
-    def evaluate_node(self, prog):
+    def evaluate_node(self, prog : Program) -> IREvaluation:
         if self.is_int and self.evaluate_int(prog) >= 0:
             return IntConst(self.evaluate_int(prog)).with_type(self.get_type()).evaluate(prog)
 
-        (aut_a, val_a) = self.a.evaluate(prog)
-        (aut_b, val_b) = self.b.evaluate(prog)
+        res_a = self.a.evaluate(prog)
+        res_b = self.b.evaluate(prog)
 
-        aut_add = prog.call('adder', [val_a, val_b, self.label_var()])
+        aut_add = prog.call('adder', [res_a.ref, res_b.ref, self.label_var()])
 
-        result = self.project_intermediates(prog, val_a, val_b, aut_a & aut_b & aut_add)
+        return IREvaluation(self.project_intermediates(prog, res_a.ref, res_b.ref, res_a.aut & res_b.aut & aut_add.aut), self.label_var())
 
-        return (result, self.label_var())
-
-    def transform(self, transformer):
+    def transform(self, transformer : IRTransformer) -> Add:
         return transformer.transform_Add(self)
 
-    def evaluate_int(self, prog):
+    def evaluate_int(self, prog : Program) -> int:
         assert self.is_int
         return self.a.evaluate_int(prog) + self.b.evaluate_int(prog)
 
@@ -47,25 +57,24 @@ class Sub(BinaryIRExpression):
     def __init__(self, a, b):
         super().__init__(a, b)
 
-    def show(self):
+    def show(self) -> str:
         return '({} - {})'.format(self.a, self.b)
 
-    def evaluate_node(self, prog):
+    def evaluate_node(self, prog : Program) -> IREvaluation:
         if self.is_int and self.evaluate_int(prog) >= 0:
             return IntConst(self.evaluate_int(prog)).with_type(self.get_type()).evaluate(prog)
 
-        (aut_a, val_a) = self.a.evaluate(prog)
-        (aut_b, val_b) = self.b.evaluate(prog)
+        res_a = self.a.evaluate(prog)
+        res_b = self.b.evaluate(prog)
 
-        aut_sub = prog.call('adder', [self.label_var(), val_b, val_a])
+        aut_sub = prog.call('adder', [self.label_var(), res_b.ref, res_a.ref])
 
-        result = self.project_intermediates(prog, val_a, val_b, aut_a & aut_b & aut_sub)
-        return (result, self.label_var())
+        return IREvaluation(self.project_intermediates(prog, res_a.ref, res_b.ref, res_a.aut & res_b.aut & aut_sub.aut), self.label_var())
 
-    def transform(self, transformer):
+    def transform(self, transformer : IRTransformer) -> Sub:
         return transformer.transform_Sub(self)
 
-    def evaluate_int(self, prog):
+    def evaluate_int(self, prog : Program) -> int:
         assert self.is_int
         return self.a.evaluate_int(prog) - self.b.evaluate_int(prog)
 
@@ -73,24 +82,24 @@ class Mul(BinaryIRExpression):
     def __init__(self, a, b):
         super().__init__(a, b)
 
-    def change_label(self, label): # for changing label to __constant#
+    def change_label(self, label : str): # for changing label to __constant#
         self.label = label
         return self
 
-    def show(self):
+    def show(self) -> str:
         # The operands should always have the same type, but in the interest of debugging, we should display when this is not the case
         if self.a.get_type() == self.b.get_type():
             return '({} * {})'.format(self.a.show(), self.b.show())
         else:
             return '({} * {})'.format(self.a, self.b)
 
-    def evaluate_node(self, prog):
+    def evaluate_node(self, prog : Program) -> IREvaluation:
         if self.is_int:
             n = self.evaluate_int(prog)
             if n >= 0:
                 return IntConst(n).with_type(self.get_type()).evaluate(prog)
             else:
-                return Sub(IntConst(0), IntConst(n)).with_type(self.get_type()).evaluate(prog)
+                return Sub(IntConst(0), IntConst(n)).with_type(self.get_type()).evaluate(prog) # TODO: shouldn't it be Sub(IntConst(0), IntConst(-n))?
 
         if not self.a.is_int and not self.b.is_int:
             raise AutomatonArithmeticError("At least one argument of multiplication must be an constant integer in {}".format(self))
@@ -105,7 +114,7 @@ class Mul(BinaryIRExpression):
         negative = False
 
         if c == 0:
-            return ir.IntConst(0).with_type(self.get_type()).evaluate(prog)
+            return IntConst(0).with_type(self.get_type()).evaluate(prog)
 
         if c < 0:
             negative = True
@@ -123,34 +132,35 @@ class Mul(BinaryIRExpression):
             power = Add(power, power).with_type(self.get_type())
 
         if negative:
-            return Sub(ir.IntConst(0), s).with_type(self.get_type()).evaluate(prog)
+            return Sub(IntConst(0), s).with_type(self.get_type()).evaluate(prog)
         else:
             return s.evaluate(prog)
 
-    def transform(self, transformer):
+    def transform(self, transformer : IRTransformer) -> Mul:
         return transformer.transform_Mul(self)
 
-    def evaluate_int(self, prog):
+    def evaluate_int(self, prog : Program) -> int:
         assert self.is_int
         return self.a.evaluate_int(prog) * self.b.evaluate_int(prog)
 
 constants_map = {}
 class IntConst(IRExpression):
-    def __init__(self, val):
+    def __init__(self, val : int):
         super().__init__()
-        self.val = val
-        self.label = "__constant{}".format(self.val)
+        self.val : int = val
+        self.label : str = "__constant{}".format(self.val)
 
-    def evaluate_node(self,prog):
+    def evaluate_node(self, prog : Program) -> IREvaluation:
         if self.val < 0:
             return Sub(IntConst(0), IntConst(-self.val)).with_type(self.get_type()).evaluate(prog)
 
         if (self.val, self.get_type()) in constants_map:
-            return constants_map[(self.val, self.get_type())]
+            aut, ref = constants_map[(self.val, self.get_type())]
+            return IREvaluation(aut, ref)
 
         if self.val == 0:
             res = prog.call('zero', [self.label_var()])
-            constants_map[(self.val, self.get_type())] = (res, self.label_var())
+            constants_map[(self.val, self.get_type())] = (res.aut, self.label_var())
         elif self.val == 1:
             res = prog.lookup_dynamic_call('one', [self.label_var()])
 
@@ -164,10 +174,10 @@ class IntConst(IRExpression):
                 formula_1 = Conjunction(self.get_type().restrict(self.label_var()),
                                         Conjunction(Less(zero_const, self.label_var()),
                                             Complement(Exists([b_const], [self.get_type().restrict(b_const)], b_in_0_1))))
-                constants_map[(self.val, self.get_type())] = (formula_1.evaluate(prog), self.label_var())
+                constants_map[(self.val, self.get_type())] = (formula_1.evaluate(prog).aut, self.label_var())
             else:
                 res = prog.call('one', [self.label_var()])
-                constants_map[(self.val, self.get_type())] = (res, self.label_var())
+                constants_map[(self.val, self.get_type())] = (res.aut, self.label_var())
         else:
             assert self.val >= 2, "constant here should be greater than or equal to 2, while it is {}".format(self.val)
 
@@ -184,72 +194,73 @@ class IntConst(IRExpression):
 
             result.change_label(self.label)
             result.is_int = False
-            (result_aut, val) = result.evaluate(prog)
+            evaluation = result.evaluate(prog)
 
             # because the powers of two get used so much, it is advantageous to make sure they are as small
             # as possible by postprocessing them
             if is_power_of_two(self.val):
-                result_aut.postprocess()
+                evaluation.postprocess()
 
-            constants_map[(self.val, self.get_type())] = (result_aut, val)
+            constants_map[(self.val, self.get_type())] = (evaluation.aut, evaluation.ref)
 
-        return constants_map[(self.val, self.get_type())]
+        aut, ref = constants_map[(self.val, self.get_type())]
+        return IREvaluation(aut, ref)
 
-    def evaluate_int(self, prog):
+    def evaluate_int(self, prog : Program) -> int:
         return self.val
 
-    def transform(self, transformer):
+    def transform(self, transformer : IRTransformer) -> IntConst:
         return transformer.transform_IntConst(self)
 
-    def show(self):
+    def show(self) -> str:
         return str(self.val)
 
-    def __eq__(self, other):
+    def __eq__(self, other : Any) -> bool:
         return other is not None and type(other) is self.__class__ and self.val == other.val and self.get_type() == other.get_type()
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(self.val)
 
 class Equals(BinaryIRPredicate):
     def __init__(self, a, b):
         super().__init__(a, b)
 
-    def evaluate_node(self, prog):
+    def evaluate_node(self, prog : Program) -> IREvaluation:
         if self.a.is_int and self.b.is_int:
             return BoolConst(self.a.evaluate_int(prog) == self.b.evaluate_int(prog)).evaluate(prog)
 
-        (aut_a, val_a) = self.a.evaluate(prog)
-        (aut_b, val_b) = self.b.evaluate(prog)
+        res_a = self.a.evaluate(prog)
+        res_b = self.b.evaluate(prog)
 
-        eq_aut = prog.call('equal', [val_a, val_b])
+        eq_aut = prog.call('equal', [res_a.ref, res_b.ref])
 
-        return self.project_intermediates(prog, val_a, val_b, eq_aut & aut_a & aut_b)
+        return IREvaluation(self.project_intermediates(prog, res_a.ref, res_b.ref, eq_aut.aut & res_a.aut & res_b.aut))
 
-    def transform(self, transformer):
+    def transform(self, transformer : IRTransformer) -> Equals:
         return transformer.transform_Equals(self)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '({} = {})'.format(self.a, self.b)
 
 class Less(BinaryIRPredicate):
-    def __init__(self, a, b):
+    def __init__(self, a : IRExpression, b : IRExpression):
         super().__init__(a, b)
 
-    def evaluate_node(self, prog):
+    def evaluate_node(self, prog : Program) -> IREvaluation:
         if self.a.is_int and self.b.is_int:
             return BoolConst(self.a.evaluate_int(prog) < self.b.evaluate_int(prog)).evaluate(prog)
 
-        (aut_a, val_a) = self.a.evaluate(prog)
-        (aut_b, val_b) = self.b.evaluate(prog)
+        res_a = self.a.evaluate(prog)
+        res_b = self.b.evaluate(prog)
 
-        aut_less = prog.call('less', [val_a, val_b])
+        aut_less = prog.call('less', [res_a.ref, res_b.ref])
 
-        return self.project_intermediates(prog, val_a, val_b, aut_a & aut_b & aut_less)
+        return IREvaluation(self.project_intermediates(prog, res_a.ref, res_b.ref, res_a.aut & res_b.aut & aut_less.aut))
 
-    def transform(self, transformer):
+    def transform(self, transformer : IRTransformer) -> Less:
         return transformer.transform_Less(self)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '({} < {})'.format(self.a, self.b)
 
 class FunctionExpression(IRExpression):
@@ -261,54 +272,53 @@ class FunctionExpression(IRExpression):
         self.val_idx = val_idx # the index of the "return value" of the function
         # TODO: Warn users if the function is not a "true" function
 
-    def evaluate_node(self, prog):
+    def evaluate_node(self, prog : Program) -> IREvaluation:
         return_val = VarRef(prog.fresh_name()).with_type(self.args[self.val_idx].get_type())
         self.args[self.val_idx] = return_val
         from pecan.lang.typed_ir_lowering import TypedIRLowering
-        return TypedIRLowering(prog).transform(Call(self.pred_name, self.args)).evaluate(prog), return_val
+        return TypedIRLowering(prog).transform(Call(self.pred_name, self.args)).evaluate(prog).with_ref(return_val)
 
     # Transforms the function expression into a regular call, with the result going into the variable provided.
     # For example: if we have something like P() = x, we probably want to transform this into just P(x)
-    def to_call(self, result_var):
+    def to_call(self, result_var) -> Call:
         self.args[self.val_idx] = result_var
         return Call(self.pred_name, self.args)
 
-    def transform(self, transformer):
+    def transform(self, transformer : IRTransformer) -> FunctionExpression:
         return transformer.transform_FunctionExpression(self)
 
-    def show(self):
+    def show(self) -> str:
         temp_args = list(map(repr, self.args))
         temp_args[self.val_idx] = 'out({})'.format(self.args[self.val_idx])
         return '{}({})'.format(self.pred_name, ', '.join(temp_args))
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self.show()
 
 class PredicateExpr(IRExpression):
-    def __init__(self, var, pred):
+    def __init__(self, var : VarRef, pred):
         super().__init__()
-        from pecan.lang.ir_substitution import IRSubstitution
-        self.var = var
+        from pecan.lang.ir_substitution import IRSubstitution # TODO: Check what is up with this import
+        self.var : VarRef = var
         self.pred = pred
-        self.is_int = False
+        self.is_int : bool = False
 
-    def evaluate_node(self, prog):
-        aut = Conjunction(self.var.get_type().restrict(self.var), self.pred).evaluate(prog)
-        return aut, self.var
+    def evaluate_node(self, prog : Program) -> IREvaluation:
+         return Conjunction(self.var.get_type().restrict(self.var), self.pred).evaluate(prog).with_ref(self.var)
 
-    def transform(self, transformer):
+    def transform(self, transformer : IRTransformer) -> PredicateExpr:
         return transformer.transform_PredicateExpr(self)
 
-    def show(self):
+    def show(self) -> str:
         return 'Expr({}, {})'.format(self.var, self.pred)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self.show()
 
-    def __eq__(self, other):
+    def __eq__(self, other : Any) -> bool:
         return other is not None and type(other) is self.__class__ and self.var == other.var and self.pred == other.pred
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((self.var, self.pred))
 
 class AutomatonArithmeticError(Exception):

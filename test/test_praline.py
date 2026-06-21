@@ -14,7 +14,7 @@ def run_file(filename, expected_output):
     f = io.StringIO()
     with redirect_stdout(f):
         prog = program.load(filename)
-        assert prog.evaluate().result.succeeded()
+        assert prog.evaluate_prog().result.succeeded()
     assert f.getvalue().strip() == expected_output.strip()
 
     settings.set_quiet(orig_quiet)
