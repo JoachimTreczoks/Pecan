@@ -8,7 +8,7 @@ if TYPE_CHECKING :
     from pecan.lang.ast_transformer import AstTransformer
     from pecan.lang.ast.prog import Predicate
 
-def process_args(app, body):
+def process_args(app : PralineTerm, body : PralineTerm) -> tuple[list[PralineTerm], PralineTerm]:
     if isinstance(app, PralineApp):
         rest_args, new_body = process_args(app.receiver, body)
         new_arg, final_body = split_arg(app.arg, new_body)
@@ -16,7 +16,7 @@ def process_args(app, body):
     else:
         return [app], body
 
-def split_arg(arg, body):
+def split_arg(arg : PralineTuple | PralineVar, body : PralineTerm) -> tuple[PralineVar, PralineTerm]:
     if isinstance(arg, PralineVar):
         return arg, body
     elif isinstance(arg, PralineTuple):
@@ -69,8 +69,8 @@ class PralineDef(ASTNode): # TODO: Type hinting
         def_params, new_body = process_args(def_id, body)
 
         self.name : str = def_params[0]
-        self.args = def_params[1:]
-        self.body = new_body
+        self.args : list[PralineVar] = def_params[1:]
+        self.body : PralineApp = new_body
 
     def transform(self, transformer : AstTransformer) -> PralineDef:
         return transformer.transform_PralineDef(self)
@@ -194,10 +194,10 @@ class PralineList(PralineTerm):
             return '({} :: {})'.format(self.head, self.tail)
 
 class PralineMatch(PralineTerm):
-    def __init__(self, t : PralineTerm, arms : type):
+    def __init__(self, t : PralineTerm, arms : list[PralineMatchArm]):
         super().__init__()
         self.t : PralineTerm = t
-        self.arms : type = arms
+        self.arms : list[PralineMatchArm] = arms
 
     def transform(self, transformer : AstTransformer) -> PralineMatch:
         return transformer.transform_PralineMatch(self)

@@ -43,14 +43,14 @@ class EqualsCompareIndex(Predicate):
 
         if type(index_b) is IntConst:
             if index_b.val == 0:
-                self.index_b : BoolConst = BoolConst(False)
+                self.index_b : BoolConst | Index = BoolConst(False)
             elif index_b.val == 1:
-                self.index_b : BoolConst = BoolConst(True)
+                self.index_b : BoolConst | Index = BoolConst(True)
             else:
                 # TODO: Remove this restriction
                 raise Exception('Automatic words can only be binary (i.e., 0 or 1), {} is not allowed (in "{} = {}")'.format(index_b.val, index_a, index_b))
         elif isinstance(index_b, Index):
-            self.index_b : Index = index_b
+            self.index_b : BoolConst | Index = index_b
         else:
             raise Exception('Unexpected index expression on RHS: {} = {}'.format(index_a, index_b))
 

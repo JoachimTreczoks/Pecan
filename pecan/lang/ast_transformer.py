@@ -7,7 +7,7 @@ class AstTransformer:
     def __init__(self):
         pass
 
-    def transform(self, node : None | str | ASTNode) -> None | str | ASTNode:
+    def transform[T : ASTNode](self, node : T) -> T:
         if node is None:
             return None
         elif type(node) is str:
@@ -16,6 +16,9 @@ class AstTransformer:
             return node.transform(self)
 
     def transform_str(self, node : str) -> str:
+        return node
+    
+    def transform_truth_value(self, node : Literal['false', 'true', 'sometimes']) -> Literal['false', 'true', 'sometimes']:
         return node
 
     def transform_Conjunction(self, node : Conjunction) -> Conjunction:
@@ -37,32 +40,32 @@ class AstTransformer:
         return node
 
     def transform_DirectiveSaveAut(self, node : DirectiveSaveAut) -> DirectiveSaveAut:
-        return DirectiveSaveAut(self.transform(node.filename), self.transform(node.pred_name))
+        return DirectiveSaveAut(self.transform_str(node.filename), self.transform_str(node.pred_name))
 
     def transform_DirectiveSaveAutImage(self, node : DirectiveSaveAutImage) -> DirectiveSaveAutImage:
-        return DirectiveSaveAutImage(self.transform(node.filename), self.transform(node.pred_name))
+        return DirectiveSaveAutImage(self.transform_str(node.filename), self.transform_str(node.pred_name))
 
     def transform_DirectiveContext(self, node : DirectiveContext) -> DirectiveContext:
-        return DirectiveContext(self.transform(node.context_key), self.transform(node.context_val))
+        return DirectiveContext(self.transform_str(node.context_key), self.transform_str(node.context_val))
 
     def transform_DirectiveEndContext(self, node : DirectiveEndContext) -> DirectiveEndContext:
-        return DirectiveEndContext(self.transform(node.context_key))
+        return DirectiveEndContext(self.transform_str(node.context_key))
 
     def transform_DirectiveAssertProp(self, node : DirectiveAssertProp) -> DirectiveAssertProp:
-        return DirectiveAssertProp(self.transform(node.truth_val), self.transform(node.pred_name))
+        return DirectiveAssertProp(self.transform_truth_value(node.truth_val), self.transform_str(node.pred_name))
 
     def transform_DirectiveLoadAut(self, node : DirectiveLoadAut) -> DirectiveLoadAut:
-        return DirectiveLoadAut(self.transform(node.filename), self.transform(node.aut_format), self.transform(node.pred))
+        return DirectiveLoadAut(self.transform_str(node.filename), self.transform_str(node.aut_format), self.transform(node.pred))
 
     def transform_DirectiveImport(self, node : DirectiveImport) -> DirectiveImport:
-        return DirectiveImport(self.transform(node.filename))
+        return DirectiveImport(self.transform_str(node.filename))
 
     def transform_DirectiveForget(self, node : DirectiveForget) -> DirectiveForget:
-        return DirectiveForget(self.transform(node.var_name))
+        return DirectiveForget(self.transform_str(node.var_name))
 
     def transform_DirectiveStructure(self, node : DirectiveStructure) -> DirectiveStructure:
         return DirectiveStructure(self.transform(node.pred_ref),
-                {self.transform(k): self.transform(v) for k, v in node.val_dict.items()})
+                {self.transform_str(k): self.transform(v) for k, v in node.val_dict.items()})
 
     def transform_DirectiveShuffle(self, node : DirectiveShuffle) -> DirectiveShuffle:
         return DirectiveShuffle(node.disjunction, self.transform(node.pred_a), self.transform(node.pred_b), self.transform(node.output_pred))
@@ -110,10 +113,10 @@ class AstTransformer:
         return IndexRange(node.var_name, self.transform(node.start), self.transform(node.end))
 
     def transform_EqualsCompareIndex(self, node : EqualsCompareIndex) -> EqualsCompareIndex:
-        return EqualsCompareIndex(node.is_equals, self.transform(node.index_a), self.transform(node.index_b))
+        return EqualsCompareIndex(node.is_equals, self.transform_Index(node.index_a), self.transform(node.index_b))
 
     def transform_EqualsCompareRange(self, node : EqualsCompareRange) -> EqualsCompareRange:
-        return EqualsCompareRange(node.is_equals, self.transform(node.index_a), self.transform(node.index_b))
+        return EqualsCompareRange(node.is_equals, self.transform_IndexRange(node.index_a), self.transform_IndexRange(node.index_b))
 
     def transform_Forall(self, node: Forall) -> Forall:
         return Forall([self.transform(var_pred) for var_pred in node.var_preds], self.transform(node.pred))
@@ -133,13 +136,11 @@ class AstTransformer:
     def transform_Call(self, node : Call) -> Call:
         return Call(node.name, [self.transform(arg) for arg in node.args])
 
-    def transform_PredicateExpr(self, node : PredicateExpr) -> PredicateExpr:
-        return PredicateExpr(self.transform(node.var_name), self.transform(node.pred))
+    def transformExpr(self, node : PredicateExpr) -> PredicateExpr:
+        return PredicateExpr(self.transform_str(node.var_name), self.transform_TypeHint(node.pred))
 
     def transform_NamedPred(self, node : NamedPred) -> NamedPred:
-        new_args = [self.transform(arg) for arg in node.args]
-        new_restrictions = {self.transform(var): self.transform(restriction) for var, restriction in node.arg_restrictions.items()}
-        return NamedPred(node.name, new_args, new_restrictions, self.transform(node.body))
+        return NamedPred(node.name, list(map(self.transform, node.args)), self.transform(node.body))
 
     def transform_Program(self, node : Program) -> Program:
         new_defs = [self.transform(d) for d in node.defs]
@@ -152,18 +153,18 @@ class AstTransformer:
         return (pred_ref, val_dict)
 
     def transform_Restriction(self, node : Restriction) -> Restriction:
-        return Restriction(list(map(self.transform, node.var_names)), self.transform(node.pred))
+        return Restriction(list(map(self.transform, node.restrict_vars)), self.transform(node.pred))
 
     def transform_PralineAlias(self, node : PralineAlias) -> PralineAlias:
-        return PralineAlias(self.transform(node.name), self.transform(node.directive_name), self.transform(node.term))
+        return PralineAlias(self.transform_str(node.name), self.transform_str(node.directive_name), self.transform(node.term))
 
     def transform_PralineDirective(self, node : PralineDirective) -> PralineDirective:
-        return PralineDirective(self.transform(node.name), self.transform(node.term))
+        return PralineDirective(self.transform_str(node.name), self.transform(node.term))
 
     def transform_PralineDef(self, node : PralineDef) -> PralineDef:
-        return PralineDef(reduce(PralineApp, [self.transform(node.name)] + list(map(self.transform, node.args))), self.transform(node.body))
+        return PralineDef(reduce(PralineApp, [self.transform_str(node.name)] + list(map(self.transform, node.args))), self.transform(node.body))
 
-    def transform_PralineApp(self, node : PralineApp) -> PralineAdd:
+    def transform_PralineApp(self, node : PralineApp) -> PralineApp:
         return PralineApp(self.transform(node.receiver), self.transform(node.arg))
 
     def transform_PralineAdd(self, node : PralineAdd) -> PralineAdd:
@@ -197,7 +198,7 @@ class AstTransformer:
         return PralineMatchInt(node.val)
 
     def transform_PralineMatchString(self, node : PralineMatchString) -> PralineMatchString:
-        return PralineMatchString(self.transform(node.val))
+        return PralineMatchString(self.transform_str(node.val))
 
     def transform_PralineMatchList(self, node : PralineMatchList) -> PralineMatchList:
         return PralineMatchList(self.transform(node.head), self.transform(node.tail))
@@ -206,7 +207,7 @@ class AstTransformer:
         return PralineMatchTuple([self.transform(v) for v in node.vals])
 
     def transform_PralineMatchVar(self, node : PralineMatchVar) -> PralineMatchVar:
-        return PralineMatchVar(self.transform(node.var))
+        return PralineMatchVar(self.transform_str(node.var))
 
     def transform_PralineMatchPecan(self, node : PralineMatchPecan) -> PralineMatchPecan:
         return PralineMatchPecan(self.transform(node.pecan_term))
@@ -221,10 +222,10 @@ class AstTransformer:
         return PralineLambda(reduce(PralineApp, list(map(self.transform, node.params))), self.transform(node.body))
 
     def transform_PralineLetPecan(self, node : PralineLetPecan) -> PralineLetPecan:
-        return PralineLetPecan(self.transform(node.var_name), self.transform(node.pecan_term), self.transform(node.body))
+        return PralineLetPecan(self.transform_str(node.var_name), self.transform(node.pecan_term), self.transform(node.body))
 
     def transform_PralineLet(self, node : PralineLet) -> PralineLet:
-        return PralineLet(self.transform(node.var_name), self.transform(node.expr), self.transform(node.body))
+        return PralineLet(self.transform_str(node.var_name), self.transform(node.expr), self.transform(node.body))
 
     def transform_PralineTuple(self, node : PralineTuple) -> PralineTuple:
         return PralineTuple(list(map(self.transform, node.vals)))

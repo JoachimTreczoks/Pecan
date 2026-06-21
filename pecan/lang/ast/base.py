@@ -3,6 +3,7 @@
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING :
+    from typing import Self
     from pecan.lang.ast_transformer import AstTransformer;
     from pecan.lang.ast.prog import Program, VarRef
 
@@ -10,8 +11,8 @@ class ASTNode:
     def __init__(self):
         self.is_int = False
 
-    def transform(self, transformer : AstTransformer) -> ASTNode:
-        return NotImplementedError('Transform not implemented for {}'.format(self.__class__.__name__))
+    def transform(self, transformer : AstTransformer) -> Self:
+        raise NotImplementedError('Transform not implemented for {}'.format(self.__class__.__name__))
 
     def evaluate_node(self, prog : Program):
         raise NotImplementedError

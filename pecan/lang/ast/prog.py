@@ -48,15 +48,15 @@ class SpotFormula(Predicate):
         return 'LTL({})'.format(self.formula_str)
 
 class Call(Predicate):
-    def __init__(self, name : str, args : list[VarRef]):
+    def __init__(self, name : str, args : list[Expression]):
         super().__init__()
         self.name : str = name
-        self.args : list[VarRef] = args
+        self.args : list[Expression] = args
 
     def transform(self, transformer : AstTransformer) -> Call:
         return transformer.transform_Call(self)
 
-    def with_args(self, new_args : list[VarRef]) -> Call:
+    def with_args(self, new_args : list[Expression]) -> Call:
         return Call(self.name, new_args)
 
     def add_arg(self, new_arg : VarRef) -> Call:

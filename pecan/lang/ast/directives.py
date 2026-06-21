@@ -36,7 +36,7 @@ class DirectiveSaveAutImage(ASTNode):
 class DirectiveContext(ASTNode):
     def __init__(self, context_key : str, context_val : str):
         super().__init__()
-        self.context_key : str= context_key
+        self.context_key : str = context_key
         self.context_val : str = context_val
 
     def transform(self, transformer : AstTransformer) -> DirectiveContext:
