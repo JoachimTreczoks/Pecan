@@ -11,10 +11,10 @@ from pecan.utility import unzip
 
 # TODO: Reduce duplicated code between here and ast/quant.py
 #   Unfortunately, this uses the IR classes, the one in ast/quant.py naturally uses the AST classes, so it's not as simple just calling those
-def to_ref(var_ref):
-    if type(var_ref) is ir.VarRef:
+def to_ref(var_ref : str | ir.VarRef) -> ir.VarRef:
+    if isinstance(var_ref, ir.VarRef):
         return var_ref
-    else:
+    elif isinstance(var_ref, str):
         return ir.VarRef(var_ref)
 
 def extract_var_cond(var_pred):
@@ -35,75 +35,72 @@ class ASTToIR(AstTransformer):
         else:
             return t
 
-    def transform_Conjunction(self, node):
+    def transform_Conjunction(self, node : Conjunction) -> ir.Conjunction:
         return ir.Conjunction(self.transform(node.a), self.transform(node.b))
 
-    def transform_Disjunction(self, node):
+    def transform_Disjunction(self, node : Disjunction) -> ir.Disjunction:
         return ir.Disjunction(self.transform(node.a), self.transform(node.b))
 
-    def transform_Complement(self, node):
+    def transform_Complement(self, node : Complement) -> ir.Complement:
         return ir.Complement(self.transform(node.a))
 
-    def transform_Iff(self, node):
+    def transform_Iff(self, node : Iff) -> ir.Conjunction:
         new_a = self.transform(node.a)
         new_b = self.transform(node.b)
         return ir.Conjunction(ir.Disjunction(ir.Complement(new_a), new_b), ir.Disjunction(ir.Complement(new_b), new_a))
 
-    def transform_Implies(self, node):
+    def transform_Implies(self, node : Implies) -> ir.Disjunction:
         new_a = self.transform(node.a)
         new_b = self.transform(node.b)
         return ir.Disjunction(ir.Complement(new_a), new_b)
 
-    def transform_BoolConst(self, node):
+    def transform_BoolConst(self, node : BoolConst) -> ir.BoolConst:
         return ir.BoolConst(node.bool_val)
 
-    def transform_DirectiveSaveAut(self, node):
+    def transform_DirectiveSaveAut(self, node : DirectiveSaveAut) -> ir.DirectiveSaveAut:
         return ir.DirectiveSaveAut(self.transform(node.filename), self.transform(node.pred_name))
 
-    def transform_DirectiveSaveAutImage(self, node):
+    def transform_DirectiveSaveAutImage(self, node : DirectiveSaveAutImage) -> ir.DirectiveSaveAutImage:
         return ir.DirectiveSaveAutImage(self.transform(node.filename), self.transform(node.pred_name))
 
-    def transform_DirectiveContext(self, node):
+    def transform_DirectiveContext(self, node : DirectiveContext) -> ir.DirectiveContext:
         return ir.DirectiveContext(self.transform(node.context_key), self.transform(node.context_val))
 
-    def transform_DirectiveEndContext(self, node):
+    def transform_DirectiveEndContext(self, node : DirectiveEndContext) -> ir.DirectiveEndContext:
         return ir.DirectiveEndContext(self.transform(node.context_key))
 
-    def transform_DirectiveAssertProp(self, node):
+    def transform_DirectiveAssertProp(self, node : DirectiveAssertProp) -> ir.DirectiveAssertProp:
         return ir.DirectiveAssertProp(self.transform(node.truth_val), self.transform(node.pred_name))
 
-    def transform_DirectiveLoadAut(self, node):
+    def transform_DirectiveLoadAut(self, node : DirectiveLoadAut) -> ir.DirectiveLoadAut:
         return ir.DirectiveLoadAut(self.transform(node.filename), self.transform(node.aut_format), self.transform(node.pred))
 
-    def transform_DirectiveImport(self, node):
+    def transform_DirectiveImport(self, node : DirectiveImport) -> ir.DirectiveImport:
         return ir.DirectiveImport(self.transform(node.filename))
 
-    def transform_DirectiveForget(self, node):
+    def transform_DirectiveForget(self, node : DirectiveForget) -> ir.DirectiveForget:
         return ir.DirectiveForget(self.transform(node.var_name))
 
-    def transform_DirectiveStructure(self, node):
+    def transform_DirectiveStructure(self, node : DirectiveStructure) -> ir.DirectiveStructure:
         return ir.DirectiveStructure(self.transform_decl_type(node.pred_ref),
                 {self.transform(k): self.transform(v) for k, v in node.val_dict.items()})
 
-    def transform_DirectiveShuffle(self, node):
+    def transform_DirectiveShuffle(self, node : DirectiveShuffle) -> DirectiveShuffle:
         return ir.DirectiveShuffle(node.disjunction, self.transform(node.pred_a), self.transform(node.pred_b), self.transform(node.output_pred))
 
-    def transform_DirectivePlot(self, node):
-        return ir.DirectivePlot(self.transform(node.pred_name), **node.kwargs)
-
-    def transform_Add(self, node):
+    def transform_Add(self, node : Add) -> ir.Add:
         self.expr_depth += 1
         res = ir.Add(self.transform(node.a), self.transform(node.b))
         self.expr_depth -= 1
         return res
 
-    def transform_Sub(self, node):
+    def transform_Sub(self, node : Sub) -> ir.Sub:
         self.expr_depth += 1
         res = ir.Sub(self.transform(node.a), self.transform(node.b))
         self.expr_depth -= 1
         return res
 
-    def transform_Mul(self, node):
+    def transform_Mul(self, node : Mul) -> ir.Mul | ir.IntConst | ir.Add | ir.Sub:
         # If they are both ints, translate to an IR node that will multiply
         # This will fail at runtime if one/both of the variables doesn't get substituted before this runs
         if not node.a.is_int and not node.b.is_int:
@@ -146,82 +143,82 @@ class ASTToIR(AstTransformer):
         else:
             return s
 
-    def transform_Div(self, node):
+    def transform_Div(self, node : Div) -> ir.IntConst | ir.PredicateExpr:
         if node.is_int:
             return ir.IntConst(node.evaluate_int(self.prog))
 
         new_var = VarRef(ir.IRNode.fresh_name())
-        return self.transform(PredicateExpr(new_var.var_name, TypeHint(new_var, node.a, Equals(node.a, Mul(node.b, new_var)))))
+        return self.transform_PredicateExpr(PredicateExpr(new_var.var_name, TypeHint(new_var, node.a, Equals(node.a, Mul(node.b, new_var)))))
 
-    def transform_IntConst(self, node):
+    def transform_IntConst(self, node : IntConst) -> ir.IntConst:
         return ir.IntConst(node.val)
 
-    def transform_Equals(self, node):
+    def transform_Equals(self, node : Equals) -> ir.Equals:
         self.expr_depth += 1
         res = ir.Equals(self.transform(node.a), self.transform(node.b))
         self.expr_depth -= 1
         return res
 
-    def transform_NotEquals(self, node):
+    def transform_NotEquals(self, node : NotEquals) -> ir.Complement:
         return ir.Complement(self.transform(Equals(node.a, node.b)))
 
-    def transform_Less(self, node):
+    def transform_Less(self, node : Less) -> ir.Less:
         self.expr_depth += 1
         res = ir.Less(self.transform(node.a), self.transform(node.b))
         self.expr_depth -= 1
         return res
 
-    def transform_Greater(self, node):
-        return self.transform(Less(node.b, node.a))
+    def transform_Greater(self, node : Greater) -> ir.Less:
+        return self.transform_Less(Less(node.b, node.a))
 
-    def transform_LessEquals(self, node):
-        return self.transform(Disjunction(Less(node.a, node.b), Equals(node.a, node.b)))
+    def transform_LessEquals(self, node : LessEquals) -> ir.Disjunction:
+        return self.transform_Disjunction(Disjunction(Less(node.a, node.b), Equals(node.a, node.b)))
 
-    def transform_GreaterEquals(self, node):
-        return self.transform(Disjunction(Less(node.b, node.a), Equals(node.a, node.b)))
+    def transform_GreaterEquals(self, node : GreaterEquals) -> ir.Disjunction:
+        return self.transform_Disjunction(Disjunction(Less(node.b, node.a), Equals(node.a, node.b)))
 
-    def transform_Neg(self, node):
-        return self.transform(Sub(IntConst(0), node.a))
+    def transform_Neg(self, node : Neg) -> ir.Sub:
+        return self.transform_Sub(Sub(IntConst(0), node.a))
 
-    def transform_Index(self, node):
-        return self.transform(Call(node.var_name, [node.index_expr]))
+    def transform_Index(self, node : Index) -> ir.Call | ir.FunctionExpression:
+        return self.transform_Call(Call(node.var_name, [node.index_expr]))
 
-    def transform_IndexRange(self, node):
+    def transform_IndexRange(self, node : IndexRange) -> ir.IndexRange:
         self.expr_depth += 1
         res = ir.IndexRange(node.var_name, self.transform(node.start), self.transform(node.end))
         self.expr_depth -= 1
         return res
 
-    def transform_EqualsCompareIndex(self, node):
+    def transform_EqualsCompareIndex(self, node : EqualsCompareIndex) -> ir.Conjunction:
         if node.is_equals:
-            return self.transform(Iff(node.index_a, node.index_b))
+            return self.transform_Iff(Iff(node.index_a, node.index_b))
         else:
-            return self.transform(Iff(Complement(node.index_a), node.index_b))
+            return self.transform_Iff(Iff(Complement(node.index_a), node.index_b))
 
-    def transform_EqualsCompareRange(self, node):
+    def transform_EqualsCompareRange(self, node : EqualsCompareRange) -> ir.EqualsCompareRange:
         self.expr_depth += 1
         res = ir.EqualsCompareRange(node.is_equals, self.transform(node.index_a), self.transform(node.index_b))
         self.expr_depth -= 1
         return res
 
-    def transform_Forall(self, node: Forall):
+    def transform_Forall(self, node : Forall) -> ir.Complement:
         var_refs, conds = unzip(map(extract_var_cond, map(self.transform, node.var_preds)))
         return ir.Complement(ir.Exists(var_refs, conds, ir.Complement(self.transform(node.pred))))
 
-    def transform_Exists(self, node: Exists):
+    def transform_Exists(self, node : Exists) -> ir.Exists:
         var_refs, conds = unzip(map(extract_var_cond, map(self.transform, node.var_preds)))
         return ir.Exists(var_refs, conds, self.transform(node.pred))
 
-    def transform_VarRef(self, node: VarRef):
+    def transform_VarRef(self, node : VarRef) -> ir.VarRef:
         return ir.VarRef(node.var_name)
 
-    def transform_AutLiteral(self, node):
+    def transform_AutLiteral(self, node : AutLiteral) -> ir.AutLiteral:
         return ir.AutLiteral(node.aut)
 
-    def transform_SpotFormula(self, node):
+    def transform_SpotFormula(self, node : SpotFormula) -> ir.SpotFormula:
         return ir.SpotFormula(node.formula_str)
 
-    def transform_Call(self, node):
+    def transform_Call(self, node : Call) -> ir.Call | ir.FunctionExpression:
         self.expr_depth += 1
         new_args = [self.transform(arg) for arg in node.args]
         self.expr_depth -= 1
@@ -243,7 +240,7 @@ class ASTToIR(AstTransformer):
         else:
             return ir.Call(node.name, new_args)
 
-    def transform_PredicateExpr(self, node):
+    def transform_PredicateExpr(self, node : PredicateExpr) -> ir.PredicateExpr:
         # We need to set the expression depth to 0 because the predicate inside
         # the node is NOT an expression, even if we are at the expression leve.
         orig_depth = self.expr_depth
@@ -252,12 +249,12 @@ class ASTToIR(AstTransformer):
         self.expr_depth = orig_depth
         return res
 
-    def transform_NamedPred(self, node):
+    def transform_NamedPred(self, node : NamedPred) -> ir.NamedPred:
         new_args = [self.transform(arg) for arg in node.args]
         new_restrictions = {self.transform(var): self.transform(restriction) for var, restriction in node.arg_restrictions.items()}
         return ir.NamedPred(node.name, new_args, new_restrictions, self.transform(node.body))
 
-    def transform_Program(self, node):
+    def transform_Program(self, node : Program) -> ir.Program:
         # TODO: While `copy_defaults` will work here because of duck typing (node is an ast.prog.Program, not an ir.prog.Program), we should make come up with a better solution maybe?
         self.prog = ir.Program([]).copy_defaults(node)
         self.prog.defs = [self.transform(d) for d in node.defs]
@@ -270,102 +267,102 @@ class ASTToIR(AstTransformer):
     def transform_type(self, pred_ref, val_dict):
         return (self.transform(pred_ref), {self.transform(k): self.transform(v) for k, v in val_dict.items()})
 
-    def transform_Restriction(self, node):
+    def transform_Restriction(self, node : Restriction) -> ir.Restriction:
         return ir.Restriction(list(map(self.transform, node.restrict_vars)), self.transform(node.pred))
 
-    def transform_PralineAlias(self, node):
+    def transform_PralineAlias(self, node : PralineAlias) -> ir.PralineAlias:
         return ir.PralineAlias(self.transform(node.name), self.transform(node.directive_name), self.transform(node.term))
 
-    def transform_PralineDirective(self, node):
+    def transform_PralineDirective(self, node : PralineDirective) -> ir.PralineDirective:
         return ir.PralineDirective(self.transform(node.name), self.transform(node.term))
 
-    def transform_PralineDef(self, node):
+    def transform_PralineDef(self, node : PralineDef) -> ir.PralineDef:
         return ir.PralineDef(self.transform(node.name), list(map(self.transform, node.args)), self.transform(node.body))
 
-    def transform_PralineApp(self, node):
+    def transform_PralineApp(self, node : PralineApp) -> ir.PralineApp:
         return ir.PralineApp(self.transform(node.receiver), self.transform(node.arg))
 
-    def transform_PralineAdd(self, node):
+    def transform_PralineAdd(self, node : PralineAdd) -> ir.PralineAdd:
         return ir.PralineAdd(self.transform(node.a), self.transform(node.b))
 
-    def transform_PralineDiv(self, node):
+    def transform_PralineDiv(self, node : PralineDiv) -> ir.PralineDiv:
         return ir.PralineDiv(self.transform(node.a), self.transform(node.b))
 
-    def transform_PralineSub(self, node):
+    def transform_PralineSub(self, node : PralineSub) -> ir.PralineSub:
         return ir.PralineSub(self.transform(node.a), self.transform(node.b))
 
-    def transform_PralineMul(self, node):
+    def transform_PralineMul(self, node : PralineMul) -> ir.PralineMul:
         return ir.PralineMul(self.transform(node.a), self.transform(node.b))
 
-    def transform_PralineExponent(self, node):
+    def transform_PralineExponent(self, node : PralineExponent) -> ir.PralineExponent:
         return ir.PralineExponent(self.transform(node.a), self.transform(node.b))
 
-    def transform_PralineNeg(self, node):
+    def transform_PralineNeg(self, node : PralineNeg) -> ir.PralineNeg:
         return ir.PralineNeg(self.transform(node.a))
 
-    def transform_PralineList(self, node):
+    def transform_PralineList(self, node : PralineList) -> ir.PralineList:
         return ir.PralineList(self.transform(node.head), self.transform(node.tail))
 
-    def transform_PralineMatch(self, node):
+    def transform_PralineMatch(self, node : PralineMatch) -> ir.PralineMatch:
         return ir.PralineMatch(self.transform(node.t), list(map(self.transform, node.arms)))
 
-    def transform_PralineMatchArm(self, node):
+    def transform_PralineMatchArm(self, node : PralineMatchArm) -> ir.PralineMatchArm:
         return ir.PralineMatchArm(self.transform(node.pat), self.transform(node.expr))
 
-    def transform_PralineMatchInt(self, node):
+    def transform_PralineMatchInt(self, node : PralineMatchInt) -> ir.PralineMatchInt:
         return ir.PralineMatchInt(node.val)
 
-    def transform_PralineMatchString(self, node):
+    def transform_PralineMatchString(self, node : PralineMatchString) -> ir.PralineMatchString:
         return ir.PralineMatchString(self.transform(node.val))
 
-    def transform_PralineMatchList(self, node):
+    def transform_PralineMatchList(self, node : PralineMatchList) -> ir.PralineMatchList:
         return ir.PralineMatchList(self.transform(node.head), self.transform(node.tail))
 
-    def transform_PralineMatchTuple(self, node):
+    def transform_PralineMatchTuple(self, node : PralineMatchTuple) -> ir.PralineMatchTuple:
         return ir.PralineMatchTuple([self.transform(v) for v in node.vals])
 
-    def transform_PralineMatchVar(self, node):
+    def transform_PralineMatchVar(self, node : PralineMatchVar) -> ir.PralineMatchVar:
         return ir.PralineMatchVar(self.transform(node.var))
 
-    def transform_PralineMatchPecan(self, node):
+    def transform_PralineMatchPecan(self, node : PralineMatchPecan) -> PralineMatchPecan:
         return ir.PralineMatchPecan(self.transform(node.pecan_term))
 
-    def transform_PralineIf(self, node):
+    def transform_PralineIf(self, node : PralineIf) -> ir.PralineIf:
         return ir.PralineIf(self.transform(node.cond), self.transform(node.e1), self.transform(node.e2))
 
-    def transform_PralinePecanTerm(self, node):
+    def transform_PralinePecanTerm(self, node : PralinePecanTerm) -> ir.PralinePecanTerm:
         return ir.PralinePecanTerm(self.transform(node.pecan_term))
 
-    def transform_PralineLambda(self, node):
+    def transform_PralineLambda(self, node : PralineLambda) -> ir.PralineLambda:
         return ir.PralineLambda(list(map(self.transform, node.params)), self.transform(node.body))
 
-    def transform_PralineLetPecan(self, node):
+    def transform_PralineLetPecan(self, node : PralineLetPecan) -> ir.PralineLetPecan:
         return ir.PralineLetPecan(self.transform(node.var_name), self.transform(node.pecan_term), self.transform(node.body))
 
-    def transform_PralineLet(self, node):
+    def transform_PralineLet(self, node : PralineLet) -> ir.PralineLet:
         return ir.PralineLet(self.transform(node.var_name), self.transform(node.expr), self.transform(node.body))
 
-    def transform_PralineTuple(self, node):
+    def transform_PralineTuple(self, node : PralineTuple) -> ir.PralineTuple:
         return ir.PralineTuple(list(map(self.transform, node.vals)))
 
-    def transform_PralineVar(self, node):
+    def transform_PralineVar(self, node : PralineVar) -> ir.PralineVar:
         return ir.PralineVar(node.var_name)
 
-    def transform_PralineInt(self, node):
+    def transform_PralineInt(self, node : PralineInt) -> ir.PralineInt:
         return ir.PralineInt(node.val)
 
-    def transform_PralineString(self, node):
+    def transform_PralineString(self, node : PralineString) -> ir.PralineString:
         return ir.PralineString(node.val)
 
-    def transform_PralineBool(self, node):
+    def transform_PralineBool(self, node : PralineBool) -> ir.PralineBool:
         return ir.PralineBool(node.val)
 
-    def transform_PralineDo(self, node):
+    def transform_PralineDo(self, node : PralineDo) -> ir.PralineDo:
         return ir.PralineDo([self.transform(t) for t in node.terms])
 
-    def transform_Annotation(self, node):
+    def transform_Annotation(self, node : Annotation) -> ir.Annotation:
         return ir.Annotation(node.annotation_name, self.transform(node.body))
 
-    def transform_TypeHint(self, node):
+    def transform_TypeHint(self, node : TypeHint) -> ir.TypeHint:
         return ir.TypeHint(self.transform(node.expr_a), self.transform(node.expr_b), self.transform(node.body))
 

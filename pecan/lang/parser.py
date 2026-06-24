@@ -1,11 +1,9 @@
 #!/usr/bin/env python3.6
 # -*- coding=utf-8 -*-
 
-import ast
-
 from functools import reduce
 
-from lark import Lark, Transformer, v_args
+from lark import Transformer, v_args
 
 from pecan.lang.ast import *
 

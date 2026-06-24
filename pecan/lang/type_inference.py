@@ -6,6 +6,10 @@ from pecan.lang.ir import *
 
 from pecan.settings import settings
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING :
+    from typing import Any
+
 class Type:
     def __init__(self):
         pass
@@ -13,20 +17,20 @@ class Type:
     def get_restriction(self):
         return None
 
-    def restrict(self, var):
+    def restrict(self, var) -> IRPredicate:
         return None
 
-    def __eq__(self, other):
+    def __eq__(self, other : Any) -> bool:
         return other is not None and other.__class__ == self.__class__
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return 0 # There are no fields to hash
 
 class AnyType(Type):
     def __init__(self):
         super().__init__()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return 'any'
 
 # These should only be present during type inference
@@ -42,47 +46,47 @@ class RestrictionType(Type):
         super().__init__()
         self.restriction : Call = restriction
 
-    def get_restriction(self):
+    def get_restriction(self) -> Call:
         return self.restriction
 
-    def restrict(self, var):
+    def restrict(self, var) -> IRPredicate:
         if type(self.restriction) is Call:
             return self.restriction.subs_last(var)
         else:
             return self.restriction.add_arg(var)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return repr(self.restriction)
 
-    def __eq__(self, other):
+    def __eq__(self, other : Any) -> bool:
         return other is not None and other.__class__ == self.__class__ and self.restriction == other.restriction
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(self.restriction)
 
 class TypeEnv:
-    def __init__(self, prog):
-        self.prog = prog
-        self.type_env = {}
-        self.unification = {}
+    def __init__(self, prog : Program):
+        self.prog : Program = prog
+        self.type_env : dict[str, Type] = {}
+        self.unification : dict = {}
 
-    def __index__(self, idx):
+    def __index__(self, idx : str) -> Type:
         return self.type_env[idx]
 
-    def __getitem__(self, item):
+    def __getitem__(self, item : str) -> Type:
         return self.type_env[item]
 
-    def __contains__(self, item):
+    def __contains__(self, item : Type) -> bool:
         return item in self.type_env
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key : str, value : Type) -> None:
         self.type_env[key] = value
 
     # TODO: At some point it would be nice to unify (haha) this code with the similar code in prog.py for looking up
     #  dynamic calls
-    def unify(self, a, b):
-        type_a = a.get_type()
-        type_b = b.get_type()
+    def unify(self, a : IRNode, b : IRNode) -> None | Type:
+        type_a = a.get_safe_type()
+        type_b = b.get_safe_type()
 
         # TODO: Replace these exceptions (and all the others) with something that's more appropriate (probably a
         #  custom exception type)
@@ -105,14 +109,14 @@ class TypeEnv:
         else:
             raise Exception(f'Unknown types {a} : {type_a} and {b} : {type_b}')
 
-    def unify_with(self, t_a, t_b):
+    def unify_with(self, t_a, t_b) -> bool:
         if t_b in self.unification:
             return self.unification[t_b] == t_a
         else:
             self.unification[t_b] = t_a
             return True
 
-    def unify_type(self, a, t_a, b, t_b):
+    def unify_type(self, a, t_a : Call | None | VarRef, b, t_b : Call | None | VarRef) -> Call | None:
         if t_a is None:
             return t_b
         elif t_b is None:
@@ -145,7 +149,7 @@ class TypeEnv:
                 else:
                     return None
 
-    def try_unify_type(self, a, t_a, b, t_b) -> Type:
+    def try_unify_type(self, a, t_a, b, t_b) -> RestrictionType:
         old_unification = dict(self.unification)
         result = self.unify_type(a, t_a, b, t_b)
         if result is not None:
@@ -163,35 +167,35 @@ class TypeEnv:
 class TypeInferer(IRTransformer):
     def __init__(self, prog: Program):
         super().__init__()
-        self.prog = prog
-        self.type_env = TypeEnv(self.prog)
+        self.prog : Program = prog
+        self.type_env : TypeEnv = TypeEnv(self.prog)
 
-    def reset(self):
+    def reset(self) -> TypeInferer:
         self.type_env = TypeEnv(self.prog)
         return self
 
-    def transform_Add(self, node: Add):
+    def transform_Add(self, node : Add) -> Add:
         a = self.transform(node.a)
         b = self.transform(node.b)
         res_type = self.type_env.unify(a, b)
         return Add(a, b).with_type(res_type)
 
-    def transform_Mul(self, node: Mul):
+    def transform_Mul(self, node : Mul) -> Mul :
         a = self.transform(node.a)
         b = self.transform(node.b)
         res_type = self.type_env.unify(a, b)
         return Mul(a, b).with_type(res_type)
 
-    def transform_Sub(self, node: Sub):
+    def transform_Sub(self, node : Sub) -> Sub:
         a = self.transform(node.a)
         b = self.transform(node.b)
         res_type = self.type_env.unify(a, b)
         return Sub(a, b).with_type(res_type)
 
-    def transform_IntConst(self, node: IntConst):
+    def transform_IntConst(self, node : IntConst) -> IntConst:
         return node.with_type(InferredType())
 
-    def transform_VarRef(self, node: VarRef):
+    def transform_VarRef(self, node : VarRef) -> VarRef:
         # TODO: It would be nice not to have this kludge and either remove the condition "node.get_type() != AnyType" or remove the first branch altogether and always recalculate the type.
         if node.get_type() is not None and node.get_type() != AnyType():
             return node
@@ -204,19 +208,19 @@ class TypeInferer(IRTransformer):
                     self.type_env[node.var_name] = AnyType() # InferredType()
             return VarRef(node.var_name).with_type(self.type_env[node.var_name])
 
-    def transform_Equals(self, node: Equals):
+    def transform_Equals(self, node : Equals) -> Equals:
         a = self.transform(node.a)
         b = self.transform(node.b)
         res_type = self.type_env.unify(a, b)
         return Equals(a.with_type(res_type), b.with_type(res_type))
 
-    def transform_Less(self, node: Less):
+    def transform_Less(self, node : Less) -> Less:
         a = self.transform(node.a)
         b = self.transform(node.b)
         res_type = self.type_env.unify(a, b)
         return Less(a.with_type(res_type), b.with_type(res_type))
 
-    def transform_Exists(self, node: Exists):
+    def transform_Exists(self, node : Exists) -> Exists:
         self.prog.enter_scope()
 
         for v, cond in zip(node.var_refs, node.conds):
@@ -229,7 +233,7 @@ class TypeInferer(IRTransformer):
 
         return res
 
-    def transform_Call(self, node: Call):
+    def transform_Call(self, node : Call) -> Call:
         new_args = [self.transform(arg) for arg in node.args]
 
         # Temp args is necessary, because the resolving dynamic calls only works with variables for now (TODO)
@@ -274,12 +278,12 @@ class TypeInferer(IRTransformer):
 
         return Call(resolved_pred.name, final_args)
 
-    def transform_PredicateExpr(self, node):
+    def transform_PredicateExpr(self, node : PredicateExpr) -> PredicateExpr:
         new_pred = self.transform(node.pred)
         new_var = self.transform(node.var)
         return PredicateExpr(new_var, new_pred).with_type(new_var.get_type())
 
-    def transform_NamedPred(self, node):
+    def transform_NamedPred(self, node : NamedPred) -> NamedPred:
         self.prog.enter_scope(node.restriction_env)
 
         for _, arg_restriction in node.arg_restrictions.items():
@@ -291,7 +295,7 @@ class TypeInferer(IRTransformer):
 
         return res
 
-    def transform_FunctionExpression(self, node):
+    def transform_FunctionExpression(self, node : FunctionExpression) -> FunctionExpression:
         temp_args = list(node.args)
         out_var_ref = VarRef(self.prog.fresh_name()).with_type(InferredType())
         temp_args[node.val_idx] = out_var_ref
@@ -310,7 +314,7 @@ class TypeInferer(IRTransformer):
 
         return FunctionExpression(new_call.name, new_call.args, new_idx).with_type(res_type)
 
-    def transform_TypeHint(self, node):
+    def transform_TypeHint(self, node : TypeHint) -> TypeHint:
         a = self.transform(node.expr_a)
         b = self.transform(node.expr_b)
 

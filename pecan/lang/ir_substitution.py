@@ -6,14 +6,14 @@ from pecan.lang.ir import *
 from pecan.lang.ir_transformer import IRTransformer
 
 class IRSubstitution(IRTransformer):
-    def __init__(self, subs):
+    def __init__(self, subs : dict[str, IRNode]):
         super().__init__()
         self.subs = subs
 
-    def transform_str(self, original_str):
+    def transform_str(self, original_str : str) -> str:
         return self.substitute_identifier(None, original_str)
 
-    def substitute_identifier(self, node, original_str):
+    def substitute_identifier(self, node : IRNode, original_str : str) -> str:
         if original_str in self.subs:
             if type(self.subs[original_str]) is PralineString:
                 return self.subs[original_str].get_value()
@@ -22,13 +22,13 @@ class IRSubstitution(IRTransformer):
         else:
             return original_str
 
-    def transform_VarRef(self, node):
+    def transform_VarRef(self, node : VarRef) -> IRNode | VarRef:
         if node.var_name in self.subs:
             return self.subs[node.var_name]
         else:
             return node
 
-    def transform_Call(self, node):
+    def transform_Call(self, node : Call) -> Call:
         new_args = [self.transform(arg) for arg in node.args]
         if node.name in self.subs:
             sub = self.subs[node.name]
@@ -42,7 +42,7 @@ class IRSubstitution(IRTransformer):
         else:
             return Call(node.name, new_args).with_type(node.get_type())
 
-    def transform_NamedPred(self, node):
+    def transform_NamedPred(self, node : NamedPred) -> NamedPred:
         new_name = self.substitute_identifier(node, node.name)
         new_args = [self.transform(arg) for arg in node.args]
         new_restrictions = {self.transform(var): self.transform(restriction) for var, restriction in node.arg_restrictions.items()}
