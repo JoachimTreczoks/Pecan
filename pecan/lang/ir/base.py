@@ -40,6 +40,11 @@ class IRNode:
     def get_type(self) -> None | Type:
         return self.type
 
+    def get_safe_type(self) -> Type:
+        if self.type is None:
+            raise Exception('Tried to obtain undefined type')
+        return self.type
+
     def show_aut_stats(self, prog : Program, aut : Automaton, desc : None | str = None) -> None:
         sn, en = aut.num_states(), aut.num_edges()
 

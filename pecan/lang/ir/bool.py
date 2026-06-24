@@ -7,13 +7,11 @@ from pecan.lang.ir.base import BinaryIRPredicate, IREvaluation, IRPredicate, Una
 from typing import TYPE_CHECKING
 if TYPE_CHECKING :
     from typing import Any
-    from pecan.automata.automaton import Automaton
     from pecan.lang.ir_transformer import IRTransformer
-    from pecan.lang.ir.base import IREvaluation
     from pecan.lang.ir.prog import Program
 
 class Conjunction(BinaryIRPredicate):
-    def __init__(self, a, b):
+    def __init__(self, a : IRPredicate, b : IRPredicate):
         super().__init__(a, b)
 
     def evaluate_node(self, prog : Program) -> IREvaluation:
@@ -36,7 +34,7 @@ class Conjunction(BinaryIRPredicate):
         return '({} ∧ {})'.format(self.a, self.b)
 
 class Disjunction(BinaryIRPredicate):
-    def __init__(self, a, b):
+    def __init__(self, a : IRPredicate, b : IRPredicate):
         super().__init__(a, b)
 
     def evaluate_node(self, prog : Program) -> IREvaluation:
@@ -55,7 +53,7 @@ class Disjunction(BinaryIRPredicate):
         return '({} ∨ {})'.format(self.a, self.b)
 
 class Complement(UnaryIRPredicate):
-    def __init__(self, a):
+    def __init__(self, a : IRPredicate):
         super().__init__(a)
 
     def evaluate_node(self, prog : Program) -> IREvaluation:

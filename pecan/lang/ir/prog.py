@@ -173,10 +173,10 @@ class Match:
         return hash((self.pred_name, self.pred_args, self.match_any))
 
 class Call(IRPredicate):
-    def __init__(self, name : str, args : list[VarRef]):
+    def __init__(self, name : str, args : list[IRExpression]):
         super().__init__()
         self.name : str = name
-        self.args : list[VarRef] = args
+        self.args : list[IRExpression] = args
 
     def arity(self) -> int:
         return len(self.args)
@@ -184,7 +184,7 @@ class Call(IRPredicate):
     def match(self) -> Match:
         return Match(self.name, self.args)
 
-    def with_args(self, new_args : list[VarRef]) -> Call:
+    def with_args(self, new_args : list[IRExpression]) -> Call:
         return Call(self.name, new_args)
 
     def add_arg(self, new_arg : VarRef) -> Call:
@@ -556,7 +556,7 @@ class Program(IRNode):
     def exit_var_map_scope(self) -> VarMap:
         return self.var_map.pop()
 
-    def get_restrictions(self, var_name: str, local_only : bool = False):
+    def get_restrictions(self, var_name: str, local_only : bool = False) -> list[IRPredicate]:
         result = []
         # for scope in self.restrictions:
         for r in self.get_restriction_env(local_only).get(var_name, []):

@@ -414,7 +414,7 @@ class PralineMatchPecan(PralineMatchPat):
 
         return self.unify_terms(evaluated_term.pecan_term, term.pecan_term)
 
-    def unify_terms(self, term_a, term_b):
+    def unify_terms[T : IRExpression | IRPredicate | None](self, term_a : T, term_b : T) -> dict | None:
         if term_a == None and term_b == None:
             return {}
 
@@ -464,7 +464,7 @@ class PralineMatchPecan(PralineMatchPat):
 
         raise Exception('Unsupported Pecan term on LHS of a match arm: {}'.format(term_a))
 
-    def combine_unification(self, unif_a, unif_b):
+    def combine_unification(self, unif_a : dict, unif_b : dict) -> dict | None:
         unif = {}
 
         for k, v in unif_a.items():

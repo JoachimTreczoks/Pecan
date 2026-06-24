@@ -222,7 +222,7 @@ class IntConst(IRExpression):
         return hash(self.val)
 
 class Equals(BinaryIRPredicate):
-    def __init__(self, a, b):
+    def __init__(self, a : IRExpression, b : IRExpression):
         super().__init__(a, b)
 
     def evaluate_node(self, prog : Program) -> IREvaluation:
@@ -304,7 +304,7 @@ class PredicateExpr(IRExpression):
         self.is_int : bool = False
 
     def evaluate_node(self, prog : Program) -> IREvaluation:
-         return Conjunction(self.var.get_type().restrict(self.var), self.pred).evaluate(prog).with_ref(self.var)
+         return Conjunction(self.var.get_safe_type().restrict(self.var), self.pred).evaluate(prog).with_ref(self.var)
 
     def transform(self, transformer : IRTransformer) -> PredicateExpr:
         return transformer.transform_PredicateExpr(self)

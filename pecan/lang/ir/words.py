@@ -12,7 +12,7 @@ if TYPE_CHECKING :
     from pecan.lang.ir.prog import VarRef
 
 class IndexRange(IRPredicate):
-    def __init__(self, var_name, start : IRExpression, end : IRExpression):
+    def __init__(self, var_name : str, start : IRExpression, end : IRExpression):
         super().__init__()
         self.var_name : str = var_name
         self.start : IRExpression = start

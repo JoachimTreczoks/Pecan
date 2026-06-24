@@ -9,14 +9,14 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING :
     from typing import Any
     from pecan.lang.ir_transformer import IRTransformer
-    from pecan.lang.ir.base import IREvaluation, IRPredicate
+    from pecan.lang.ir.base import IREvaluation, IRNode, IRPredicate
     from pecan.lang.ir.prog import Program
 
 class Annotation(IRPredicate):
-    def __init__(self, annotation_name : str, body):
+    def __init__(self, annotation_name : str, body : IRNode):
         super().__init__()
         self.annotation_name : str = annotation_name
-        self.body = body
+        self.body : IRNode = body
 
     def evaluate_node(self, prog : Program) -> IREvaluation:
         if self.annotation_name == '@no_simplify':
