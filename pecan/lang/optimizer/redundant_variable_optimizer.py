@@ -25,7 +25,7 @@ class RedundantVariableOptimizer(BasicOptimizer):
 
         self.enabled = True
 
-    def pre_optimize(self, node):
+    def pre_optimize(self, node : IRNode):
         self.decl_level = {}
         self.cur_level = 0
 
@@ -43,12 +43,12 @@ class RedundantVariableOptimizer(BasicOptimizer):
 
         return subs
 
-    def transform(self, node):
+    def transform[T : IRNode](self, node : T) -> T:
         if not isinstance(node, Conjunction):
             self.enabled = True
         return super().transform(node)
 
-    def gather_conjuncts(self, node):
+    def gather_conjuncts(self, node : Conjunction):
         res = []
         if isinstance(node.a, Conjunction):
             res += self.gather_conjuncts(node.a)
@@ -62,7 +62,7 @@ class RedundantVariableOptimizer(BasicOptimizer):
 
         return res
 
-    def transform_Conjunction(self, node):
+    def transform_Conjunction(self, node : Conjunction) -> Conjunction:
         if self.enabled:
             conjuncts = self.gather_conjuncts(node)
 
@@ -81,7 +81,7 @@ class RedundantVariableOptimizer(BasicOptimizer):
         else:
             return super().transform_Conjunction(node)
 
-    def transform_Complement(self, node):
+    def transform_Complement(self, node : Complement) -> Complement:
         # Clear out the level dictionary, because the complement means that variables outside should not interact with variables inside
         # TODO: I think...? at the very least, it's safe to do clear it out, because we'll just optimize a little less
         temp = self.decl_level
@@ -91,7 +91,7 @@ class RedundantVariableOptimizer(BasicOptimizer):
 
         return result
 
-    def transform_Exists(self, node: Exists):
+    def transform_Exists(self, node: Exists) -> Exists:
         self.cur_level += 1
 
         for v in node.var_refs:

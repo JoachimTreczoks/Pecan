@@ -11,10 +11,10 @@ from pecan.lang.ir import *
 from pecan.settings import settings
 
 class UntypedOptimizer:
-    def __init__(self, prog):
+    def __init__(self, prog : Program):
         self.prog = prog
 
-    def optimize(self):
+    def optimize(self) -> Program:
         for i, d in enumerate(self.prog.defs):
             if type(d) is NamedPred:
                 self.prog.defs[i] = NamedPred(d.name, d.args, d.arg_restrictions, self.run_optimizations(d.body, d), restriction_env=d.restriction_env, arg_name_map=d.arg_name_map)
@@ -45,13 +45,13 @@ class UntypedOptimizer:
         return new_node
 
 class Optimizer:
-    def __init__(self, prog):
+    def __init__(self, prog : Program):
         self.prog = prog
 
-    def optimize(self, pred):
+    def optimize(self, pred) -> NamedPred:
         return NamedPred(pred.name, pred.args, pred.arg_restrictions, self.run_optimizations(pred.body, pred), restriction_env=pred.restriction_env, arg_name_map=pred.arg_name_map)
 
-    def run_optimizations(self, node, pred):
+    def run_optimizations(self, node : IRNode, pred):
         settings.log(2, lambda: f'Optimizing: {node}')
 
         if settings.min_opt():

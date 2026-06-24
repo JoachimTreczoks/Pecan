@@ -7,7 +7,7 @@ from pecan.lang.optimizer.basic_optimizer import BasicOptimizer
 from pecan.lang.ir import *
 
 class BooleanOptimizer(BasicOptimizer):
-    def transform_Complement(self, node):
+    def transform_Complement(self, node : Complement) -> IRPredicate:
         if type(node.a) is Complement:
             # !(!P) is equivalent to P
             self.changed = True
@@ -36,7 +36,7 @@ class BooleanOptimizer(BasicOptimizer):
         else:
             return super().transform_Complement(node)
 
-    def transform_Conjunction(self, node):
+    def transform_Conjunction(self, node : Conjunction) -> IRPredicate:
         if type(node.a) is BoolConst:
             self.changed = True
 
@@ -56,7 +56,7 @@ class BooleanOptimizer(BasicOptimizer):
         else:
             return super().transform_Conjunction(node)
 
-    def transform_Disjunction(self, node):
+    def transform_Disjunction(self, node : Disjunction) -> IRPredicate:
         if type(node.a) is BoolConst:
             self.changed = True
 
@@ -76,7 +76,7 @@ class BooleanOptimizer(BasicOptimizer):
         else:
             return super().transform_Disjunction(node)
 
-    def transform_Equals(self, node: Equals):
+    def transform_Equals(self, node: Equals) -> IRPredicate:
         if node.a == node.b:
             self.changed = True
             return BoolConst(True)

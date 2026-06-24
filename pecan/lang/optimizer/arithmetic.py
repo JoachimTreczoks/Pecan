@@ -7,10 +7,10 @@ from pecan.lang.optimizer.basic_optimizer import BasicOptimizer
 from pecan.lang.ir import *
 
 class ArithmeticOptimizer(BasicOptimizer):
-    def constant_eq(self, node, val):
+    def constant_eq(self, node : IRNode, val : int) -> bool:
         return type(node) is IntConst and node.val == val
 
-    def transform_Add(self, node):
+    def transform_Add(self, node : Add) -> IRExpression:
         if self.constant_eq(node.a, 0):
             self.changed = True
             return self.transform(node.b)
@@ -20,14 +20,14 @@ class ArithmeticOptimizer(BasicOptimizer):
         else:
             return Add(self.transform(node.a), self.transform(node.b)).with_type(node.get_type())
 
-    def transform_Sub(self, node):
+    def transform_Sub(self, node : Sub) -> IRExpression:
         if self.constant_eq(node.b, 0):
             self.changed = True
             return self.transform(node.a)
         else:
             return Sub(self.transform(node.a), self.transform(node.b)).with_type(node.get_type())
 
-    def transform_Equals(self, node):
+    def transform_Equals(self, node : Equals) -> IRPredicate:
         # we can only do the following transformation once we know types, otherwise we will be unable to resolve the dynamic call to 'adder'
         if node.a.get_type() is not None and node.b.get_type() is not None:
             if type(node.a) is VarRef and type(node.b) is Add:

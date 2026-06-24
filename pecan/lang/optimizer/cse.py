@@ -28,7 +28,7 @@ class ExpressionExtractor(IRTransformer):
 
         self.changed = False
 
-    def merge(self, other):
+    def merge(self, other : ExpressionExtractor) -> ExpressionExtractor:
         self.expressions.update(other.expressions)
         self.expressions_compute.update(other.expressions_compute)
         self.to_compute.update(other.to_compute)
@@ -39,7 +39,7 @@ class ExpressionExtractor(IRTransformer):
 
         return self
 
-    def dep_order(self, new_vars):
+    def dep_order(self, new_vars : list[str | VarRef]) -> list[str | VarRef]:
         compute_vars = []
 
         def add_var(new_var):
@@ -77,13 +77,13 @@ class ExpressionExtractor(IRTransformer):
 
         return new_pred
 
-    def is_var(self, var):
+    def is_var(self, var : str | VarRef) -> bool:
         if isinstance(var, VarRef):
             return var.var_name in self.dep_graph
         else: # if str
             return var in self.dep_graph
 
-    def transform_Sub(self, node):
+    def transform_Sub(self, node : Sub) -> Sub:
         if node.is_int:
             return node
 
@@ -120,7 +120,7 @@ class ExpressionExtractor(IRTransformer):
             new_b = self.transform(node.b)
             return Sub(new_a, new_b).with_type(node.get_type())
 
-    def transform_Add(self, node):
+    def transform_Add(self, node : Add) -> Add:
         if node.is_int:
             return node
 
@@ -202,7 +202,7 @@ class CSEOptimizer(BasicOptimizer):
 
         return extractor.compute_vars_for(Equals(new_a, new_b))
 
-    def multipass_cse(self, extractors, node):
+    def multipass_cse(self, extractors : list[ExpressionExtractor], node : IRPredicate):
         new_node = node
         for extractor in extractors:
             new_node = extractor.transform(new_node)
@@ -214,7 +214,7 @@ class CSEOptimizer(BasicOptimizer):
     def pre_optimize(self, node):
         self.current_scope = {arg.var_name for arg in self.pred.args}
 
-    def transform(self, node):
+    def transform[T : IRNode](self, node : T) -> T:
         node = super().transform(node)
         if isinstance(node, IRPredicate):
             frequency = ExpressionFrequency().count(node)

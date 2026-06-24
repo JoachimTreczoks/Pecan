@@ -7,7 +7,7 @@ from pecan.lang.optimizer.tools import VariableUsage
 from pecan.lang.ir import *
 
 class UnusedVariableOptimizer(BasicOptimizer):
-    def transform_Exists(self, node: Exists):
+    def transform_Exists(self, node: Exists) -> IRPredicate:
         used_vars = VariableUsage().analyze(node.pred)
 
         new_var_refs = []
