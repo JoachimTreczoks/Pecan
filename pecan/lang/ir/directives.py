@@ -40,11 +40,11 @@ class DirectiveSaveAut(IRNode):
     def transform(self, transformer : IRTransformer) -> DirectiveSaveAut:
         return transformer.transform_DirectiveSaveAut(self)
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return '#save_aut({}, {})'.format(str(self.filename), self.pred_name)
 
     def __eq__(self, other : Any) -> bool:
-        return other is not None and type(other) is self.__class__ and self.filename == other.filename and self.pred_name == other.pred_name
+        return other is not None and isinstance(other, self.__class__) and self.filename == other.filename and self.pred_name == other.pred_name
 
     def __hash__(self) -> int:
         return hash((self.filename, self.pred_name))
@@ -70,11 +70,11 @@ class DirectiveSaveAutImage(IRNode):
     def transform(self, transformer : IRTransformer) -> DirectiveSaveAutImage:
         return transformer.transform_DirectiveSaveAutImage(self)
 
-    def __repr__(self) -> str:
-        return '#save_aut_img({}, {})'.format(repr(self.filename), self.pred_name)
+    def __str__(self) -> str:
+        return '#save_aut_img({}, {})'.format(str(self.filename), self.pred_name)
 
     def __eq__(self, other : Any) -> bool:
-        return other is not None and type(other) is self.__class__ and self.filename == other.filename and self.pred_name == other.pred_name
+        return other is not None and isinstance(other, self.__class__) and self.filename == other.filename and self.pred_name == other.pred_name
 
     def __hash__(self) -> int:
         return hash((self.filename, self.pred_name))
@@ -92,11 +92,11 @@ class DirectiveContext(IRNode):
     def transform(self, transformer : IRTransformer) -> DirectiveContext:
         return transformer.transform_DirectiveContext(self)
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return '#context({}, {})'.format(self.context_key, self.context_val)
 
     def __eq__(self, other : Any) -> bool:
-        return other is not None and type(other) is self.__class__ and self.context_key == other.context_key and self.context_val == other.context_val
+        return other is not None and isinstance(other, self.__class__) and self.context_key == other.context_key and self.context_val == other.context_val
 
     def __hash__(self) -> int:
         return hash((self.context_key, self.context_val))
@@ -113,11 +113,11 @@ class DirectiveEndContext(IRNode):
     def transform(self, transformer : IRTransformer) -> DirectiveEndContext:
         return transformer.transform_DirectiveEndContext(self)
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return '#end_context({})'.format(self.context_key)
 
     def __eq__(self, other : Any) -> bool:
-        return other is not None and type(other) is self.__class__ and self.context_key == other.context_key
+        return other is not None and isinstance(other, self.__class__) and self.context_key == other.context_key
 
     def __hash__(self) -> int:
         return hash(self.context_key)
@@ -155,11 +155,11 @@ class DirectiveAssertProp(IRNode):
         else:
             return self.truth_val # 'true' or 'false'
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return '#assert_prop({}, {})'.format(self.truth_val, self.pred_name)
 
     def __eq__(self, other : Any) -> bool:
-        return other is not None and type(other) is self.__class__ and self.truth_val == other.truth_val and self.pred_name == other.pred_name
+        return other is not None and isinstance(other, self.__class__) and self.truth_val == other.truth_val and self.pred_name == other.pred_name
 
     def __hash__(self) -> int:
         return hash((self.truth_val, self.pred_name))
@@ -200,11 +200,11 @@ class DirectiveLoadAut(IRNode):
     def transform(self, transformer : IRTransformer) -> DirectiveLoadAut:
         return transformer.transform_DirectiveLoadAut(self)
 
-    def __repr__(self) -> str:
-        return '#load({}, {}, {})'.format(self.filename, self.aut_format, repr(self.pred))
+    def __str__(self) -> str:
+        return '#load({}, {}, {})'.format(self.filename, self.aut_format, str(self.pred))
 
     def __eq__(self, other : Any) -> bool:
-        return other is not None and type(other) is self.__class__ and \
+        return other is not None and isinstance(other, self.__class__) and \
                self.filename == other.filename and self.aut_format == other.aut_format and self.pred == other.pred
 
     def __hash__(self) -> int:
@@ -226,11 +226,11 @@ class DirectiveImport(IRNode):
     def transform(self, transformer : IRTransformer) -> DirectiveImport:
         return transformer.transform_DirectiveImport(self)
 
-    def __repr__(self) -> str:
-        return '#import({})'.format(repr(self.filename))
+    def __str__(self) -> str:
+        return '#import({})'.format(str(self.filename))
 
     def __eq__(self, other : Any) -> bool:
-        return other is not None and type(other) is self.__class__ and \
+        return other is not None and isinstance(other, self.__class__) and \
                self.filename == other.filename
 
     def __hash__(self) -> int:
@@ -248,11 +248,11 @@ class DirectiveForget(IRNode):
     def transform(self, transformer : IRTransformer) -> DirectiveForget:
         return transformer.transform_DirectiveForget(self)
 
-    def __repr__(self) -> str:
-        return '#forget({})'.format(repr(self.var_name))
+    def __str__(self) -> str:
+        return '#forget({})'.format(str(self.var_name))
 
     def __eq__(self, other : Any) -> bool:
-        return other is not None and type(other) is self.__class__ and \
+        return other is not None and isinstance(other, self.__class__) and \
                self.var_name == other.var_name
 
     def __hash__(self) -> int:
@@ -271,11 +271,11 @@ class DirectiveStructure(IRNode):
     def transform(self, transformer : IRTransformer) -> DirectiveStructure:
         return transformer.transform_DirectiveStructure(self)
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return 'Structure {} defining {}.'.format(self.pred_ref, self.val_dict)
 
     def __eq__(self, other : Any) -> bool:
-        return other is not None and type(other) is self.__class__ and \
+        return other is not None and isinstance(other, self.__class__) and \
                self.pred_ref == other.pred_ref and self.val_dict == other.val_dict
 
     def __hash__(self) -> int:
@@ -303,6 +303,6 @@ class DirectiveShuffle(IRNode):
 
         return None
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return '#shuffle({}, {}, {})'.format(self.pred_a, self.pred_b, self.output_pred)
 

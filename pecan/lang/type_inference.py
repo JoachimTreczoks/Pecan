@@ -25,12 +25,19 @@ class Type:
 
     def __hash__(self) -> int:
         return 0 # There are no fields to hash
+    
+class UndefinedType(Type):
+    def __init__(self):
+        super().__init__()
+    
+    def __str__(self) -> str:
+        return 'undefined'
 
 class AnyType(Type):
     def __init__(self):
         super().__init__()
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return 'any'
 
 # These should only be present during type inference
@@ -38,7 +45,7 @@ class InferredType(Type):
     def __init__(self):
         super().__init__()
 
-    def __repr__(self):
+    def __str__(self) -> str:
         return 'inferred'
 
 class RestrictionType(Type):
@@ -50,13 +57,13 @@ class RestrictionType(Type):
         return self.restriction
 
     def restrict(self, var) -> IRPredicate:
-        if type(self.restriction) is Call:
+        if isinstance(self.restriction, Call):
             return self.restriction.subs_last(var)
         else:
             return self.restriction.add_arg(var)
 
-    def __repr__(self) -> str:
-        return repr(self.restriction)
+    def __str__(self) -> str:
+        return str(self.restriction)
 
     def __eq__(self, other : Any) -> bool:
         return other is not None and other.__class__ == self.__class__ and self.restriction == other.restriction
@@ -84,9 +91,9 @@ class TypeEnv:
 
     # TODO: At some point it would be nice to unify (haha) this code with the similar code in prog.py for looking up
     #  dynamic calls
-    def unify(self, a : IRNode, b : IRNode) -> None | Type:
-        type_a = a.get_safe_type()
-        type_b = b.get_safe_type()
+    def unify(self, a : IRNode, b : IRNode) -> Type:
+        type_a = a.get_type()
+        type_b = b.get_type()
 
         # TODO: Replace these exceptions (and all the others) with something that's more appropriate (probably a
         #  custom exception type)
@@ -121,9 +128,9 @@ class TypeEnv:
             return t_b
         elif t_b is None:
             return t_a
-        elif type(t_a) is VarRef and type(t_b) is VarRef and t_a.var_name == t_b.var_name:
+        elif isinstance(t_a, VarRef) and isinstance(t_b, VarRef) and t_a.var_name == t_b.var_name:
             return t_a
-        elif type(t_a) is Call and type(t_b) is Call:
+        elif isinstance(t_a, Call) and isinstance(t_b, Call):
             if t_a.name == t_b.name:
                 if len(t_a.args) != len(t_b.args):
                     return None
@@ -197,7 +204,7 @@ class TypeInferer(IRTransformer):
 
     def transform_VarRef(self, node : VarRef) -> VarRef:
         # TODO: It would be nice not to have this kludge and either remove the condition "node.get_type() != AnyType" or remove the first branch altogether and always recalculate the type.
-        if node.get_type() is not None and node.get_type() != AnyType():
+        if node.get_type() != UndefinedType() and node.get_type() != AnyType():
             return node
         else:
             restrictions = self.prog.get_restrictions(node.var_name)
@@ -240,7 +247,7 @@ class TypeInferer(IRTransformer):
         arg_map = {}
         temp_args = []
         for arg in new_args:
-            if type(arg) is VarRef:
+            if isinstance(arg, VarRef):
                 temp_args.append(arg)
 
                 arg_map[arg] = arg
@@ -302,14 +309,14 @@ class TypeInferer(IRTransformer):
 
         new_call = self.transform_Call(Call(node.pred_name, temp_args))
 
-        res_type = None
+        res_type = UndefinedType()
         new_idx = -1
         for idx, arg in enumerate(new_call.args):
-            if type(arg) is VarRef and arg.var_name == out_var_ref.var_name:
+            if isinstance(arg, VarRef) and arg.var_name == out_var_ref.var_name:
                 res_type = arg.get_type()
                 new_idx = idx
 
-        if res_type is None:
+        if res_type == UndefinedType():
             raise Exception('Missing output variable in resolved call: (was {}, resolved to {}, looking for {})'.format(node, new_call, out_var_ref))
 
         return FunctionExpression(new_call.name, new_call.args, new_idx).with_type(res_type)

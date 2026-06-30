@@ -10,7 +10,7 @@ class AstTransformer:
     def transform[T : ASTNode](self, node : T) -> T:
         if node is None:
             return None
-        elif type(node) is str:
+        elif isinstance(node, str):
             return self.transform_str(node)
         else:
             return node.transform(self)

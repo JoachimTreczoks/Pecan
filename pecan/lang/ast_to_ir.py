@@ -18,7 +18,7 @@ def to_ref(var_ref : str | ir.VarRef) -> ir.VarRef:
         return ir.VarRef(var_ref)
 
 def extract_var_cond(var_pred):
-    if type(var_pred) is ir.Call:
+    if isinstance(var_pred, ir.Call):
         return to_ref(var_pred.args[-1]), var_pred
     else:
         return to_ref(var_pred), None
@@ -30,7 +30,7 @@ class ASTToIR(AstTransformer):
         self.expr_depth = 0
 
     def transform_decl_type(self, t):
-        if type(t) is Call:
+        if isinstance(t, Call):
             return RestrictionType(self.transform(t))
         else:
             return t
@@ -226,7 +226,7 @@ class ASTToIR(AstTransformer):
         if self.expr_depth > 0:
             idx = -1
             for i, arg in enumerate(new_args):
-                if type(arg) is ir.VarRef and arg.var_name == '_':
+                if isinstance(arg, ir.VarRef) and arg.var_name == '_':
                     if idx != -1:
                         raise Exception('Multiple outputs specified for function expression: {}({})'.format(node.name, node.args))
                     idx = i

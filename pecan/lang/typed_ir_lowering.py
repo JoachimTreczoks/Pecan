@@ -22,7 +22,7 @@ class TypedIRLowering(IRTransformer):
         final_args = []
         for arg in node.args:
             # If it's not just a variable, we need to actually do something
-            if type(arg) is not VarRef:
+            if not isinstance(arg, VarRef):
                 # For some reason we need to import again here?
                 from pecan.lang.ir.arith import Equals, FunctionExpression
 

@@ -16,6 +16,6 @@ class Annotation(Predicate):
     def transform(self, transformer : AstTransformer) -> Annotation:
         return transformer.transform_Annotation(self)
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return '{}[{}]'.format(self.annotation_name, self.body)
 

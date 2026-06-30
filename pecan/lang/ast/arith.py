@@ -16,8 +16,8 @@ class Add(BinaryExpression):
     def change_label(self, label : str) -> None: # for changing label to __constant#
         self.label : str = label
 
-    def show(self) -> str:
-        return '({} + {})'.format(self.a.show(), self.b.show())
+    def __str__(self) -> str:
+        return '({} + {})'.format(self.a, self.b)
 
     def transform(self, transformer : AstTransformer) -> Add:
         return transformer.transform_Add(self)
@@ -30,7 +30,7 @@ class Sub(BinaryExpression):
     def __init__(self, a : Expression, b : Expression):
         super().__init__(a, b)
 
-    def show(self) -> str:
+    def __str__(self) -> str:
         return '({} - {})'.format(self.a, self.b)
 
     def transform(self, transformer : AstTransformer) -> Sub:
@@ -47,7 +47,7 @@ class Mul(BinaryExpression):
     def transform(self, transformer : AstTransformer) -> Mul:
         return transformer.transform_Mul(self)
 
-    def show(self) -> str:
+    def __str__(self) -> str:
         return '({} * {})'.format(self.a, self.b)
 
     def evaluate_int(self, prog : Program) -> int:
@@ -60,7 +60,7 @@ class Div(BinaryExpression):
         if not self.b.is_int:
             raise AutomatonArithmeticError("Second argument of division must be an integer in {}".format(self))
 
-    def show(self) -> str:
+    def __str__(self) -> str:
         return '({} / {})'.format(self.a, self.b)
 
     def evaluate_int(self, prog : Program) -> int:
@@ -82,7 +82,7 @@ class IntConst(Expression):
     def evaluate_int(self, prog : Program) -> int:
         return self.val
 
-    def show(self) -> str:
+    def __str__(self) -> str:
         return str(self.val)
 
 class Equals(Predicate):
@@ -94,7 +94,7 @@ class Equals(Predicate):
     def transform(self, transformer : AstTransformer) -> Equals:
         return transformer.transform_Equals(self)
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return '({} = {})'.format(self.a, self.b)
 
 class NotEquals(Predicate):
@@ -106,7 +106,7 @@ class NotEquals(Predicate):
     def transform(self, transformer : AstTransformer) -> NotEquals:
         return transformer.transform_NotEquals(self)
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return '({} ≠ {})'.format(self.a, self.b)
 
 class Less(Predicate):
@@ -118,7 +118,7 @@ class Less(Predicate):
     def transform(self, transformer : AstTransformer) -> Less:
         return transformer.transform_Less(self)
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return '({} < {})'.format(self.a, self.b)
 
 class Greater(Predicate):
@@ -130,7 +130,7 @@ class Greater(Predicate):
     def transform(self, transformer : AstTransformer) -> Greater:
         return transformer.transform_Greater(self)
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return '({} > {})'.format(self.a, self.b)
 
 class LessEquals(Predicate):
@@ -142,7 +142,7 @@ class LessEquals(Predicate):
     def transform(self, transformer : AstTransformer) -> LessEquals:
         return transformer.transform_LessEquals(self)
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return '({} ≤ {})'.format(self.a, self.b)
 
 class GreaterEquals(Predicate):
@@ -154,7 +154,7 @@ class GreaterEquals(Predicate):
     def transform(self, transformer : AstTransformer) -> GreaterEquals:
         return transformer.transform_GreaterEquals(self)
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return '({} ≥ {})'.format(self.a, self.b)
 
 class Neg(UnaryExpression): # Should this be allowed?
@@ -165,7 +165,7 @@ class Neg(UnaryExpression): # Should this be allowed?
     def transform(self, transformer : AstTransformer) -> Neg:
         return transformer.transform_Neg(self)
 
-    def show(self) -> str:
+    def __str__(self) -> str:
         return '(-{})'.format(self.a)
 
     def evaluate_int(self, prog : Program) -> int:
@@ -181,7 +181,7 @@ class PredicateExpr(Expression):
     def transform(self, transformer : AstTransformer) -> PredicateExpr:
         return transformer.transform_PredicateExpr(self)
 
-    def show(self) -> str:
+    def __str__(self) -> str:
         return 'Expr({}, {})'.format(self.var_name, self.pred)
 
 class AutomatonArithmeticError(Exception):

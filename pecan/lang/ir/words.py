@@ -27,7 +27,7 @@ class IndexRange(IRPredicate):
     def transform(self, transformer : IRTransformer) -> IndexRange:
         return transformer.transform_IndexRange(self)
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return '{}[{}..{}]'.format(self.var_name, self.start, self.end)
 
 class EqualsCompareRange(IRPredicate):
@@ -40,7 +40,7 @@ class EqualsCompareRange(IRPredicate):
     def transform(self, transformer : IRTransformer) -> EqualsCompareRange:
         return transformer.transform_EqualsCompareRange(self)
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         if self.is_equals:
             return '{} = {}'.format(self.index_a, self.index_b)
         else:

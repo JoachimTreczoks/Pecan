@@ -12,20 +12,20 @@ from pecan.lib.plot import BuchiPlotter
 from pecan.settings import settings
 
 def as_praline(val : list | str | bool | int | tuple) -> PralineList | PralineString | PralineBool | PralineInt | PralineTuple:
-    if type(val) is list:
+    if isinstance(val, list):
         result = PralineList(None, None)
 
         for v in val[::-1]:
             result = PralineList(as_praline(v), result)
 
         return result
-    elif type(val) is str:
+    elif isinstance(val, str):
         return PralineString(val)
-    elif type(val) is bool:
+    elif isinstance(val, bool):
         return PralineBool(val)
-    elif type(val) is int:
+    elif isinstance(val, int):
         return PralineInt(val)
-    elif type(val) is tuple:
+    elif isinstance(val, tuple):
         return PralineTuple([as_praline(v) for v in val])
     else:
         raise Exception("Can't convert {} ({}) to a Praline value".format(type(val), val))
@@ -80,14 +80,14 @@ class ToString(Builtin):
     def evaluate(self, prog : Program) -> PralineString:
         t = prog.praline_lookup('x').evaluate(prog)
 
-        return PralineString(t.display())
+        return PralineString(str(t))
 
 class PralinePrint(Builtin):
     def __init__(self):
         super().__init__(PralineVar('print'), [PralineVar('s')])
 
     def evaluate(self, prog : Program) -> PralineBool:
-        settings.print(prog.praline_lookup('s').evaluate(prog).display())
+        settings.print(str(prog.praline_lookup('s').evaluate(prog)))
         return PralineBool(True)
 
 class Emit(Builtin):
@@ -219,9 +219,9 @@ class AutToStr(Builtin):
 
     def evaluate(self, prog : Program) -> PralineString:
         aut = prog.praline_lookup('aut').evaluate(prog)
-        if type(aut) is PralinePecanLiteral:
+        if isinstance(aut, PralinePecanLiteral):
             term = aut.get_term()
-            if type(term) is AutLiteral:
+            if isinstance(term, AutLiteral):
                 return PralineString(term.aut.to_str())
             else:
                 raise Exception('Expected an AutLiteral but got {}'.format(term))

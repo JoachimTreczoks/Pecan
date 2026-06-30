@@ -23,9 +23,11 @@ class IRNode:
         return label
 
     def __init__(self):
+        from pecan.lang.type_inference import UndefinedType
         # TODO: detect used labels and avoid those
         self.label : None | str = None
-        self.type : None | Type = None
+        self.type : Type = UndefinedType()
+        assert self.type == UndefinedType()
 
     def label_var(self) -> VarRef:
         from pecan.lang.ir.prog import VarRef
@@ -34,15 +36,11 @@ class IRNode:
         return VarRef(self.label).with_type(self.get_type())
 
     def with_type(self, new_type : None | Type) -> Self:
-        self.type = new_type
+        from pecan.lang.type_inference import UndefinedType
+        self.type : Type = new_type or UndefinedType()
         return self
 
-    def get_type(self) -> None | Type:
-        return self.type
-
-    def get_safe_type(self) -> Type:
-        if self.type is None:
-            raise Exception('Tried to obtain undefined type')
+    def get_type(self) -> Type:
         return self.type
 
     def show_aut_stats(self, prog : Program, aut : Automaton, desc : None | str = None) -> None:
@@ -114,14 +112,15 @@ class IRExpression(IRNode):
         raise NotImplementedError
 
     # This should be overriden by all expressions
-    def show(self) -> str:
+    def __str__(self) -> str:
         raise NotImplementedError
 
-    def __repr__(self) -> str:
-        if self.type is None:
-            return self.show()
+    def format_type(self, string : str) -> str:
+        from pecan.lang.type_inference import UndefinedType
+        if self.type == UndefinedType():
+            return string
         else:
-            return f'{self.show()} : {self.get_type()}'
+            return f'{string} : {self.get_type()}'
 
 class UnaryIRExpression(IRExpression):
     def __init__(self, a):
@@ -133,7 +132,7 @@ class UnaryIRExpression(IRExpression):
         return super().with_type(new_type)
 
     def __eq__(self, other : Any) -> bool:
-        return other is not None and type(other) is self.__class__ and self.a == other.a and self.get_type() == other.get_type()
+        return other is not None and isinstance(other, self.__class__) and self.a == other.a and self.get_type() == other.get_type()
 
     def __hash__(self) -> int:
         return hash((self.a, self.get_type()))
@@ -164,7 +163,7 @@ class BinaryIRExpression(IRExpression):
         return aut.project(proj_vars, prog.get_var_map())
 
     def __eq__(self, other : Any) -> bool:
-        return other is not None and type(other) is self.__class__ and self.a == other.a and self.b == other.b and self.get_type() == other.get_type()
+        return other is not None and isinstance(other, self.__class__) and self.a == other.a and self.b == other.b and self.get_type() == other.get_type()
 
     def __hash__(self) -> int:
         return hash((self.a, self.b, self.get_type()))
@@ -196,7 +195,7 @@ class BinaryIRPredicate(IRPredicate):
         return aut.project(proj_vars, prog.get_var_map())
 
     def __eq__(self, other : Any) -> bool:
-        return other is not None and type(other) is self.__class__ and self.a == other.a and self.b == other.b
+        return other is not None and isinstance(other, self.__class__) and self.a == other.a and self.b == other.b
 
     def __hash__(self) -> int:
         return hash((self.a, self.b))
@@ -207,7 +206,7 @@ class UnaryIRPredicate(IRPredicate):
         self.a = a
 
     def __eq__(self, other : Any) -> bool:
-        return other is not None and type(other) is self.__class__ and self.a == other.a
+        return other is not None and isinstance(other, self.__class__) and self.a == other.a
 
     def __hash__(self) -> int:
         return hash(self.a)
@@ -222,10 +221,7 @@ class TypeHint(IRNode):
     def transform(self, transformer : IRTransformer) -> TypeHint:
         return transformer.transform_TypeHint(self)
 
-    def show(self) -> str:
-        return repr(self)
-
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return '(typ({}) = typ({}) in {})'.format(self.expr_a, self.expr_b, self.body)
 
 class IREvaluation:

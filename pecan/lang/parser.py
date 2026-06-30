@@ -250,7 +250,7 @@ class PecanTransformer(Transformer):
         return (key, Call(pred_name, args))
 
     def restrict_many(self, args, pred):
-        if type(pred) is VarRef: # If we do something like `x,y,z are nat`
+        if isinstance(pred, VarRef): # If we do something like `x,y,z are nat`
             return Restriction(args, Call(pred.var_name, []))
         else:
             return Restriction(args, pred)
@@ -317,26 +317,26 @@ class PecanTransformer(Transformer):
         # Resolve what sort of equality we're doing (e.g., "regular" equality, equality of subwords, etc.)
 
         # TODO: It would be nice to support automatic words with outputs other than 0 or 1
-        if type(a) is Index and type(b) is IntConst:
+        if isinstance(a, Index) and isinstance(b, IntConst):
             return EqualsCompareIndex(True, a, b)
-        elif type(a) is IntConst and type(b) is Index:
+        elif isinstance(a, IntConst) and isinstance(b, Index):
             return EqualsCompareIndex(True, b, a)
-        elif type(a) is Index and type(b) is Index:
+        elif isinstance(a, Index) and isinstance(b, Index):
             return EqualsCompareIndex(True, a, b)
-        elif type(a) is IndexRange and type(b) is IndexRange:
+        elif isinstance(a, IndexRange) and isinstance(b, IndexRange):
             return EqualsCompareRange(True, a, b)
         else:
             return Equals(a, b)
 
     def not_equal(self, a, sym, b):
         # Resolve what sort of equality we're doing (e.g., "regular" equality, equality of subwords, etc.)
-        if type(a) is Index and type(b) is IntConst:
+        if isinstance(a, Index) and isinstance(a, IntConst):
             return EqualsCompareIndex(False, a, b)
-        elif type(a) is IntConst and type(b) is Index:
+        elif isinstance(a, IntConst) and isinstance(b, Index):
             return EqualsCompareIndex(False, b, a)
-        elif type(a) is Index and type(b) is Index:
+        elif isinstance(a, Index) and isinstance(b, Index):
             return EqualsCompareIndex(False, a, b)
-        elif type(a) is IndexRange and type(b) is IndexRange:
+        elif isinstance(a, IndexRange) and isinstance(a, IndexRange):
             return EqualsCompareRange(False, a, b)
         else:
             return NotEquals(a, b)

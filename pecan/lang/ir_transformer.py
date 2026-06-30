@@ -10,7 +10,7 @@ class IRTransformer:
     def transform[T : IRNode](self, node : T) -> T:
         if node is None:
             return None
-        elif type(node) is str:
+        elif isinstance(node, str):
             return self.transform_str(node)
         else:
             return node.transform(self)
@@ -20,7 +20,7 @@ class IRTransformer:
 
     def transform_decl_type(self, t):
         from pecan.lang.type_inference import RestrictionType
-        if type(t) is Call:
+        if isinstance(t, Call):
             return RestrictionType(self.transform(t))
         else:
             return t

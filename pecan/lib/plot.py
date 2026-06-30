@@ -16,7 +16,7 @@ class Bitmap:
         self.bitmap = 0 # use pylong as the bitmap
 
     def get_index(self, indices):
-        if type(indices) is int:
+        if isinstance(indices, int):
             assert indices < self.dims[0]
             return indices
 

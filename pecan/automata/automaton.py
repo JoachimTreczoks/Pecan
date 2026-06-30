@@ -57,7 +57,7 @@ class Automaton:
         raise NotImplementedError
 
     # Should return a string of SVG data
-    def show(self) -> str: # TODO: not literally str, check type
+    def __str__(self) -> str: # TODO: not literally str, check type
         raise NotImplementedError
 
     def save(self, filename : str) -> None:

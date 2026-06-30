@@ -49,7 +49,7 @@ class PralineAlias(ASTNode):
     def transform(self, transformer : AstTransformer) -> PralineAlias:
         return transformer.transform_PralineAlias(self)
 
-    def show(self) -> str:
+    def __str__(self) -> str:
         return 'Alias "{}" ==> {} {} .'.format(self.name, self.directive_name, self.term)
 
 class PralineDirective(ASTNode):
@@ -61,7 +61,7 @@ class PralineDirective(ASTNode):
     def transform(self, transformer : AstTransformer) -> PralineDirective:
         return transformer.transform_PralineDirective(self)
 
-    def show(self) -> str:
+    def __str__(self) -> str:
         return '{} {} .'.format(self.name, self.term)
 
 class PralineDef(ASTNode): # TODO: Type hinting
@@ -75,7 +75,7 @@ class PralineDef(ASTNode): # TODO: Type hinting
     def transform(self, transformer : AstTransformer) -> PralineDef:
         return transformer.transform_PralineDef(self)
 
-    def show(self) -> str:
+    def __str__(self) -> str:
         return 'Define {} {} := {} .'.format(self.name, self.args, self.body)
 
 class PralineApp(PralineTerm):
@@ -87,7 +87,7 @@ class PralineApp(PralineTerm):
     def transform(self, transformer : AstTransformer) -> PralineApp:
         return transformer.transform_PralineApp(self)
 
-    def show(self) -> str:
+    def __str__(self) -> str:
         return '({} {})'.format(self.receiver, self.arg)
 
 class PralineVar(PralineTerm):
@@ -101,7 +101,7 @@ class PralineVar(PralineTerm):
     def build_match(self) -> PralineMatchVar:
         return PralineMatchVar(self.var_name)
 
-    def show(self) -> str:
+    def __str__(self) -> str:
         return '{}'.format(self.var_name)
 
 class PralineBinaryOp(PralineTerm):
@@ -117,7 +117,7 @@ class PralineAdd(PralineBinaryOp):
     def transform(self, transformer : AstTransformer) -> PralineAdd:
         return transformer.transform_PralineAdd(self)
 
-    def show(self) -> str:
+    def __str__(self) -> str:
         return '({} + {})'.format(self.a, self.b)
 
 class PralineDiv(PralineBinaryOp):
@@ -127,7 +127,7 @@ class PralineDiv(PralineBinaryOp):
     def transform(self, transformer : AstTransformer) -> PralineDiv:
         return transformer.transform_PralineDiv(self)
 
-    def show(self) -> str:
+    def __str__(self) -> str:
         return '({} / {})'.format(self.a, self.b)
 
 class PralineSub(PralineBinaryOp):
@@ -137,7 +137,7 @@ class PralineSub(PralineBinaryOp):
     def transform(self, transformer : AstTransformer) -> PralineSub:
         return transformer.transform_PralineSub(self)
 
-    def show(self) -> str:
+    def __str__(self) -> str:
         return '({} - {})'.format(self.a, self.b)
 
 class PralineMul(PralineBinaryOp):
@@ -147,7 +147,7 @@ class PralineMul(PralineBinaryOp):
     def transform(self, transformer : AstTransformer) -> PralineMul:
         return transformer.transform_PralineMul(self)
 
-    def show(self) -> str:
+    def __str__(self) -> str:
         return '({} * {})'.format(self.a, self.b)
 
 class PralineExponent(PralineBinaryOp):
@@ -157,7 +157,7 @@ class PralineExponent(PralineBinaryOp):
     def transform(self, transformer : AstTransformer) -> PralineExponent:
         return transformer.transform_PralineExponent(self)
 
-    def show(self) -> str:
+    def __str__(self) -> str:
         return '({} ^ {})'.format(self.a, self.b)
 
 class PralineUnaryOp(PralineTerm):
@@ -172,7 +172,7 @@ class PralineNeg(PralineUnaryOp):
     def transform(self, transformer : AstTransformer) -> PralineNeg:
         return transformer.transform_PralineNeg(self)
 
-    def show(self) -> str:
+    def __str__(self) -> str:
         return '(-{})'.format(self.a)
 
 class PralineList(PralineTerm):
@@ -187,7 +187,7 @@ class PralineList(PralineTerm):
     def build_match(self) -> PralineMatchList:
         return PralineMatchList(self.head.build_match(), self.tail.build_match())
 
-    def show(self) -> str:
+    def __str__(self) -> str:
         if self.head is None:
             return '[]'
         else:
@@ -202,8 +202,8 @@ class PralineMatch(PralineTerm):
     def transform(self, transformer : AstTransformer) -> PralineMatch:
         return transformer.transform_PralineMatch(self)
 
-    def show(self) -> str:
-        return 'match {} with\n{}\nend'.format(self.t, '\n'.join(map(repr, self.arms)))
+    def __str__(self) -> str:
+        return 'match {} with\n{}\nend'.format(self.t, '\n'.join(map(str, self.arms)))
 
 class PralineMatchArm(ASTNode):
     def __init__(self, pat : PralineMatchPat, expr : PralineTerm):
@@ -214,7 +214,7 @@ class PralineMatchArm(ASTNode):
     def transform(self, transformer : AstTransformer) -> PralineMatchArm:
         return transformer.transform_PralineMatchArm(self)
 
-    def show(self) -> str:
+    def __str__(self) -> str:
         return 'case {} => {}'.format(self.pat, self.expr)
 
 class PralineMatchPat(ASTNode):
@@ -229,7 +229,7 @@ class PralineMatchInt(PralineMatchPat):
     def transform(self, transformer : AstTransformer) -> PralineMatchInt:
         return transformer.transform_PralineMatchInt(self)
 
-    def show(self) -> str:
+    def __str__(self) -> str:
         return 'PralineMatchInt({})'.format(self.val)
 
 class PralineMatchString(PralineMatchPat):
@@ -240,7 +240,7 @@ class PralineMatchString(PralineMatchPat):
     def transform(self, transformer : AstTransformer) -> PralineMatchString:
         return transformer.transform_PralineMatchString(self)
 
-    def show(self) -> str:
+    def __str__(self) -> str:
         return 'PralineMatchString({})'.format(self.val)
 
 class PralineMatchList(PralineMatchPat):
@@ -252,7 +252,7 @@ class PralineMatchList(PralineMatchPat):
     def transform(self, transformer : AstTransformer) -> PralineMatchList:
         return transformer.transform_PralineMatchList(self)
 
-    def show(self) -> str:
+    def __str__(self) -> str:
         return 'PralineMatchList({}, {})'.format(self.head, self.tail)
 
 class PralineMatchTuple(PralineMatchPat):
@@ -263,8 +263,8 @@ class PralineMatchTuple(PralineMatchPat):
     def transform(self, transformer : AstTransformer) -> PralineMatchTuple:
         return transformer.transform_PralineMatchTuple(self)
 
-    def show(self) -> str:
-        return 'PralineMatchTuple({})'.format(','.join(map(repr, self.vls)))
+    def __str__(self) -> str:
+        return 'PralineMatchTuple({})'.format(','.join(map(str, self.vls)))
 
 class PralineMatchVar(PralineMatchPat):
     def __init__(self, var : str):
@@ -274,7 +274,7 @@ class PralineMatchVar(PralineMatchPat):
     def transform(self, transformer : AstTransformer) -> PralineMatchVar:
         return transformer.transform_PralineMatchVar(self)
 
-    def show(self) -> str:
+    def __str__(self) -> str:
         return 'PralineMatchVar({})'.format(self.var)
 
 class PralineMatchPecan(PralineMatchPat):
@@ -285,7 +285,7 @@ class PralineMatchPecan(PralineMatchPat):
     def transform(self, transformer : AstTransformer) -> PralineMatchPecan:
         return transformer.transform_PralineMatchPecan(self)
 
-    def show(self) -> str:
+    def __str__(self) -> str:
         return 'PralineMatchPecan({})'.format(self.pecan_term)
 
 class PralineIf(PralineTerm):
@@ -298,7 +298,7 @@ class PralineIf(PralineTerm):
     def transform(self, transformer : AstTransformer) -> PralineIf:
         return transformer.transform_PralineIf(self)
 
-    def show(self) -> str:
+    def __str__(self) -> str:
         return '(if {} then {} else {})'.format(self.cond, self.e1, self.e2)
 
 class PralinePecanTerm(PralineTerm):
@@ -312,7 +312,7 @@ class PralinePecanTerm(PralineTerm):
     def build_match(self) -> PralineMatchPecan:
         return PralineMatchPecan(self)
 
-    def show(self) -> str:
+    def __str__(self) -> str:
         return '{{ {} }}'.format(self.pecan_term)
 
 class PralineLambda(PralineTerm):
@@ -323,7 +323,7 @@ class PralineLambda(PralineTerm):
     def transform(self, transformer : AstTransformer) -> PralineLambda:
         return transformer.transform_PralineLambda(self)
 
-    def show(self) -> str:
+    def __str__(self) -> str:
         return '(\\ {} -> {})'.format(self.params, self.body)
 
 class PralineLetPecan(PralineTerm):
@@ -336,7 +336,7 @@ class PralineLetPecan(PralineTerm):
     def transform(self, transformer : AstTransformer) -> PralineLetPecan:
         return transformer.transform_PralineLetPecan(self)
 
-    def show(self) -> str:
+    def __str__(self) -> str:
         return '(let {} be {} in {})'.format(self.var_name, self.pecan_term, self.body)
 
 class PralineLet(PralineTerm):
@@ -349,7 +349,7 @@ class PralineLet(PralineTerm):
     def transform(self, transformer : AstTransformer) -> PralineLet:
         return transformer.transform_PralineLet(self)
 
-    def show(self) -> str:
+    def __str__(self) -> str:
         return '(let {} := {} in {})'.format(self.var_name, self.expr, self.body)
 
 class PralineTuple(PralineTerm):
@@ -363,8 +363,8 @@ class PralineTuple(PralineTerm):
     def transform(self, transformer : AstTransformer) -> PralineTuple:
         return transformer.transform_PralineTuple(self)
 
-    def show(self) -> str:
-        return '({})'.format(','.join(map(repr, self.vals)))
+    def __str__(self) -> str:
+        return '({})'.format(','.join(map(str, self.vals)))
 
 class PralineInt(PralineTerm):
     def __init__(self, val : int):
@@ -377,7 +377,7 @@ class PralineInt(PralineTerm):
     def build_match(self) -> PralineMatchInt:
         return PralineMatchInt(self.val)
 
-    def show(self) -> str:
+    def __str__(self) -> str:
         return 'PralineInt({})'.format(self.val)
 
 class PralineString(PralineTerm):
@@ -391,7 +391,7 @@ class PralineString(PralineTerm):
     def build_match(self) -> PralineMatchString:
         return PralineMatchString(self.val)
 
-    def show(self):
+    def __str__(self) -> str:
         return 'PralineString({})'.format(self.val)
 
 class PralineBool(PralineTerm):
@@ -402,7 +402,7 @@ class PralineBool(PralineTerm):
     def transform(self, transformer : AstTransformer) -> PralineBool:
         return transformer.transform_PralineBool(self)
 
-    def show(self) -> str:
+    def __str__(self) -> str:
         return 'PralineBool({})'.format(self.val)
 
 class PralineDo(PralineTerm):
@@ -413,6 +413,6 @@ class PralineDo(PralineTerm):
     def transform(self, transformer : AstTransformer) -> PralineDo:
         return transformer.transform_PralineDo(self)
 
-    def show(self) -> str:
-        return 'do\n    {}'.format('\n    '.join(map(repr, self.terms)))
+    def __str__(self) -> str:
+        return 'do\n    {}'.format('\n    '.join(map(str, self.terms)))
 

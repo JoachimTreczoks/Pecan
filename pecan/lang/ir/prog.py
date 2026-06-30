@@ -40,14 +40,14 @@ class VarRef(IRExpression):
     def transform(self, transformer : IRTransformer) -> VarRef:
         return transformer.transform_VarRef(self)
 
-    def show(self) -> str:
+    def __str__(self) -> str:
         return str(self.var_name)
-
-    def __repr__(self) -> str:
-        return self.show()
+    
+    def __repr__(self) -> str: # Needed because Guido van Rossum decided to reject https://peps.python.org/pep-3140/ 18 years ago and never reconsidered...
+        return str(self)
 
     def __eq__(self, other : Any) -> bool:
-        return other is not None and type(other) is self.__class__ and self.var_name == other.var_name
+        return other is not None and isinstance(other, self.__class__) and self.var_name == other.var_name
 
     def __hash__(self) -> int:
         return hash(self.var_name)
@@ -68,17 +68,14 @@ class AutLiteral(IRPredicate):
     def transform(self, transformer : IRTransformer) -> AutLiteral:
         return transformer.transform_AutLiteral(self)
 
-    def show(self) -> str:
-        return repr(self)
-
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         if self.display_node is not None:
-            return 'AutLiteral({})'.format(repr(self.display_node))
+            return 'AutLiteral({})'.format(str(self.display_node))
         else:
             return 'AUTOMATON LITERAL'
 
     def __eq__(self, other : Any) -> bool:
-        return other is not None and type(other) is self.__class__ and self.aut == other.aut
+        return other is not None and isinstance(other, self.__class__) and self.aut == other.aut
 
     def __hash__(self) -> int:
         return hash((self.aut))
@@ -97,11 +94,11 @@ class SpotFormula(IRPredicate):
     def transform(self, transformer : IRTransformer) -> SpotFormula:
         return transformer.transform_SpotFormula(self)
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return 'LTL({})'.format(self.formula_str)
 
     def __eq__(self, other : Any) -> bool:
-        return other is not None and type(other) is self.__class__ and self.formula_str == other.formula_str
+        return other is not None and isinstance(other, self.__class__) and self.formula_str == other.formula_str
 
     def __hash__(self) -> int:
         return hash((self.formula_str))
@@ -163,11 +160,11 @@ class Match:
             raise Exception('Missing predicate name')
         return Call(self.pred_name, final_args)
 
-    def __repr__(self):
-        return '{}({})'.format(self.pred_name, ', '.join(map(repr, self.pred_args)))
+    def __str__(self) -> str:
+        return '{}({})'.format(self.pred_name, ', '.join(map(str, self.pred_args)))
 
     def __eq__(self, other):
-        return other is not None and type(other) is self.__class__ and self.pred_name == other.pred_name and self.pred_args == other.pred_args and self.match_any == other.match_any
+        return other is not None and isinstance(other, self.__class__) and self.pred_name == other.pred_name and self.pred_args == other.pred_args and self.match_any == other.match_any
 
     def __hash__(self):
         return hash((self.pred_name, self.pred_args, self.match_any))
@@ -199,11 +196,11 @@ class Call(IRPredicate):
     def transform(self, transformer : IRTransformer) -> Call:
         return transformer.transform_Call(self)
 
-    def __repr__(self) -> str:
-        return '{}({})'.format(self.name, ', '.join(map(repr, self.args)))
+    def __str__(self) -> str:
+        return '{}({})'.format(self.name, ', '.join(map(str, self.args)))
 
     def __eq__(self, other : Any) -> bool:
-        return other is not None and type(other) is self.__class__ and self.name == other.name and self.args == other.args
+        return other is not None and isinstance(other, self.__class__) and self.name == other.name and self.args == other.args
 
     def __hash__(self) -> int:
         return hash((self.name, tuple(self.args)))
@@ -288,14 +285,14 @@ class NamedPred(Call):
         finally:
             prog.exit_scope()
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         if self.body_evaluated is None:
-            return '{}({}) := {}'.format(self.name, ', '.join(map(repr, self.args)), self.body)
+            return '{}({}) := {}'.format(self.name, ', '.join(map(str, self.args)), self.body)
         else:
-            return '{}({}) := {} (evaluated)'.format(self.name, ', '.join(map(repr, self.args)), self.body)
+            return '{}({}) := {} (evaluated)'.format(self.name, ', '.join(map(str, self.args)), self.body)
 
     def __eq__(self, other : Any) -> bool:
-        return other is not None and type(other) is self.__class__ and self.name == other.name and self.args == other.args and self.arg_restrictions == other.arg_restrictions and self.body == other.body and self.restriction_env == other.restriction_env
+        return other is not None and isinstance(other, self.__class__) and self.name == other.name and self.args == other.args and self.arg_restrictions == other.arg_restrictions and self.body == other.body and self.restriction_env == other.restriction_env
 
     def __hash__(self) -> int:
         return hash((self.name, tuple(self.args)))
@@ -484,7 +481,7 @@ class Program(IRNode):
 
             settings.log(0, lambda: '[DEBUG] Processing: {}'.format(d))
             result = self.run_definition(self.idx, d)
-            if result is not None and type(result) is Result:
+            if result is not None and isinstance(result, Result):
                 if result.failed():
                     succeeded = False
                     msgs.append(result.message())
@@ -513,7 +510,7 @@ class Program(IRNode):
 
     def global_restrict(self, var_name : str, pred : Call) -> None:
         if pred is not None and pred not in self.get_restrictions(var_name):
-            if type(pred) is not Call or not pred.args:
+            if not isinstance(pred, Call) or not pred.args:
                 raise Exception('Unexpected predicate used as restriction (must be Call with the first argument as the variable to restrict): {}'.format(pred))
 
             if var_name in self.global_restrictions:
@@ -523,7 +520,7 @@ class Program(IRNode):
 
     def restrict(self, var_name : str, pred : Call) -> None:
         if pred is not None and pred not in self.get_restrictions(var_name, local_only=True):
-            if type(pred) is not Call or not pred.args:
+            if not isinstance(pred, Call) or not pred.args:
                 raise Exception('Unexpected predicate used as restriction (must be Call with the first argument as the variable to restrict): {}'.format(pred))
 
             if var_name in self.restrictions[-1]:
@@ -587,9 +584,9 @@ class Program(IRNode):
             return True
 
     def unify_type(self, t1 : Call | VarRef, t2 : Call | VarRef, unification : dict[str, str]) -> bool:
-        if type(t1) is VarRef and type(t2) is VarRef:
+        if isinstance(t1, VarRef) and isinstance(t2, VarRef):
             return self.unify_with(t1.var_name, t2.var_name, unification)
-        elif type(t1) is Call and type(t2) is Call:
+        elif isinstance(t1, Call) and isinstance(t2, Call):
             if t1.name != t2.name or len(t1.args) != len(t2.args):
                 return False
 
@@ -619,7 +616,8 @@ class Program(IRNode):
             raise Exception(f'Predicate {pred_name} not found (known predicates: {self.preds.keys()}!')
 
     def lookup_call(self, pred_name : str, arg : VarRef, unification) -> Match:
-        if arg.get_type() is None:
+        from pecan.lang.type_inference import UndefinedType
+        if arg.get_type() == UndefinedType():
             return Match(match_any=True)
 
         for t in self.types:
@@ -664,8 +662,8 @@ class Program(IRNode):
 
         raise FileNotFoundError(filename)
 
-    def __repr__(self) -> str:
-        return repr(self.defs)
+    def __str__(self) -> str:
+        return str(self.defs)
 
 class Result:
     def __init__(self, msg : str, succeeded : bool):
@@ -704,8 +702,8 @@ class Restriction(IRNode):
     def transform(self, transformer : IRTransformer) -> Restriction:
         return transformer.transform_Restriction(self)
 
-    def __repr__(self) -> str:
-        return 'Restrict {} are {}.'.format(', '.join(map(repr, self.restrict_vars)), self.pred)
+    def __str__(self) -> str:
+        return 'Restrict {} are {}.'.format(', '.join(map(str, self.restrict_vars)), self.pred)
 
 class AutomatonStats(TypedDict):
     states : int

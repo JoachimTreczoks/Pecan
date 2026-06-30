@@ -19,7 +19,7 @@ class Transition:
     def input_str(self) -> str:
         return ' '.join(self.inputs)
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return 'Transition({}, {})'.format(self.inputs, self.dest_label)
 
 class State:
@@ -42,7 +42,7 @@ class State:
             lines.append(transition.to_str(state_map))
         return lines
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return 'State({}, {}, {})'.format(self.label, self.acc, self.transitions)
 
 # TODO: It would be nice if we used a real parser for all this stuff

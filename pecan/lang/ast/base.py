@@ -17,8 +17,8 @@ class ASTNode:
     def evaluate_node(self, prog : Program):
         raise NotImplementedError
 
-    def __repr__(self) -> str:
-        return self.show()
+    def __str__(self) -> str:
+        raise NotImplementedError
 
 class Expression(ASTNode):
     def __init__(self):
@@ -26,7 +26,7 @@ class Expression(ASTNode):
         self.is_int : bool = True
 
     # This should be overriden by all expressions
-    def show(self) -> str:
+    def __str__(self) -> str:
         raise NotImplementedError
 
 class UnaryExpression(Expression):
@@ -55,6 +55,6 @@ class TypeHint(ASTNode): # TODO: type hinting
     def transform(self, transformer : AstTransformer) -> TypeHint:
         return transformer.transform_TypeHint(self)
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return '(typ({}) = typ({}) in {})'.format(self.expr_a, self.expr_b, self.body)
 

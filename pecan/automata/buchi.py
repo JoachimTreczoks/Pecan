@@ -193,7 +193,7 @@ class BuchiAutomaton(Automaton):
         pecan_var_names = []
 
         for v in var_refs:
-            if type(v) is VarRef:
+            if isinstance(v, VarRef):
                 aps.extend(self.var_map[v.var_name])
                 pecan_var_names.append(v.var_name)
 
@@ -251,7 +251,7 @@ class BuchiAutomaton(Automaton):
         return self.aut.num_edges()
 
     # Should return a string of SVG data
-    def show(self) -> str:
+    def __str__(self) -> str:
         return self.postprocess().aut.show()
 
     def get_aut(self):
@@ -462,7 +462,7 @@ class Substitution(Builder):
 
     def pre_build(self, new_aut : spot.twa_graph):
         for k, v in self.subs.items():
-            if type(v) is str:
+            if isinstance(v, str):
                 self.subs[k] = buddy.bdd_ithvar(new_aut.register_ap(v))
 
     def build_cond(self, cond : buddy.bdd):

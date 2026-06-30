@@ -33,8 +33,8 @@ class RedundantVariableOptimizer(BasicOptimizer):
     def gather_info(self, node):
         subs = {}
 
-        if type(node) is Equals:
-            if type(node.a) is VarRef and type(node.b) is VarRef:
+        if isinstance(node, Equals):
+            if isinstance(node.a, VarRef) and isinstance(node.b, VarRef):
                 if node.a.var_name in self.decl_level and node.b.var_name in self.decl_level:
                     if self.decl_level[node.a.var_name] < self.decl_level[node.b.var_name]:
                         subs[node.b] = node.a

@@ -18,7 +18,7 @@ class DirectiveSaveAut(ASTNode):
     def transform(self, transformer : AstTransformer) -> DirectiveSaveAut:
         return transformer.transform_DirectiveSaveAut(self)
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return '#save_aut({}, {})'.format(self.filename, self.pred_name)
 
 class DirectiveSaveAutImage(ASTNode):
@@ -30,7 +30,7 @@ class DirectiveSaveAutImage(ASTNode):
     def transform(self, transformer : AstTransformer) -> DirectiveSaveAutImage:
         return transformer.transform_DirectiveSaveAutImage(self)
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return '#save_aut_img({}, {})'.format(self.filename, self.pred_name)
 
 class DirectiveContext(ASTNode):
@@ -42,7 +42,7 @@ class DirectiveContext(ASTNode):
     def transform(self, transformer : AstTransformer) -> DirectiveContext:
         return transformer.transform_DirectiveContext(self)
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return '#context({}, {})'.format(self.context_key, self.context_val)
 
 class DirectiveEndContext(ASTNode):
@@ -53,7 +53,7 @@ class DirectiveEndContext(ASTNode):
     def transform(self, transformer : AstTransformer) -> DirectiveEndContext:
         return transformer.transform_DirectiveEndContext(self)
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return '#end_context({})'.format(self.context_key)
 
 # Asserts that pred_name is truth_val: i.e., that pred_name is 'true' (always), 'false' (always), or 'sometimes' true
@@ -66,7 +66,7 @@ class DirectiveAssertProp(ASTNode):
     def transform(self, transformer : AstTransformer) -> DirectiveAssertProp:
         return transformer.transform_DirectiveAssertProp(self)
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return '#assert_prop({}, {})'.format(self.truth_val, self.pred_name)
 
 class DirectiveLoadAut(ASTNode):
@@ -79,8 +79,8 @@ class DirectiveLoadAut(ASTNode):
     def transform(self, transformer : AstTransformer) -> DirectiveLoadAut:
         return transformer.transform_DirectiveLoadAut(self)
 
-    def __repr__(self) -> str:
-        return '#load("{}", "{}", {})'.format(self.filename, self.aut_format, repr(self.pred))
+    def __str__(self) -> str:
+        return '#load("{}", "{}", {})'.format(self.filename, self.aut_format, str(self.pred))
 
 class DirectiveImport(ASTNode):
     def __init__(self, filename : str):
@@ -90,7 +90,7 @@ class DirectiveImport(ASTNode):
     def transform(self, transformer : AstTransformer) -> DirectiveImport:
         return transformer.transform_DirectiveImport(self)
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return '#import({})'.format(self.filename)
 
 class DirectiveForget(ASTNode):
@@ -101,16 +101,16 @@ class DirectiveForget(ASTNode):
     def transform(self, transformer : AstTransformer) -> DirectiveForget:
         return transformer.transform_DirectiveForget(self)
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return '#forget({})'.format(self.var_name)
 
 class DirectiveStructure(ASTNode):
     def __init__(self, pred_ref : VarRef | Call, val_dict : dict[str, Call]):
         super().__init__()
 
-        if type(pred_ref) is VarRef:
+        if isinstance(pred_ref, VarRef):
             self.pred_ref : Call = Call(pred_ref.var_name, [VarRef('*')])
-        elif type(pred_ref) is Call:
+        elif isinstance(pred_ref, Call):
             self.pred_ref : Call = pred_ref.add_arg(VarRef('*'))
         else:
             raise Exception('Pred ref {} is not a VarRef or Call'.format(pred_ref))
@@ -120,7 +120,7 @@ class DirectiveStructure(ASTNode):
     def transform(self, transformer : AstTransformer) -> DirectiveStructure:
         return transformer.transform_DirectiveStructure(self)
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return 'Structure {} defining {} .'.format(self.pred_ref, self.val_dict)
 
 class DirectiveShuffle(ASTNode):
@@ -134,6 +134,6 @@ class DirectiveShuffle(ASTNode):
     def transform(self, transformer : AstTransformer) -> DirectiveShuffle:
         return transformer.transform_DirectiveShuffle(self)
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return '#shuffle({}, {}, {})'.format(self.pred_a, self.pred_b, self.output_pred)
 

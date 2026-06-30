@@ -17,7 +17,7 @@ class Conjunction(Predicate):
     def transform(self, transformer : AstTransformer) -> Conjunction:
         return transformer.transform_Conjunction(self)
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return '({} ∧ {})'.format(self.a, self.b)
 
 class Disjunction(Predicate):
@@ -29,7 +29,7 @@ class Disjunction(Predicate):
     def transform(self, transformer : AstTransformer) -> Disjunction:
         return transformer.transform_Disjunction(self)
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return '({} ∨ {})'.format(self.a, self.b)
 
 class Complement(Predicate):
@@ -40,7 +40,7 @@ class Complement(Predicate):
     def transform(self, transformer : AstTransformer) -> Complement:
         return transformer.transform_Complement(self)
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return '(¬{})'.format(self.a)
 
 class Iff(Predicate):
@@ -52,7 +52,7 @@ class Iff(Predicate):
     def transform(self, transformer : AstTransformer) -> Iff:
         return transformer.transform_Iff(self)
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return '({} ⟺  {})'.format(self.a, self.b)
 
 class Implies(Predicate):
@@ -64,7 +64,7 @@ class Implies(Predicate):
     def transform(self, transformer : AstTransformer) -> Implies:
         return transformer.transform_Implies(self)
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return '({} ⟹  {})'.format(self.a, self.b)
 
 class BoolConst(Predicate):
@@ -75,7 +75,7 @@ class BoolConst(Predicate):
     def transform(self, transformer : AstTransformer) -> BoolConst:
         return transformer.transform_BoolConst(self)
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         if self.bool_val:
             return '⊤'
         else:

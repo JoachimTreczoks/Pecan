@@ -57,6 +57,7 @@ class ExpressionExtractor(IRTransformer):
         return compute_vars
 
     def compute_vars_for(self, pred):
+        from pecan.lang.type_inference import UndefinedType
         compute_vars = self.dep_order(list(self.dep_graph.keys()))
 
         done = set()
@@ -67,10 +68,10 @@ class ExpressionExtractor(IRTransformer):
             expr = self.to_compute[var_name]
             to_compute = self.expressions_compute[expr]
 
-            if type(to_compute) is VarRef:
+            if isinstance(to_compute, VarRef):
                 new_pred = NodeSubstitution({v: to_compute}).transform(new_pred)
             else:
-                if v.get_type() is not None and v.get_type().get_restriction() is not None:
+                if v.get_type() is not UndefinedType and v.get_type().get_restriction() is not UndefinedType:
                     new_pred = Exists([v], [v.get_type().restrict(v)], Conjunction(Equals(to_compute, v), new_pred))
                 else:
                     new_pred = Exists([v], [None], Conjunction(Equals(to_compute, v), new_pred))
@@ -84,6 +85,7 @@ class ExpressionExtractor(IRTransformer):
             return var in self.dep_graph
 
     def transform_Sub(self, node : Sub) -> Sub:
+        from pecan.lang.type_inference import UndefinedType
         if node.is_int:
             return node
 
@@ -99,10 +101,10 @@ class ExpressionExtractor(IRTransformer):
                 new_a = self.transform(node.a)
                 new_b = self.transform(node.b)
 
-                if type(new_a) is not IntConst and type(new_b) is not IntConst:
+                if not isinstance(new_a, IntConst) and not isinstance(new_b, IntConst):
                     self.changed = True
 
-                    t = node.get_type() if node.get_type() is not None else InferredType()
+                    t = node.get_type() if node.get_type() != UndefinedType() else InferredType()
                     new_var = VarRef(self.prog.fresh_name()).with_type(t)
 
                     self.var_map[new_var.var_name] = new_var
@@ -136,10 +138,10 @@ class ExpressionExtractor(IRTransformer):
                 new_a = self.transform(node.a)
                 new_b = self.transform(node.b)
 
-                if type(new_a) is not IntConst and type(new_b) is not IntConst:
+                if not isinstance(new_a, IntConst) and not isinstance(new_b, IntConst):
                     self.changed = True
 
-                    t = node.get_type() if node.get_type() is not None else InferredType()
+                    t = node.get_type() if node.get_type() != UndefinedType() else InferredType()
                     new_var = VarRef(self.prog.fresh_name()).with_type(t)
 
                     self.var_map[new_var.var_name] = new_var
@@ -169,13 +171,13 @@ class CSEOptimizer(BasicOptimizer):
         self.frequency_threshold = 2
 
     def worth_optimization(self, node):
-        if type(node) is VarRef:
+        if isinstance(node, VarRef):
             return False
 
         if not isinstance(node, BinaryIRExpression):
             return False
 
-        if (type(node.a) is VarRef or type(node.a) is IntConst) and (type(node.b) is VarRef or type(node.b) is IntConst):
+        if isinstance(node.a, (VarRef, IntConst)) and isinstance(node.b, (VarRef, IntConst)):
             return False
 
         return True
@@ -206,7 +208,7 @@ class CSEOptimizer(BasicOptimizer):
         new_node = node
         for extractor in extractors:
             new_node = extractor.transform(new_node)
-            if type(new_node) is VarRef:
+            if isinstance(new_node, VarRef):
                 break
 
         return new_node

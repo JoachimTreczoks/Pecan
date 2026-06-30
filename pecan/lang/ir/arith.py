@@ -28,12 +28,12 @@ class Add(BinaryIRExpression):
         self.label = label
         return self
 
-    def show(self) -> str:
+    def __str__(self) -> str:
         # The operands should always have the same type, but in the interest of debugging, we should display when this is not the case
         if self.a.get_type() == self.b.get_type():
-            return '({} + {})'.format(self.a.show(), self.b.show())
+            return self.format_type('({} + {})'.format(self.a, self.b))
         else:
-            return '({} + {})'.format(self.a, self.b)
+            return self.format_type('({} + {})'.format(self.a, self.b))
 
     def evaluate_node(self, prog : Program) -> IREvaluation:
         if self.is_int and self.evaluate_int(prog) >= 0:
@@ -57,8 +57,8 @@ class Sub(BinaryIRExpression):
     def __init__(self, a, b):
         super().__init__(a, b)
 
-    def show(self) -> str:
-        return '({} - {})'.format(self.a, self.b)
+    def __str__(self) -> str:
+        return self.format_type('({} - {})'.format(self.a, self.b))
 
     def evaluate_node(self, prog : Program) -> IREvaluation:
         if self.is_int and self.evaluate_int(prog) >= 0:
@@ -86,12 +86,12 @@ class Mul(BinaryIRExpression):
         self.label = label
         return self
 
-    def show(self) -> str:
+    def __str__(self) -> str:
         # The operands should always have the same type, but in the interest of debugging, we should display when this is not the case
         if self.a.get_type() == self.b.get_type():
-            return '({} * {})'.format(self.a.show(), self.b.show())
+            return self.format_type('({} * {})'.format(self.a, self.b))
         else:
-            return '({} * {})'.format(self.a, self.b)
+            return self.format_type('({} * {})'.format(self.a, self.b))
 
     def evaluate_node(self, prog : Program) -> IREvaluation:
         if self.is_int:
@@ -212,11 +212,11 @@ class IntConst(IRExpression):
     def transform(self, transformer : IRTransformer) -> IntConst:
         return transformer.transform_IntConst(self)
 
-    def show(self) -> str:
-        return str(self.val)
+    def __str__(self) -> str:
+        return self.format_type(str(self.val))
 
     def __eq__(self, other : Any) -> bool:
-        return other is not None and type(other) is self.__class__ and self.val == other.val and self.get_type() == other.get_type()
+        return other is not None and isinstance(other, self.__class__) and self.val == other.val and self.get_type() == other.get_type()
 
     def __hash__(self) -> int:
         return hash(self.val)
@@ -239,7 +239,7 @@ class Equals(BinaryIRPredicate):
     def transform(self, transformer : IRTransformer) -> Equals:
         return transformer.transform_Equals(self)
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return '({} = {})'.format(self.a, self.b)
 
 class Less(BinaryIRPredicate):
@@ -260,7 +260,7 @@ class Less(BinaryIRPredicate):
     def transform(self, transformer : IRTransformer) -> Less:
         return transformer.transform_Less(self)
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return '({} < {})'.format(self.a, self.b)
 
 class FunctionExpression(IRExpression):
@@ -287,13 +287,10 @@ class FunctionExpression(IRExpression):
     def transform(self, transformer : IRTransformer) -> FunctionExpression:
         return transformer.transform_FunctionExpression(self)
 
-    def show(self) -> str:
-        temp_args = list(map(repr, self.args))
+    def __str__(self) -> str:
+        temp_args = list(map(str, self.args))
         temp_args[self.val_idx] = 'out({})'.format(self.args[self.val_idx])
-        return '{}({})'.format(self.pred_name, ', '.join(temp_args))
-
-    def __repr__(self) -> str:
-        return self.show()
+        return self.format_type('{}({})'.format(self.pred_name, ', '.join(temp_args)))
 
 class PredicateExpr(IRExpression):
     def __init__(self, var : VarRef, pred):
@@ -304,19 +301,16 @@ class PredicateExpr(IRExpression):
         self.is_int : bool = False
 
     def evaluate_node(self, prog : Program) -> IREvaluation:
-         return Conjunction(self.var.get_safe_type().restrict(self.var), self.pred).evaluate(prog).with_ref(self.var)
+        return Conjunction(self.var.get_type().restrict(self.var), self.pred).evaluate(prog).with_ref(self.var)
 
     def transform(self, transformer : IRTransformer) -> PredicateExpr:
         return transformer.transform_PredicateExpr(self)
 
-    def show(self) -> str:
-        return 'Expr({}, {})'.format(self.var, self.pred)
-
-    def __repr__(self) -> str:
-        return self.show()
+    def __str__(self) -> str:
+        return self.format_type('Expr({}, {})'.format(self.var, self.pred))
 
     def __eq__(self, other : Any) -> bool:
-        return other is not None and type(other) is self.__class__ and self.var == other.var and self.pred == other.pred
+        return other is not None and isinstance(other, self.__class__) and self.var == other.var and self.pred == other.pred
 
     def __hash__(self) -> int:
         return hash((self.var, self.pred))

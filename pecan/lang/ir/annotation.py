@@ -66,11 +66,11 @@ class Annotation(IRPredicate):
     def transform(self, transformer : IRTransformer) -> Annotation:
         return transformer.transform_Annotation(self)
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return '{}[{}]'.format(self.annotation_name, self.body)
 
     def __eq__(self, other : Any) -> bool:
-        return other is not None and type(other) is self.__class__ and self.annotation_name == other.annotation_name and self.body == other.body
+        return other is not None and isinstance(other, self.__class__) and self.annotation_name == other.annotation_name and self.body == other.body
 
     def __hash__(self) -> int:
         return hash((self.annotation_name, self.body))

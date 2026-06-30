@@ -21,7 +21,7 @@ class VarRef(Expression):
     def transform(self, transformer : AstTransformer) -> VarRef:
         return transformer.transform_VarRef(self)
 
-    def show(self) -> str:
+    def __str__(self) -> str:
         return str(self.var_name)
 
 class AutLiteral(Predicate):
@@ -33,7 +33,7 @@ class AutLiteral(Predicate):
     def transform(self, transformer : AstTransformer) -> AutLiteral:
         return transformer.transform_AutLiteral(self)
 
-    def show(self) -> str:
+    def __str__(self) -> str:
         return 'AUTOMATON LITERAL'
 
 class SpotFormula(Predicate):
@@ -44,7 +44,7 @@ class SpotFormula(Predicate):
     def transform(self, transformer : AstTransformer) -> SpotFormula:
         return transformer.transform_SpotFormula(self)
 
-    def show(self) -> str:
+    def __str__(self) -> str:
         return 'LTL({})'.format(self.formula_str)
 
 class Call(Predicate):
@@ -62,8 +62,8 @@ class Call(Predicate):
     def add_arg(self, new_arg : VarRef) -> Call:
         return Call(self.name, self.args + [new_arg])
 
-    def show(self) -> str:
-        return '{}({})'.format(self.name, ', '.join(map(repr, self.args)))
+    def __str__(self) -> str:
+        return '{}({})'.format(self.name, ', '.join(map(str, self.args)))
 
 class NamedPred(ASTNode):
     def __init__(self, name : str, args : list[VarRef | Call], body : Predicate):
@@ -73,9 +73,9 @@ class NamedPred(ASTNode):
         self.args : list[VarRef] = []
         self.arg_restrictions : dict[VarRef, Restriction] = {}
         for arg in args:
-            if type(arg) is VarRef:
+            if isinstance(arg, VarRef):
                 self.args.append(arg)
-            elif type(arg) is Call:
+            elif isinstance(arg, Call):
                 var = arg.args[-1]
                 self.args.append(var)
                 self.arg_restrictions[var] = Restriction([var], arg.with_args(arg.args[:-1]))
@@ -87,8 +87,8 @@ class NamedPred(ASTNode):
     def transform(self, transformer : AstTransformer) -> NamedPred:
         return transformer.transform_NamedPred(self)
 
-    def show(self) -> str:
-        return '{}({}) := {}'.format(self.name, ','.join(map(repr, self.args)), self.body)
+    def __str__(self) -> str:
+        return '{}({}) := {}'.format(self.name, ','.join(map(str, self.args)), self.body)
 
 class Program(ASTNode):
     def __init__(self, defs, *args, **kwargs : dict[str, Any]): # TODO: Add type hinting for the args and kwargs
@@ -163,15 +163,15 @@ class Program(ASTNode):
     def transform(self, transformer : AstTransformer) -> Program:
         return transformer.transform_Program(self)
 
-    def show(self) -> str:
-        return repr(self.defs)
+    def __str__(self) -> str:
+        return str(self.defs)
 
 class Restriction(ASTNode):
     def __init__(self, restrict_vars : list[VarRef | str], pred : Call):
         super().__init__()
         self.restrict_vars : list[VarRef] = []
         for var in restrict_vars:
-            if type(var) is VarRef:
+            if isinstance(var, VarRef):
                 self.restrict_vars.append(var)
             else:
                 raise Exception("Argument '{}' is not a valid var name (string or VarRef)".format(var)) # TODO: This error implies strings are accepted, even though they aren't. Need to work out which behaviour is the correct one
@@ -180,6 +180,6 @@ class Restriction(ASTNode):
     def transform(self, transformer : AstTransformer) -> Restriction:
         return transformer.transform_Restriction(self)
 
-    def show(self) -> str:
-        return '{} are {}'.format(', '.join(map(repr, self.restrict_vars)), self.pred)
+    def __str__(self) -> str:
+        return '{} are {}'.format(', '.join(map(str, self.restrict_vars)), self.pred)
 

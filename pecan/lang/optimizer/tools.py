@@ -119,7 +119,8 @@ class VariableUsage(IRTransformer):
         self.used_vars = set()
 
     def transform[T : IRNode](self, node : T) -> T:
-        if isinstance(node, IRNode) and node.get_type() is not None:
+        from pecan.lang.type_inference import UndefinedType
+        if isinstance(node, IRNode) and node.get_type() != UndefinedType():
             if node.get_type().get_restriction() is not None:
                 self.transform(node.get_type().get_restriction())
 

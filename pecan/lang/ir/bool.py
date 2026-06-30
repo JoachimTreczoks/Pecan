@@ -30,7 +30,7 @@ class Conjunction(BinaryIRPredicate):
     def transform(self, transformer : IRTransformer) -> Conjunction:
         return transformer.transform_Conjunction(self)
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return '({} ∧ {})'.format(self.a, self.b)
 
 class Disjunction(BinaryIRPredicate):
@@ -49,7 +49,7 @@ class Disjunction(BinaryIRPredicate):
     def transform(self, transformer : IRTransformer) -> Disjunction:
         return transformer.transform_Disjunction(self)
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return '({} ∨ {})'.format(self.a, self.b)
 
 class Complement(UnaryIRPredicate):
@@ -62,7 +62,7 @@ class Complement(UnaryIRPredicate):
     def transform(self, transformer : IRTransformer) -> Complement:
         return transformer.transform_Complement(self)
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return '(¬{})'.format(self.a)
 
 class BoolConst(IRPredicate):
@@ -79,14 +79,14 @@ class BoolConst(IRPredicate):
     def transform(self, transformer : IRTransformer) -> BoolConst:
         return transformer.transform_BoolConst(self)
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         if self.bool_val:
             return '⊤'
         else:
             return '⊥'
 
     def __eq__(self, other : Any) -> bool:
-        return other is not None and type(other) is self.__class__ and self.bool_val == other.bool_val
+        return other is not None and isinstance(other, self.__class__) and self.bool_val == other.bool_val
 
     def __hash__(self) -> int:
         return hash(self.bool_val) # No fields to hash

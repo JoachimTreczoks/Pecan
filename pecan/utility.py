@@ -74,12 +74,12 @@ class VarMap:
 
         return self[var_name]
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return 'VarMap({})'.format(self.var_reps)
 
     def update(self, other : VarMap) -> None:
         self.var_reps.update(other.var_reps)
 
     def to_str(self) -> str:
-        return repr(self.var_reps)
+        return str(self.var_reps)
 
