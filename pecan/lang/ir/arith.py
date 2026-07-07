@@ -3,7 +3,7 @@
 
 #from pecan.lang.ir import *
 
-from pecan.lang.ir.base import BinaryIRExpression, BinaryIRPredicate, IREvaluation, IRExpression
+from pecan.lang.ir.base import BinaryIRExpression, IREvaluation, IRExpression, IRComparison
 from pecan.lang.ir.bool import BoolConst, Complement, Conjunction, Disjunction
 from pecan.lang.ir.prog import Call, VarRef
 from pecan.lang.ir.quant import Exists
@@ -11,7 +11,6 @@ from pecan.lang.ir.quant import Exists
 from typing import TYPE_CHECKING
 if TYPE_CHECKING :
     from typing import Any
-    from pecan.automata.automaton import Automaton
     from pecan.lang.ir_transformer import IRTransformer
     from pecan.lang.ir.prog import Program
 
@@ -221,7 +220,7 @@ class IntConst(IRExpression):
     def __hash__(self) -> int:
         return hash(self.val)
 
-class Equals(BinaryIRPredicate):
+class Equals(IRComparison):
     def __init__(self, a : IRExpression, b : IRExpression):
         super().__init__(a, b)
 
@@ -242,7 +241,7 @@ class Equals(BinaryIRPredicate):
     def __str__(self) -> str:
         return '({} = {})'.format(self.a, self.b)
 
-class Less(BinaryIRPredicate):
+class Less(IRComparison):
     def __init__(self, a : IRExpression, b : IRExpression):
         super().__init__(a, b)
 

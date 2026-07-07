@@ -110,6 +110,9 @@ class IRExpression(IRNode):
 
     def evaluate_node(self, prog : Program) -> Automaton | tuple[Automaton, VarRef]:
         raise NotImplementedError
+    
+    def evaluate_int(self, prog : Program) -> int:
+        raise NotImplementedError
 
     # This should be overriden by all expressions
     def __str__(self) -> str:
@@ -174,12 +177,12 @@ class IRPredicate(IRNode):
 
     def evaluate_node(self, prog : Program) -> Automaton:
         raise NotImplementedError
-
-class BinaryIRPredicate(IRPredicate):
-    def __init__(self, a, b):
+    
+class IRComparison(IRPredicate):
+    def __init__(self, a : IRExpression, b : IRExpression):
         super().__init__()
-        self.a = a
-        self.b = b
+        self.a : IRExpression = a
+        self.b : IRExpression = b
 
     def project_intermediates(self, prog : Program, val_a : VarRef, val_b : VarRef, aut : Automaton) -> Automaton:
         from pecan.lang.ir.prog import VarRef
@@ -200,10 +203,22 @@ class BinaryIRPredicate(IRPredicate):
     def __hash__(self) -> int:
         return hash((self.a, self.b))
 
-class UnaryIRPredicate(IRPredicate):
-    def __init__(self, a):
+class BinaryIRPredicate(IRPredicate):
+    def __init__(self, a : IRPredicate, b : IRPredicate):
         super().__init__()
-        self.a = a
+        self.a : IRPredicate = a
+        self.b : IRPredicate = b
+
+    def __eq__(self, other : Any) -> bool:
+        return other is not None and isinstance(other, self.__class__) and self.a == other.a and self.b == other.b
+
+    def __hash__(self) -> int:
+        return hash((self.a, self.b))
+
+class UnaryIRPredicate(IRPredicate):
+    def __init__(self, a : IRPredicate):
+        super().__init__()
+        self.a : IRPredicate = a
 
     def __eq__(self, other : Any) -> bool:
         return other is not None and isinstance(other, self.__class__) and self.a == other.a
@@ -233,33 +248,28 @@ class IREvaluation:
 
     def with_ref(self, ref : VarRef) -> IREvaluation:
         self.ref = ref
-        return IREvaluation(self.aut, ref)
+        return self
     
     def get_aut_type(self) -> str:
         return self.aut.get_aut_type()
     
-#    def get_var_map(self) -> VarMap:
-#        return self.aut.get_var_map()
+    def get_var_map(self) -> VarMap:
+        return self.aut.get_var_map()
     
     def conjunction(self, other : IREvaluation) -> IREvaluation:
         self.aut = self.aut.conjunction(other.aut)
         return self
-        #return IREvaluation(self.aut.conjunction(other.aut), self.ref)
 
     def disjunction(self, other : IREvaluation) -> IREvaluation:
         self.aut = self.aut.disjunction(other.aut)
         return self
-        #return IREvaluation(self.aut.disjunction(other.aut), self.ref)
 
     def complement(self) -> IREvaluation:
         self.aut = self.aut.complement()
         return self
-        #return IREvaluation(self.aut.complement(), self.ref)
 
     def substitute(self, arg_map : dict[str, str], env_var_map : VarMap) -> IREvaluation:
-        #self.aut = self.aut.substitute(arg_map, env_var_map)
-        #return IREvaluation(self.aut, self.ref)
-        return IREvaluation(self.aut.substitute(arg_map, env_var_map), self.ref)
+        return IREvaluation(self.aut.substitute(arg_map, env_var_map), self.ref) # This can not mutate `self`, otherwise Pecan breaks down *bad*
 
     def project(self, var_refs : set[VarRef], env_var_map : VarMap) -> IREvaluation:
         self.aut = self.aut.project(var_refs, env_var_map)
