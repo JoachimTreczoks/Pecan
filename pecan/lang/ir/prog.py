@@ -170,10 +170,10 @@ class Match:
         return hash((self.pred_name, self.pred_args, self.match_any))
 
 class Call(IRPredicate):
-    def __init__(self, name : str, args : list[IRExpression]):
+    def __init__(self, name : str, args : list[VarRef]):
         super().__init__()
         self.name : str = name
-        self.args : list[IRExpression] = args
+        self.args : list[VarRef] = args
 
     def arity(self) -> int:
         return len(self.args)
@@ -424,7 +424,7 @@ class Program(IRNode):
 
         self.global_restrictions.update(other_prog.global_restrictions)
 
-    def declare_type(self, pred_ref : str, val_dict):
+    def declare_type(self, pred_ref : str, val_dict : dict[str, Call]):
         self.types[pred_ref] = val_dict
 
     def type_infer(self, node : IRNode):
@@ -528,7 +528,7 @@ class Program(IRNode):
             else:
                 self.restrictions[-1][var_name] = [pred]
 
-    def get_restriction_env(self, local_only : bool = False) -> dict:
+    def get_restriction_env(self, local_only : bool = False) -> dict[str, list[Call]]:
         result = {}
         if not local_only:
             result.update(self.global_restrictions)
@@ -553,7 +553,7 @@ class Program(IRNode):
     def exit_var_map_scope(self) -> VarMap:
         return self.var_map.pop()
 
-    def get_restrictions(self, var_name: str, local_only : bool = False) -> list[IRPredicate]:
+    def get_restrictions(self, var_name: str, local_only : bool = False) -> list[Call]:
         result = []
         # for scope in self.restrictions:
         for r in self.get_restriction_env(local_only).get(var_name, []):

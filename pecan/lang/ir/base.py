@@ -8,7 +8,7 @@ from pecan.automata.automaton import Automaton
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING :
-    from typing import Any, Literal, Self
+    from typing import Any, Literal, Self, Iterable
     from pecan.lang.ir_transformer import IRTransformer
     from pecan.lang.type_inference import Type
     from pecan.lang.ir.prog import Program, VarRef
@@ -271,7 +271,7 @@ class IREvaluation:
     def substitute(self, arg_map : dict[str, str], env_var_map : VarMap) -> IREvaluation:
         return IREvaluation(self.aut.substitute(arg_map, env_var_map), self.ref) # This can not mutate `self`, otherwise Pecan breaks down *bad*
 
-    def project(self, var_refs : set[VarRef], env_var_map : VarMap) -> IREvaluation:
+    def project(self, var_refs : Iterable[VarRef], env_var_map : VarMap) -> IREvaluation:
         self.aut = self.aut.project(var_refs, env_var_map)
         return self
 

@@ -3,24 +3,22 @@
 
 from functools import reduce
 
-#from pecan.lang.ir.bool import *
 from pecan.lang.ir.base import IRPredicate
 from pecan.lang.ir.bool import Conjunction
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING :
     from typing import Any
-    from pecan.automata.automaton import Automaton
     from pecan.lang.ir_transformer import IRTransformer
-    from pecan.lang.ir.prog import Program
+    from pecan.lang.ir.prog import Program, VarRef, Call
     from pecan.lang.ir.base import IREvaluation
 
 class Exists(IRPredicate):
-    def __init__(self, var_refs, conds, pred):
+    def __init__(self, var_refs : list[VarRef], conds : list[Call], pred : IRPredicate):
         super().__init__()
-        self.var_refs = var_refs
-        self.conds = conds
-        self.pred = pred
+        self.var_refs : list[VarRef] = var_refs
+        self.conds : list[Call] = conds
+        self.pred : IRPredicate = pred
 
     def evaluate_node(self, prog : Program) -> IREvaluation:
         for v, cond in zip(self.var_refs, self.conds):
@@ -37,7 +35,7 @@ class Exists(IRPredicate):
 
         return res
 
-    def get_prog_constraints(self, prog : Program) -> list[IRPredicate]:
+    def get_prog_constraints(self, prog : Program) -> list[Call]:
         all_constraints = []
 
         for v in self.var_refs:
@@ -45,7 +43,7 @@ class Exists(IRPredicate):
 
         return all_constraints
 
-    def with_cond(self, conds : list[IRPredicate], pred : IRPredicate) -> IRPredicate:
+    def with_cond(self, conds : list[Call], pred : IRPredicate) -> IRPredicate:
         cond = self.build_cond(set(conds))
         if cond is None:
             return pred

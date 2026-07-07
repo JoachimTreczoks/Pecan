@@ -11,8 +11,7 @@ from pecan.settings import settings
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING :
-    from collections.abc import Callable
-    from typing import Literal
+    from typing import Literal, Iterable, Callable
     from pecan.lang.ir.prog import VarRef
 
 def merge(merge_f : Callable[[spot.twa_graph, spot.twa_graph], spot.twa_graph], aut_a : BuchiAutomaton, aut_b : BuchiAutomaton) -> BuchiAutomaton:
@@ -187,7 +186,7 @@ class BuchiAutomaton(Automaton):
 
         return BuchiAutomaton(new_aut, new_var_map) #.postprocess()
 
-    def project(self, var_refs : set[VarRef], env_var_map : VarMap) -> BuchiAutomaton:
+    def project(self, var_refs : Iterable[VarRef], env_var_map : VarMap) -> BuchiAutomaton:
         from pecan.lang.ir.prog import VarRef
         aps = []
         pecan_var_names = []

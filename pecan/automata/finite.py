@@ -13,7 +13,8 @@ import PySimpleAutomata.NFA as NFA
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING :
-    from typing import Literal
+    from typing import Literal, Iterable
+    from pecan.lang.ir.prog import VarRef
 
 class FiniteAutomaton(Automaton):
     """
@@ -279,7 +280,7 @@ class FiniteAutomaton(Automaton):
 
         return FiniteAutomaton(aut, new_var_map)
 
-    def project(self, var_refs : set, env_var_map : dict) -> FiniteAutomaton:
+    def project(self, var_refs : Iterable[VarRef], env_var_map : dict) -> FiniteAutomaton:
         from pecan.lang.ir.prog import VarRef
 
         # print('Projecting', self.var_map, var_refs)
