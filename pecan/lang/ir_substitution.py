@@ -16,7 +16,7 @@ class IRSubstitution(IRTransformer):
     def substitute_identifier(self, node : IRNode, original_str : str) -> str:
         if original_str in self.subs:
             if isinstance(self.subs[original_str], PralineString):
-                return self.subs[original_str].get_value()
+                return self.subs[original_str].get_string()
             else:
                 raise Exception('Cannot substitute a non-string for an identifier in "{}"; subs: {}'.format(node, self.subs))
         else:
@@ -33,7 +33,7 @@ class IRSubstitution(IRTransformer):
         if node.name in self.subs:
             sub = self.subs[node.name]
             if isinstance(sub, PralineString):
-                return Call(sub.get_value(), new_args).with_type(node.get_type())
+                return Call(sub.get_string(), new_args).with_type(node.get_type())
             elif isinstance(sub, PralinePecanLiteral) and isinstance(sub.get_term(), Call):
                 call = sub.get_term()
                 return Call(call.name, call.args + new_args).with_type(node.get_type())

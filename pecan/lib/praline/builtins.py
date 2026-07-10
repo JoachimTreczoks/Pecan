@@ -30,13 +30,13 @@ def as_praline(val : list | str | bool | int | tuple) -> PralineList | PralineSt
     else:
         raise Exception("Can't convert {} ({}) to a Praline value".format(type(val), val))
 
-def as_python(val, expected=None) -> list | str | bool | int | tuple: # TODO: Type for PralinePecanLiteral.val
+def as_python(val, expected = None) -> list | str | bool | int | tuple: # TODO: Type for PralinePecanLiteral.val
     if isinstance(val, PralineList):
         if expected is None or isinstance(val, expected):
             result = []
-            while val.a is not None:
-                result.append(as_python(val.a))
-                val = val.b
+            while not isinstance(val.head, PralineDummy):
+                result.append(as_python(val.head))
+                val = val.tail
 
             return result
     elif isinstance(val, PralineString):
@@ -112,7 +112,7 @@ class ToChars(Builtin):
         super().__init__(PralineVar('toChars'), [PralineVar('s')])
 
     def evaluate(self, prog : Program) -> PralineList:
-        str_val = prog.praline_lookup('s').evaluate(prog).get_value()
+        str_val = prog.praline_lookup('s').evaluate(prog).get_string()
 
         result = PralineList(None, None)
 
@@ -148,8 +148,8 @@ class Compare(Builtin):
         super().__init__(PralineVar('compare'), [PralineVar('a'), PralineVar('b')])
 
     def evaluate(self, prog : Program) -> PralineInt:
-        a_val = prog.praline_lookup('a').evaluate(prog).get_value()
-        b_val = prog.praline_lookup('b').evaluate(prog).get_value()
+        a_val = prog.praline_lookup('a').evaluate(prog).get_int()
+        b_val = prog.praline_lookup('b').evaluate(prog).get_int()
 
         if a_val < b_val:
             return PralineInt(-1)
@@ -183,8 +183,8 @@ class AddState(Builtin):
 
     def evaluate(self, prog : Program) -> PralineAutomaton:
         aut = prog.praline_lookup('aut').evaluate(prog)
-        label = prog.praline_lookup('stateLabel').evaluate(prog).get_value()
-        isAccepting = prog.praline_lookup('isAccepting').evaluate(prog).get_value()
+        label = prog.praline_lookup('stateLabel').evaluate(prog).get_string()
+        isAccepting = prog.praline_lookup('isAccepting').evaluate(prog).get_bool()
 
         state_str = f'{label}: {1 if isAccepting else 0}'
         aut.add_state(state_str)
@@ -197,9 +197,9 @@ class AddTransition(Builtin):
 
     def evaluate(self, prog : Program) -> PralineAutomaton:
         aut = prog.praline_lookup('aut').evaluate(prog)
-        src = prog.praline_lookup('src').evaluate(prog).get_value()
-        dst = prog.praline_lookup('dst').evaluate(prog).get_value()
-        syms = prog.praline_lookup('syms').evaluate(prog).get_value()
+        src = prog.praline_lookup('src').evaluate(prog).get_string()
+        dst = prog.praline_lookup('dst').evaluate(prog).get_string()
+        syms = prog.praline_lookup('syms').evaluate(prog).get_string()
 
         aut.add_transition(src, '{} -> {}'.format(syms, dst))
 
@@ -233,8 +233,8 @@ class WriteFile(Builtin):
         super().__init__(PralineVar('writeFile'), [PralineVar('filepath'), PralineVar('str')])
 
     def evaluate(self, prog : Program) -> PralineBool:
-        filepath = prog.praline_lookup('filepath').evaluate(prog).get_value()
-        s = prog.praline_lookup('str').evaluate(prog).get_value()
+        filepath = prog.praline_lookup('filepath').evaluate(prog).get_string()
+        s = prog.praline_lookup('str').evaluate(prog).get_string()
 
         with open(filepath, 'w') as f:
             f.write(s)
@@ -248,7 +248,7 @@ class ReadFile(Builtin):
         super().__init__(PralineVar('readFile'), [PralineVar('filepath')])
 
     def evaluate(self, prog : Program) -> PralineString:
-        filepath = prog.praline_lookup('filepath').evaluate(prog).get_value()
+        filepath = prog.praline_lookup('filepath').evaluate(prog).get_string()
         with open(filepath, 'r') as f:
             return PralineString(f.read())
 
@@ -257,7 +257,7 @@ class DeleteFile(Builtin):
         super().__init__(PralineVar('deleteFile'), [PralineVar('filepath')])
 
     def evaluate(self, prog : Program) -> PralineBool:
-        filepath = prog.praline_lookup('filepath').evaluate(prog).get_value()
+        filepath = prog.praline_lookup('filepath').evaluate(prog).get_string()
         pathlib.Path(filepath).unlink()
         return PralineBool(True)
 
@@ -266,8 +266,8 @@ class Split(Builtin):
         super().__init__(PralineVar('splitStr'), [PralineVar('sep'), PralineVar('s')])
 
     def evaluate(self, prog : Program):
-        sep = prog.praline_lookup('sep').evaluate(prog).get_value()
-        s = prog.praline_lookup('s').evaluate(prog).get_value()
+        sep = prog.praline_lookup('sep').evaluate(prog).get_string()
+        s = prog.praline_lookup('s').evaluate(prog).get_string()
 
         return as_praline(s.split(sep))
 

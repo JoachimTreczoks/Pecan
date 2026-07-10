@@ -391,7 +391,7 @@ class Program(IRNode):
     def praline_local_define_all(self, env):
         self.praline_envs[-1].update(env)
 
-    def praline_local_cleanup(self, names : list[str]):
+    def praline_local_cleanup(self, names : Iterable[str]):
         for name in names:
             self.praline_envs[-1].pop(name)
 
