@@ -15,7 +15,7 @@ from pecan.lang.ir import *
 from pecan.settings import settings
 
 from pecan.lang.ir.base import IRNode
-from pecan.lang.ir.prog import AutLiteral, Call, NamedPred, Result
+from pecan.lang.ir.prog import AutLiteral, Call, NamedPred, Program, Result
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING :
@@ -23,13 +23,20 @@ if TYPE_CHECKING :
     from pecan.lang.ir_transformer import IRTransformer
     from pecan.lang.ir.prog import Program
 
-class DirectiveSaveAut(IRNode):
-    def __init__(self, filename, pred_name):
+class DirectiveIRNode(IRNode):
+    def __init__(self):
         super().__init__()
-        self.filename = filename
-        self.pred_name = pred_name
+    
+    def evaluate(self, prog: Program) -> None | Result:
+        raise NotImplementedError
 
-    def evaluate(self, prog):
+class DirectiveSaveAut(DirectiveIRNode):
+    def __init__(self, filename : str, pred_name : str):
+        super().__init__()
+        self.filename : str = filename
+        self.pred_name : str = pred_name
+
+    def evaluate(self, prog : Program) -> None:
         settings.log(lambda: f'[INFO] Saving {self.pred_name} as {self.filename}')
 
         prog.add_generated_file(self.filename)
@@ -49,11 +56,11 @@ class DirectiveSaveAut(IRNode):
     def __hash__(self) -> int:
         return hash((self.filename, self.pred_name))
 
-class DirectiveSaveAutImage(IRNode):
-    def __init__(self, filename, pred_name):
+class DirectiveSaveAutImage(DirectiveIRNode):
+    def __init__(self, filename : str, pred_name : str):
         super().__init__()
-        self.filename = filename
-        self.pred_name = pred_name
+        self.filename : str = filename
+        self.pred_name : str = pred_name
 
     def evaluate(self, prog : Program) -> None:
         # TODO: Support formats other than SVG?
@@ -79,11 +86,11 @@ class DirectiveSaveAutImage(IRNode):
     def __hash__(self) -> int:
         return hash((self.filename, self.pred_name))
 
-class DirectiveContext(IRNode):
-    def __init__(self, context_key, context_val):
+class DirectiveContext(DirectiveIRNode):
+    def __init__(self, context_key : str, context_val : str):
         super().__init__()
-        self.context_key = context_key
-        self.context_val = context_val
+        self.context_key : str = context_key
+        self.context_val : str = context_val
 
     def evaluate(self, prog : Program) -> None:
         prog.context[self.context_key] = self.context_val
@@ -101,10 +108,10 @@ class DirectiveContext(IRNode):
     def __hash__(self) -> int:
         return hash((self.context_key, self.context_val))
 
-class DirectiveEndContext(IRNode):
-    def __init__(self, context_key):
+class DirectiveEndContext(DirectiveIRNode):
+    def __init__(self, context_key : str):
         super().__init__()
-        self.context_key = context_key
+        self.context_key : str = context_key
 
     def evaluate(self, prog : Program) -> None:
         prog.context.pop(self.context_key)
@@ -123,7 +130,7 @@ class DirectiveEndContext(IRNode):
         return hash(self.context_key)
 
 # Asserts that pred_name is truth_val: i.e., that pred_name is 'true' (always), 'false' (always), or 'sometimes' true
-class DirectiveAssertProp(IRNode):
+class DirectiveAssertProp(DirectiveIRNode):
     def __init__(self, truth_val : Literal['false', 'true', 'sometimes'], pred_name : str):
         super().__init__()
         self.truth_val : Literal['false', 'true', 'sometimes'] = truth_val
@@ -164,12 +171,12 @@ class DirectiveAssertProp(IRNode):
     def __hash__(self) -> int:
         return hash((self.truth_val, self.pred_name))
 
-class DirectiveLoadAut(IRNode):
-    def __init__(self, filename : str, aut_format : str, pred):
+class DirectiveLoadAut(DirectiveIRNode):
+    def __init__(self, filename : str, aut_format : str, pred : Call):
         super().__init__()
         self.filename : str = filename
         self.aut_format : str = aut_format
-        self.pred = pred
+        self.pred : Call = pred
 
     def evaluate(self, prog : Program) -> None:
         # TODO: Support argument restrictions on loaded automata
@@ -210,10 +217,10 @@ class DirectiveLoadAut(IRNode):
     def __hash__(self) -> int:
         return hash((self.filename, self.aut_format, self.pred))
 
-class DirectiveImport(IRNode):
-    def __init__(self, filename):
+class DirectiveImport(DirectiveIRNode):
+    def __init__(self, filename : str):
         super().__init__()
-        self.filename = filename
+        self.filename : str = filename
 
     def evaluate(self, prog : Program) -> None:
         realpath = prog.locate_file(self.filename)
@@ -236,10 +243,10 @@ class DirectiveImport(IRNode):
     def __hash__(self) -> int:
         return hash(self.filename)
 
-class DirectiveForget(IRNode):
-    def __init__(self, var_name):
+class DirectiveForget(DirectiveIRNode):
+    def __init__(self, var_name : str):
         super().__init__()
-        self.var_name = var_name
+        self.var_name : str = var_name
 
     def evaluate(self, prog : Program) -> None:
         prog.forget_global(self.var_name)
@@ -258,11 +265,11 @@ class DirectiveForget(IRNode):
     def __hash__(self) -> int:
         return hash(self.var_name)
 
-class DirectiveStructure(IRNode):
-    def __init__(self, pred_ref, val_dict):
+class DirectiveStructure(DirectiveIRNode):
+    def __init__(self, pred_ref : str, val_dict : dict[str, Call]):
         super().__init__()
-        self.pred_ref = pred_ref
-        self.val_dict = val_dict
+        self.pred_ref : str = pred_ref
+        self.val_dict : dict[str, Call] = val_dict
 
     def evaluate(self, prog : Program) -> None:
         prog.declare_type(self.pred_ref, self.val_dict)
@@ -281,13 +288,13 @@ class DirectiveStructure(IRNode):
     def __hash__(self) -> int:
         return hash((self.pred_ref, self.val_dict))
 
-class DirectiveShuffle(IRNode):
-    def __init__(self, disjunction, pred_a, pred_b, output_pred):
+class DirectiveShuffle(DirectiveIRNode):
+    def __init__(self, disjunction : bool, pred_a : Call, pred_b : Call, output_pred : Call):
         super().__init__()
-        self.disjunction = disjunction
-        self.pred_a = pred_a
-        self.pred_b = pred_b
-        self.output_pred = output_pred
+        self.disjunction : bool = disjunction
+        self.pred_a : Call = pred_a
+        self.pred_b : Call = pred_b
+        self.output_pred : Call = output_pred
 
     def transform(self, transformer : IRTransformer) -> DirectiveShuffle:
         return transformer.transform_DirectiveShuffle(self)
@@ -305,4 +312,3 @@ class DirectiveShuffle(IRNode):
 
     def __str__(self) -> str:
         return '#shuffle({}, {}, {})'.format(self.pred_a, self.pred_b, self.output_pred)
-
