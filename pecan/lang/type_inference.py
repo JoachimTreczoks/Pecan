@@ -17,7 +17,7 @@ class Type:
     def get_restriction(self):
         return None
 
-    def restrict(self, var) -> IRPredicate:
+    def restrict(self, var : VarRef) -> Call | VarRef | None:
         return None
 
     def __eq__(self, other : Any) -> bool:
@@ -56,7 +56,7 @@ class RestrictionType(Type):
     def get_restriction(self) -> Call:
         return self.restriction
 
-    def restrict(self, var) -> IRPredicate:
+    def restrict(self, var : VarRef) -> Call:
         if isinstance(self.restriction, Call):
             return self.restriction.subs_last(var)
         else:
@@ -168,7 +168,7 @@ class TypeEnv:
             self.unification.update(old_unification)
             raise Exception(f'Could not unify {a} : {t_a} and {b} : {t_b}')
 
-    def remove(self, var_name):
+    def remove(self, var_name : str) -> None:
         self.type_env.pop(var_name)
 
 class TypeInferer(IRTransformer):
@@ -187,7 +187,7 @@ class TypeInferer(IRTransformer):
         res_type = self.type_env.unify(a, b)
         return Add(a, b).with_type(res_type)
 
-    def transform_Mul(self, node : Mul) -> Mul :
+    def transform_Mul(self, node : Mul) -> Mul:
         a = self.transform(node.a)
         b = self.transform(node.b)
         res_type = self.type_env.unify(a, b)

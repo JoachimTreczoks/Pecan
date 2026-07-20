@@ -95,7 +95,9 @@ class Emit(Builtin):
         super().__init__(PralineVar('emit'), [PralineVar('pecanTerm')])
 
     def evaluate(self, prog : Program) -> PralineBool:
-        term = prog.praline_lookup('pecanTerm').evaluate(prog).get_term()
+        pecan_term = prog.praline_lookup('pecanTerm').evaluate(prog)
+        assert isinstance(pecan_term, PralinePecanLiteral) # This is always the case, but asserting it shuts up static code type checkers
+        term = pecan_term.get_term()
         settings.log(0, lambda: '[DEBUG] Emitted: "{}"'.format(term))
         prog.emit_definition(term)
         return PralineBool(True)

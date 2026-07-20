@@ -65,7 +65,7 @@ class IRNode:
 
         return evaluation
 
-    def get_display_node(self, prog : Program) -> Self:
+    def get_display_node(self, prog : Program) -> IRNode:
         return self
 
     def evaluate(self, prog : Program) -> IREvaluation:
@@ -288,7 +288,7 @@ class IREvaluation:
         return self.aut.num_edges()
     
     def accepting_word(self) -> dict | None:
-        return self.aut.accepting_word()
+        return self.aut.accepting_word() or {}
     
     def postprocess(self, level : str | None = None) -> IREvaluation:
         self.aut = self.aut.postprocess(level)

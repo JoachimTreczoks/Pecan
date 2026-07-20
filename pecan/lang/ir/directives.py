@@ -21,6 +21,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING :
     from typing import Any, Literal
     from pecan.lang.ir_transformer import IRTransformer
+    from pecan.lang.type_inference import RestrictionType
     from pecan.lang.ir.prog import Program
 
 class DirectiveIRNode(IRNode):
@@ -29,6 +30,9 @@ class DirectiveIRNode(IRNode):
     
     def evaluate(self, prog: Program) -> None | Result:
         raise NotImplementedError
+    
+    def __repr__(self) -> str:
+        return self.__str__()
 
 class DirectiveSaveAut(DirectiveIRNode):
     def __init__(self, filename : str, pred_name : str):
@@ -66,7 +70,7 @@ class DirectiveSaveAutImage(DirectiveIRNode):
         # TODO: Support formats other than SVG?
         settings.log(lambda: f'[INFO] Saving {self.pred_name} as an SVG in {self.filename}')
 
-        evaluated = prog.call(self.pred_name).aut
+        evaluated = BuchiAutomaton.as_buchi(prog.call(self.pred_name).aut)
         with open(self.filename, 'wb') as f:
             f.write(evaluated.show().data.encode('utf-8')) # Write the raw svg data into the file
 
@@ -266,9 +270,9 @@ class DirectiveForget(DirectiveIRNode):
         return hash(self.var_name)
 
 class DirectiveStructure(DirectiveIRNode):
-    def __init__(self, pred_ref : str, val_dict : dict[str, Call]):
+    def __init__(self, pred_ref : RestrictionType, val_dict : dict[str, Call]):
         super().__init__()
-        self.pred_ref : str = pred_ref
+        self.pred_ref : RestrictionType = pred_ref
         self.val_dict : dict[str, Call] = val_dict
 
     def evaluate(self, prog : Program) -> None:
