@@ -249,8 +249,7 @@ class BuchiAutomaton(Automaton):
     def num_edges(self) -> int:
         return self.aut.num_edges()
 
-    # Should return a string of SVG data
-    def __str__(self) -> str:
+    def show(self): # Should return a string of SVG data. **Not a String object!!!**
         return self.postprocess().aut.show()
 
     def get_aut(self):
