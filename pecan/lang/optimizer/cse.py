@@ -150,11 +150,6 @@ class ExpressionExtractor(IRTransformer):
                     self.to_compute[new_var.var_name] = node
                     deps = {v for v in VariableUsage().analyze(self.expressions_compute[node])}
                     self.dep_graph[new_var.var_name] = list({ v.var_name for v in [new_a, new_b] if self.is_var(v) }.union(deps))
-                    # print(new_var)
-                    # print(self.expressions)
-                    # print(self.expressions_compute)
-                    # print(self.to_compute)
-                    # print(self.dep_graph)
                 else:
                     return Add(new_a, new_b).with_type(node.get_type())
 
@@ -243,3 +238,5 @@ class CSEOptimizer(BasicOptimizer):
 
         return res
 
+    def __str__(self) -> str:
+        return 'CSEOptimizer'

@@ -4,6 +4,7 @@
 import time
 
 from pecan.settings import settings
+from pecan.logger import Logger
 from pecan.automata.automaton import Automaton
 
 from typing import TYPE_CHECKING
@@ -47,9 +48,9 @@ class IRNode:
         sn, en = aut.num_states(), aut.num_edges()
 
         if desc is None:
-            settings.log(1, lambda: self.indented(prog, 'Automaton has {} states and {} edges'.format(sn, en)))
+            Logger.log(self.indented(prog, 'Automaton has {} states and {} edges'.format(sn, en)), 1)
         else:
-            settings.log(1, lambda: self.indented(prog, 'Automaton has {} states and {} edges {}'.format(sn, en, desc)))
+            Logger.log(self.indented(prog, 'Automaton has {} states and {} edges {}'.format(sn, en, desc)), 1)
 
     def indented(self, prog : Program, s : str) -> str:
         return '{}{}'.format(' ' * prog.eval_level, s)
@@ -93,7 +94,7 @@ class IRNode:
             prog.update_max_aut(sn, en, end_time - start_time)
 
         if settings.get_debug_level() > 0 and sn >= 0 and en >= 0:
-            settings.log(0, lambda: self.indented(prog, '{} has {} states and {} edges ({:.2f} seconds)'.format(self.get_display_node(prog), sn, en, end_time - start_time)))
+            Logger.log(self.indented(prog, '{} has {} states and {} edges ({:.2f} seconds)'.format(self.get_display_node(prog), sn, en, end_time - start_time)), 0)
 
         return result
 

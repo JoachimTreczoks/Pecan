@@ -8,6 +8,7 @@ from pecan.automata.automaton import Automaton, FalseAutomaton
 from pecan.tools.shuffle_automata import ShuffleAutomata
 from pecan.utility import VarMap
 from pecan.settings import settings
+from pecan.logger import Logger
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING :
@@ -123,7 +124,7 @@ class BuchiAutomaton(Automaton):
 
             new_aps[ap.ap_name()] = new_ap
 
-        settings.log(3, lambda: 'Relabeling: {}'.format(new_aps))
+        Logger.log('Relabeling: {}'.format(new_aps), 3)
 
         res = self.ap_substitute(new_aps)
 
@@ -161,7 +162,7 @@ class BuchiAutomaton(Automaton):
 
         bdd_subs = {self.aut.register_ap(k): v for k, v in ap_subs.items()}
 
-        settings.log(3, lambda: 'ap_subs: {}'.format(ap_subs))
+        Logger.log('ap_subs: {}'.format(ap_subs), 3)
 
         if settings.get_simplification_level() > 0:
             self.postprocess()
@@ -177,7 +178,7 @@ class BuchiAutomaton(Automaton):
                 new_var_map[v].append(new_ap)
                 to_register.append(new_ap)
 
-        settings.log(3, lambda: 'ap_subs: {}, {}, {}'.format(ap_subs, self.var_map, new_var_map))
+        Logger.log('ap_subs: {}, {}, {}'.format(ap_subs, self.var_map, new_var_map), 3)
 
         new_aut = buchi_transform(self.aut, Substitution(bdd_subs))
 
@@ -216,7 +217,7 @@ class BuchiAutomaton(Automaton):
         if not aps:
             return self
 
-        settings.log(3, lambda: 'ap_project: {}'.format(aps))
+        Logger.log('ap_project: {}'.format(aps), 3)
 
         # Do a quick check here to simplify if we're empty; the emptiness checking algorithm is very fast (can be done in linear time)
         # Compared to the cost of postprocessing (depends on the underlying automaton, but generally atrocious)
@@ -260,16 +261,16 @@ class BuchiAutomaton(Automaton):
 
     def simplify_states(self) -> BuchiAutomaton:
         self.get_aut().purge_dead_states()
-        settings.log(3, lambda: 'after purge_dead_states: {}'.format(self.num_states()))
+        Logger.log('after purge_dead_states: {}'.format(self.num_states()), 3)
         self.get_aut().purge_unreachable_states()
-        settings.log(3, lambda: 'after purge_unreachable_states: {}'.format(self.num_states()))
+        Logger.log('after purge_unreachable_states: {}'.format(self.num_states()), 3)
 
         self.aut = self.get_aut().scc_filter()
-        settings.log(3, lambda: 'after scc_filter: {}'.format(self.num_states()))
+        Logger.log('after scc_filter: {}'.format(self.num_states()), 3)
 
         if self.num_states() < 10 & self.get_aut().is_deterministic():
             self.aut = spot.sat_minimize(self.get_aut())
-            settings.log(3, lambda: 'after sat_minimize: {}'.format(self.num_states()))
+            Logger.log('after sat_minimize: {}'.format(self.num_states()), 3)
 
         if settings.use_heuristics():
             self.merge_states()
@@ -280,8 +281,8 @@ class BuchiAutomaton(Automaton):
         return self
 
     def postprocess(self, level : str | None=None) -> BuchiAutomaton:
-        settings.log(3, lambda: 'Empty: {}'.format(self.is_empty()))
-        # settings.log(3, lambda: 'Universal: {}'.format(spot.is_universal(self.get_aut())))
+        Logger.log('Empty: {}'.format(self.is_empty()), 3)
+        # Logger.log('Universal: {}'.format(spot.is_universal(self.get_aut())), 3)
 
         postprocess_settings = ['BA']
         if level is not None:
@@ -298,11 +299,11 @@ class BuchiAutomaton(Automaton):
                     else:
                         postprocess_settings.append('High')
 
-            settings.log(1, lambda: 'Postprocessing (before) using {}: {} states and {} edges'.format(postprocess_settings, self.num_states(), self.num_edges()))
+            Logger.log('Postprocessing (before) using {}: {} states and {} edges'.format(postprocess_settings, self.num_states(), self.num_edges()), 1)
 
             self.aut = self.aut.postprocess(*postprocess_settings)
 
-            settings.log(1, lambda: 'Postprocessing (after): {} states and {} edges'.format(self.num_states(), self.num_edges()))
+            Logger.log('Postprocessing (after): {} states and {} edges'.format(self.num_states(), self.num_edges()), 1)
         return self
 
     def simplify(self) -> BuchiAutomaton:
@@ -313,14 +314,14 @@ class BuchiAutomaton(Automaton):
             ran = False
             while self.get_aut().merge_states() > 0:
                 ran = True
-                settings.log(3, lambda: 'after merge_states: {}'.format(self.num_states()))
+                Logger.log('after merge_states: {}'.format(self.num_states()), 3)
 
             # If we didn't merge any states, we still want to show the message once
             if not ran:
-                settings.log(3, lambda: 'after merge_states: {}'.format(self.num_states()))
+                Logger.log('after merge_states: {}'.format(self.num_states()), 3)
         else:
             self.get_aut().merge_states()
-            settings.log(3, lambda: 'after merge_states: {}'.format(self.num_states()))
+            Logger.log('after merge_states: {}'.format(self.num_states()), 3)
 
         return self
 

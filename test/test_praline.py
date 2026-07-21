@@ -23,10 +23,10 @@ def test_praline_simple():
     run_file('examples/test_praline_simple.pn', '1\n16\n')
 
 def test_praline_list():
-    run_file('examples/test_praline_list.pn', '[1,2,3,4]\n')
+    run_file('examples/test_praline_list.pn', '[1, 2, 3, 4]\n')
 
 def test_praline_match():
-    run_file('examples/test_praline_match.pn', '4\n[1,4,9,16]\n-49\n')
+    run_file('examples/test_praline_match.pn', '4\n[1, 4, 9, 16]\n-49\n')
 
 def test_praline_compose():
     run_file('examples/test_praline_compose.pn', '1\n0\n2\n')
@@ -42,20 +42,20 @@ def test_praline_do():
 
 def test_praline_split():
     run_file('examples/test_praline_split.pn', '''
-([1,2,3,4],[5,6,7,8,9,10])
-[1,2,3,4]
-[1,2,3,4,5,6,7,8,9,10]
+([1, 2, 3, 4], [5, 6, 7, 8, 9, 10])
+[1, 2, 3, 4]
+[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 ''')
 
 def test_praline_accepting_word():
     run_file('examples/test_praline_accepting_word.pn', '''
-[(x,[([],[false])])]
-[(x,[([false,false,true,true,true,false,true],[false])])]
+[(x, [([], [false])])]
+[(x, [([false, false, true, true, true, false, true], [false])])]
 ''')
 
 def test_praline_examples():
     run_file('examples/test_praline_examples.pn', '''
-[(x,-2)]
+[(x, -2)]
 ''')
 
 def test_praline_operators():
@@ -68,20 +68,20 @@ false
 true
 true
 true
-[true,false]
-[true,true]
+[true, false]
+[true, true]
 ''')
 
 def test_praline_graphing():
     run_file('examples/test_praline_graphing.pn', '''
-[(-10,-20),(-9,-18),(-8,-16),(-7,-14),(-6,-12),(-5,-10),(-4,-8),(-3,-6),(-2,-4),(-1,-2),(0,0),(1,2),(2,4),(3,6),(4,8),(5,10),(6,12),(7,14),(8,16),(9,18),(10,20)]
+[(-10, -20), (-9, -18), (-8, -16), (-7, -14), (-6, -12), (-5, -10), (-4, -8), (-3, -6), (-2, -4), (-1, -2), (0, 0), (1, 2), (2, 4), (3, 6), (4, 8), (5, 10), (6, 12), (7, 14), (8, 16), (9, 18), (10, 20)]
 ''')
 
 def test_praline_real_format():
     run_file('examples/test_praline_real_format.pn', '''
-[(x,+1.0(0)^ω)]
-[(y,+0.1(0)^ω)]
-[(y,+11.10(10)^ω)]
+[(x, +1.0(0)^ω)]
+[(y, +0.1(0)^ω)]
+[(y, +11.10(10)^ω)]
 ''')
 
 def test_praline_file_io():
@@ -94,18 +94,18 @@ def test_praline_split_on():
     run_file('examples/test_praline_split_on.pn', '''
 []
 [[]]
-[[],[1],[0,1],[0,0,0,1]]
+[[], [1], [0, 1], [0, 0, 0, 1]]
 ''')
 
 def test_praline_match_syntax():
     run_file('examples/test_praline_match_syntax.pn', '''
-(8,10)
-(88,83109)
+(8, 10)
+(88, 83109)
 ''')
 
 def test_praline_collatz():
     run_file('examples/collatz.pn', '''
-[31041,93124,46562,23281,69844,34922,17461,52384,26192,13096,6548,3274,1637,4912,2456,1228,614,307,922,461,1384,692,346,173,520,260,130,65,196,98,49,148,74,37,112,56,28,14,7,22,11,34,17,52,26,13,40,20,10,5,16,8,4,2,1]
-[416,69]
+[31041, 93124, 46562, 23281, 69844, 34922, 17461, 52384, 26192, 13096, 6548, 3274, 1637, 4912, 2456, 1228, 614, 307, 922, 461, 1384, 692, 346, 173, 520, 260, 130, 65, 196, 98, 49, 148, 74, 37, 112, 56, 28, 14, 7, 22, 11, 34, 17, 52, 26, 13, 40, 20, 10, 5, 16, 8, 4, 2, 1]
+[416, 69]
 ''')
 

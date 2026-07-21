@@ -264,7 +264,7 @@ class PralineMatchTuple(PralineMatchPat):
         return transformer.transform_PralineMatchTuple(self)
 
     def __str__(self) -> str:
-        return 'PralineMatchTuple({})'.format(','.join(map(str, self.vls)))
+        return 'PralineMatchTuple({})'.format(', '.join(map(str, self.vls)))
 
 class PralineMatchVar(PralineMatchPat):
     def __init__(self, var : str):
@@ -364,7 +364,7 @@ class PralineTuple(PralineTerm):
         return transformer.transform_PralineTuple(self)
 
     def __str__(self) -> str:
-        return '({})'.format(','.join(map(str, self.vals)))
+        return '({})'.format(', '.join(map(str, self.vals)))
 
 class PralineInt(PralineTerm):
     def __init__(self, val : int):

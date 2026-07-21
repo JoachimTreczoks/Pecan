@@ -12,7 +12,7 @@ from pecan.tools.finite_loader import load_finite
 from pecan.automata.buchi import BuchiAutomaton
 from pecan.lang.ir import *
 
-from pecan.settings import settings
+from pecan.logger import Logger
 
 from pecan.lang.ir.base import IRNode
 from pecan.lang.ir.prog import AutLiteral, Call, NamedPred, Program, Result
@@ -41,7 +41,7 @@ class DirectiveSaveAut(DirectiveIRNode):
         self.pred_name : str = pred_name
 
     def evaluate(self, prog : Program) -> None:
-        settings.log(lambda: f'[INFO] Saving {self.pred_name} as {self.filename}')
+        Logger.info('Saving {} as {}'.format(self.pred_name, self.filename))
 
         prog.add_generated_file(self.filename)
 
@@ -68,7 +68,7 @@ class DirectiveSaveAutImage(DirectiveIRNode):
 
     def evaluate(self, prog : Program) -> None:
         # TODO: Support formats other than SVG?
-        settings.log(lambda: f'[INFO] Saving {self.pred_name} as an SVG in {self.filename}')
+        Logger.info('Saving {} as an SVG in {}'.format(self.pred_name, self.filename))
 
         evaluated = BuchiAutomaton.as_buchi(prog.call(self.pred_name).aut)
         with open(self.filename, 'wb') as f:
@@ -144,7 +144,7 @@ class DirectiveAssertProp(DirectiveIRNode):
         return Call(self.pred_name, []).evaluate(prog).truth_value()
 
     def evaluate(self, prog : Program) -> Result:
-        settings.log(lambda: f'[INFO] Checking if {self.pred_name} is {self.display_truth_val()}.')
+        Logger.info('Checking if {} is {}.'.format(self.pred_name, self.display_truth_val()))
 
         pred_truth_value = self.pred_truth_value(prog)
 
@@ -153,7 +153,7 @@ class DirectiveAssertProp(DirectiveIRNode):
         else:
             result = Result(f'{self.pred_name} is not {self.display_truth_val()}.', False)
 
-        settings.log(lambda: result.result_str())
+        Logger.log(result.result_str())
 
         return result
 
@@ -186,7 +186,7 @@ class DirectiveLoadAut(DirectiveIRNode):
         # TODO: Support argument restrictions on loaded automata
         start_time = time.time()
         realpath = prog.locate_file(self.filename)
-        settings.log(lambda: f'[INFO] Loading {self.pred} from {realpath} in "{self.aut_format}" format.')
+        Logger.info('Loading {} from {} in "{}" format.'.format(self.pred, realpath, self.aut_format), 0, True)
 
         if self.aut_format == 'hoa':
             # TODO: Rename the APs of the loaded automaton to be the same as the args specified
@@ -202,7 +202,7 @@ class DirectiveLoadAut(DirectiveIRNode):
 
         end_time = time.time()
 
-        settings.log(0, lambda: '[INFO] Loaded {} in {:.2f} seconds ({} states, {} edges).'.format(self.pred, end_time - start_time, aut.num_states(), aut.num_edges()))
+        Logger.info('Loaded {} in {:.2f} seconds ({} states, {} edges).'.format(self.pred, end_time - start_time, aut.num_states(), aut.num_edges()), 0)
 
         prog.preds[self.pred.name] = NamedPred(self.pred.name, self.pred.args, {}, AutLiteral(aut))
 

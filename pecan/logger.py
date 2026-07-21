@@ -8,21 +8,26 @@ if TYPE_CHECKING :
 class Logger:
 
     @staticmethod
-    def log(level : int, msg : str):
-        settings.log(level, lambda: msg)
+    def log(msg : str, level : int = -1, respect_quiet : bool = False):
+        if settings.get_debug_level() > level and (settings.is_quiet() or not respect_quiet):
+            settings.print(msg)
 
     @staticmethod
-    def info(msg : str):
-        Logger.log(-1, '[INFO] {}'.format(msg))
+    def info(msg : str, level : int = -1, respect_quiet : bool = False):
+        Logger.log('[INFO] {}'.format(msg), level, respect_quiet)
 
     @staticmethod
-    def debug(level : int, msg : str):
-        Logger.log(level, '[DEBUG] {}'.format(msg))
+    def debug(msg : str, level : int = 0, respect_quiet : bool = False):
+        Logger.log('[DEBUG] {}'.format(msg), level, respect_quiet)
 
     @staticmethod
-    def warn(msg : str):
-        Logger.log(-1, '[WARN] {}'.format(msg))
+    def warn(msg : str, level : int = -1, respect_quiet : bool = False):
+        Logger.log('[WARN] {}'.format(msg), level, respect_quiet)
 
     @staticmethod
-    def typecheck(name : str, var : Any):
-        Logger.log(0, '[TYPE CHECK] type({}) = {}'.format(name, type(var)))
+    def error(msg : str, level : int = -1, respect_quiet : bool = False):
+        Logger.log('[ERROR] {}'.format(msg), level, respect_quiet)
+
+    @staticmethod
+    def typecheck(name : str, var : Any, level : int = 0, respect_quiet : bool = False):
+        Logger.log('[TYPE CHECK] type({}) = {}'.format(name, type(var)), level, respect_quiet)

@@ -88,7 +88,7 @@ class NamedPred(ASTNode):
         return transformer.transform_NamedPred(self)
 
     def __str__(self) -> str:
-        return '{}({}) := {}'.format(self.name, ','.join(map(str, self.args)), self.body)
+        return '{}({}) := {}'.format(self.name, ', '.join(map(str, self.args)), self.body)
 
 class Program(ASTNode):
     def __init__(self, defs, *args, **kwargs : dict[str, Any]): # TODO: Add type hinting for the args and kwargs

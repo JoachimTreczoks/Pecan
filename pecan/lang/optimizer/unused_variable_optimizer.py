@@ -25,3 +25,5 @@ class UnusedVariableOptimizer(BasicOptimizer):
         else:
             return Exists(new_var_refs, new_conds, self.transform(node.pred))
 
+    def __str__(self) -> str:
+        return 'UnusedVariableOptimizer'

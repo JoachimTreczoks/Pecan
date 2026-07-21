@@ -4,7 +4,7 @@
 from pecan.lang.ir_transformer import IRTransformer
 from pecan.lang.ir import *
 
-from pecan.settings import settings
+from pecan.logger import Logger
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING :
@@ -276,7 +276,7 @@ class TypeInferer(IRTransformer):
                 restriction = restrictions[-1]
 
                 # if len(set(restrictions)) > 1:
-                #     settings.log(lambda: f'[WARNING]: Multiple restrictions for {formal.var_name} found; arbitrarily choose the last one, which is {restriction} (all restrictions are {restrictions}).')
+                #     Logger.warn('Multiple restrictions for {} found; arbitrarily choose the last one, which is {} (all restrictions are {}).'.format(formal.var_name, restriction, restrictions), respect_quiet = True)
 
                 res_type = temp_type_env.unify(formal.with_type(RestrictionType(restriction)), arg)
                 final_args.append(arg.with_type(res_type))

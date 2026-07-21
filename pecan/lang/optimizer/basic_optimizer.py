@@ -2,7 +2,7 @@
 # -*- coding=utf-8 -*-
 
 from pecan.lang.ir_transformer import IRTransformer
-from pecan.settings import settings
+from pecan.logger import Logger
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING :
@@ -28,25 +28,27 @@ class BasicOptimizer(IRTransformer):
 
         self.pred = pred
 
-        settings.log(3, lambda: 'Before pre-optimize {}: {}'.format(type(self).__name__, node))
+        Logger.log('Before pre-optimize {}: {}'.format(type(self).__name__, node), 3)
         res = self.pre_optimize(node)
         if res is not None:
             node = res
 
         if self.changed:
-            settings.log(3, lambda: 'Before optimize {}: {}'.format(type(self).__name__, node))
+            Logger.log('Before optimize {}: {}'.format(type(self).__name__, node), 3)
 
         new_node = self.transform(node)
 
         if self.changed:
-            settings.log(3, lambda: 'Before post-optimize {}: {}'.format(type(self).__name__, new_node))
+            Logger.log('Before post-optimize {}: {}'.format(type(self).__name__, new_node), 3)
 
         res = self.post_optimize(new_node)
         if res is not None:
             new_node = res
 
         if self.changed:
-            settings.log(3, lambda: 'After post-optimize {}: {}'.format(type(self).__name__, new_node))
+            Logger.log('After post-optimize {}: {}'.format(type(self).__name__, new_node), 3)
 
         return self.changed, new_node
 
+    def __str__(self) -> str:
+        return 'BasicOptimizer'

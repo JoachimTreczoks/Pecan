@@ -46,3 +46,5 @@ class ArithmeticOptimizer(BasicOptimizer):
 
         return super().transform_Equals(node)
 
+    def __str__(self) -> str:
+        return 'ArithmeticOptimizer'

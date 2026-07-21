@@ -336,7 +336,7 @@ class PralineAutomaton(PralineTerm):
         super().__init__()
         self.input_names : list[str] = input_names
         self.input_bases : list[int] = input_bases
-        self.alphabet_line : str = ' '.join('{' + ','.join(map(str, range(base))) + '}' for base in input_bases)
+        self.alphabet_line : str = ' '.join('{' + ', '.join(map(str, range(base))) + '}' for base in input_bases)
 
         self.states : list[State] = states
         self.state_map : dict[str, int] = state_map

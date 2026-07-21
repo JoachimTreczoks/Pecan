@@ -265,7 +265,7 @@ class PralineMatchTuple(PralineMatchPat):
         return transformer.transform_PralineMatchTuple(self)
 
     def __str__(self) -> str:
-        return 'PralineMatchTuple({})'.format(','.join(map(str, self.vals)))
+        return 'PralineMatchTuple({})'.format(', '.join(map(str, self.vals)))
 
     def __eq__(self, other : Any) -> bool:
         return other is not None and isinstance(other, self.__class__) and self.vals == other.vals

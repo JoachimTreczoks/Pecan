@@ -10,6 +10,7 @@ from pecan.lang.typed_ir_lowering import TypedIRLowering
 from pecan.lang.optimizer.optimizer import UntypedOptimizer, Optimizer
 
 from pecan.settings import settings
+from pecan.logger import Logger
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING :
@@ -40,8 +41,8 @@ def load(pecan_file : str, *args : tuple, **kwargs : Any) -> Program:
 def from_source(source_code : str, *args : tuple, **kwargs : Any) -> Program:
     prog = pecan_parser.parse(source_code)
 
-    settings.log(4, lambda: 'Parsed program:')
-    settings.log(4, lambda: prog)
+    Logger.log('Parsed program:', 4)
+    Logger.log(str(prog), 4)
 
     prog.search_paths = make_search_paths(filename=kwargs.get('filename', None))
     prog.loader = load
@@ -51,7 +52,7 @@ def from_source(source_code : str, *args : tuple, **kwargs : Any) -> Program:
 
     prog = ASTToIR().transform(prog)
 
-    settings.log(0, lambda: 'Search path: {}'.format(prog.search_paths))
+    Logger.log('Search path: {}'.format(prog.search_paths), 0)
 
     # Load the standard library
     prog = settings.include_stdlib(prog, load, args, kwargs)
@@ -59,8 +60,8 @@ def from_source(source_code : str, *args : tuple, **kwargs : Any) -> Program:
     if settings.opt_enabled():
         prog = UntypedOptimizer(prog).optimize()
 
-        settings.log(1, lambda: '(Untyped) Optimized program:')
-        settings.log(1, lambda: prog)
+        Logger.log('(Untyped) Optimized program:', 1)
+        Logger.log(str(prog), 1)
 
     return prog
 

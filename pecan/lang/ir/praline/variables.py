@@ -124,10 +124,10 @@ class PralineTuple(PralineValueHolder):
         return transformer.transform_PralineTuple(self)
 
     def __str__(self) -> str:
-        return '({})'.format(','.join(map(str, self.vals)))
+        return '({})'.format(', '.join(map(str, self.vals)))
 
     def __repr__(self) -> str:
-        return '({})'.format(','.join(map(repr, self.vals)))
+        return '({})'.format(', '.join(map(repr, self.vals)))
 
     def evaluate(self, prog : Program) -> PralineTuple:
         return PralineTuple([v.evaluate(prog) for v in self.vals])
@@ -156,7 +156,7 @@ class PralineList(PralineValueHolder):
             assert isinstance(cur.tail, PralineList)
             cur = cur.tail
 
-        return '[{}]'.format(','.join([str(e) for e in elems]))
+        return '[{}]'.format(', '.join([str(e) for e in elems]))
 
     def __repr__(self) -> str:
         if self.tail is None:

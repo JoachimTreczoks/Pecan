@@ -436,22 +436,22 @@ class Program(IRNode):
         from pecan.lang.optimizer.optimizer import Optimizer
 
         if isinstance(d, NamedPred):
-            Logger.debug(1, 'Type inference and IR lowering for: {}'.format(d.name))
+            Logger.debug('Type inference and IR lowering for: {}'.format(d.name), 1)
             transformed_def = TypedIRLowering(self).transform(self.type_infer(d))
 
             if settings.opt_enabled():
-                Logger.debug(1, 'Performing typed optimization on: {}'.format(d.name))
+                Logger.debug('Performing typed optimization on: {}'.format(d.name), 1)
                 transformed_def = Optimizer(self).optimize(transformed_def)
 
             transformed_def = TypedIRLowering(self).transform(transformed_def)
 
-            Logger.log(1, 'Lowered IR:')
-            Logger.log(1, str(transformed_def))
+            Logger.log('Lowered IR:', 1)
+            Logger.log(str(transformed_def), 1)
 
             self.defs[i] = transformed_def
             self.preds[d.name] = transformed_def
             self.preds[d.name].evaluate(self)
-            Logger.log(0, str(self.preds[d.name]))
+            Logger.log(str(self.preds[d.name]), 0)
         else:
             return d.evaluate(self)
         
@@ -475,7 +475,7 @@ class Program(IRNode):
             self.emit_offset = 0
             d = self.defs[self.idx]
 
-            Logger.debug(0, 'Processing: {}'.format(d))
+            Logger.debug('Processing: {}'.format(d))
             result = self.run_definition(self.idx, d)
             if result is not None and isinstance(result, Result):
                 if result.failed():
@@ -658,8 +658,7 @@ class Program(IRNode):
         raise FileNotFoundError(filename)
 
     def __str__(self) -> str:
-        return '[{}]'.format(','.join(map(str, self.defs)))
-        return str(self.defs)
+        return '[{}]'.format(', '.join(map(str, self.defs)))
 
 class Result:
     def __init__(self, msg : str, succeeded : bool):

@@ -140,14 +140,6 @@ class Settings:
     def get_output_hoa(self):
         return self.output_hoa
 
-    def log(self, level, msg=None):
-        if msg is None:
-            msg = level
-            if not self.is_quiet():
-                self.print(msg())
-        elif self.get_debug_level() > level:
-            self.print(msg())
-
     def include_stdlib(self, prog, loader, args, kwargs):
         if self.should_load_stdlib():
             orig_debug_level = self.get_debug_level()

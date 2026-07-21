@@ -83,3 +83,5 @@ class BooleanOptimizer(BasicOptimizer):
         else:
             return super().transform_Equals(node)
 
+    def __str__(self) -> str:
+        return 'BooleanOptimizer'

@@ -10,6 +10,7 @@ from pecan.lang.ir import AutLiteral
 from pecan.lib.plot import BuchiPlotter
 
 from pecan.settings import settings
+from pecan.logger import Logger
 
 def as_praline(val : list | str | bool | int | tuple) -> PralineList | PralineString | PralineBool | PralineInt | PralineTuple:
     if isinstance(val, list):
@@ -87,7 +88,7 @@ class PralinePrint(Builtin):
         super().__init__(PralineVar('print'), [PralineVar('s')])
 
     def evaluate(self, prog : Program) -> PralineBool:
-        settings.print(str(prog.praline_lookup('s').evaluate(prog)))
+        Logger.log(str(prog.praline_lookup('s').evaluate(prog)))
         return PralineBool(True)
 
 class Emit(Builtin):
@@ -98,7 +99,7 @@ class Emit(Builtin):
         pecan_term = prog.praline_lookup('pecanTerm').evaluate(prog)
         assert isinstance(pecan_term, PralinePecanLiteral) # This is always the case, but asserting it shuts up static code type checkers
         term = pecan_term.get_term()
-        settings.log(0, lambda: '[DEBUG] Emitted: "{}"'.format(term))
+        Logger.debug('Emitted: "{}"'.format(term))
         prog.emit_definition(term)
         return PralineBool(True)
 
@@ -284,7 +285,7 @@ class Plot(Builtin):
         options = dict(as_python(prog.praline_lookup('options').evaluate(prog)))
         num_systems = dict(as_python(prog.praline_lookup('numSystems').evaluate(prog)))
         term = as_python(prog.praline_lookup('aut').evaluate(prog), PralinePecanLiteral)
-        settings.log(lambda: '[INFO] Plotting {} using numeration systems {} with options: {}'.format(term, num_systems, options))
+        Logger.info('Plotting {} using numeration systems {} with options: {}'.format(term, num_systems, options))
         evaluation = term.evaluate(prog)
         plotter = BuchiPlotter(prog, num_systems, evaluation.aut, **options)
         plotter.plot()
