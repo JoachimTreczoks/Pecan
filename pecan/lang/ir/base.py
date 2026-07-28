@@ -76,7 +76,7 @@ class IRNode:
 
         result = self.evaluate_node(prog)
         if not isinstance(result, IREvaluation):
-            raise Exception('Not an evaluation, error from{}'.format(type(self)))
+            raise TypeError('Not an evaluation, error from {}'.format(type(self)))
         sn = result.num_states()
         en = result.num_states()
 
@@ -124,7 +124,7 @@ class IRExpression(IRNode):
         if self.type == UndefinedType():
             return string
         else:
-            return f'{string} : {self.get_type()}'
+            return '{} : {}'.format(string, self.get_type())
 
 class UnaryIRExpression(IRExpression):
     def __init__(self, a):
@@ -243,7 +243,7 @@ class TypeHint(IRNode):
 class IREvaluation:
     def __init__(self, aut : Automaton, ref : None | VarRef = None):
         if not isinstance(aut, Automaton):
-            raise Exception('Not an aut, instead got {}'.format(type(aut)))
+            raise TypeError('Unexpected value given for evaluation, got {} but expected Automaton'.format(type(aut)))
         self.aut : Automaton = aut
         self.ref : None | VarRef = ref
 

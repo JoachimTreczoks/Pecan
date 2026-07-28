@@ -7,6 +7,7 @@ import spot
 
 from pecan.automata.buchi import BuchiAutomaton
 from pecan.utility import VarMap
+from pecan.exceptions import AutomatonReadingError
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING :
@@ -68,7 +69,7 @@ class BinaryAutomaton:
         self.formal_arg_names : list[str] = formal_arg_names
 
         if len(self.input_alphabets) != len(self.formal_arg_names):
-            raise Exception('Number of inputs must match number of formal arguments ({} vs {})'.format(self.input_alphabets, self.formal_arg_names))
+            raise AutomatonReadingError('Number of inputs must match number of formal arguments ({} vs {})'.format(self.input_alphabets, self.formal_arg_names))
 
         self.states : list[State] = []
         self.state_num_map : dict[int, State] = {}
@@ -134,7 +135,7 @@ def parse_bases(line : str) -> list[int]:
             base = len([int(part) for part in base_str[1:].split(',')])
             bases.append(base)
         else:
-            raise Exception('Improperly formatted base string (expected it to be wrapped in "{{" and "}}"): "{}"'.format(base_str))
+            raise AutomatonReadingError('Improperly formatted base string (expected it to be wrapped in "{{" and "}}"): "{}"'.format(base_str))
 
     return bases
 
@@ -156,22 +157,22 @@ def convert_walnut_lines(lines : list[str], input_names : list[str]) -> BuchiAut
             continue
         elif line[0] == '{':
             if aut is not None:
-                raise Exception('Only one alphabet line is allowed!')
+                raise AutomatonReadingError('Only one alphabet line is allowed!')
 
             # It's the alphabet line,
             bases = parse_bases(line)
 
             if len(bases) != len(input_names):
-                raise Exception('Got {} input alphabets but {} formal arguments!'.format(len(bases), len(input_names)))
+                raise AutomatonReadingError('Got {} input alphabets but {} formal arguments!'.format(len(bases), len(input_names)))
 
             aut = BinaryAutomaton(bases, input_names)
         elif '->' in line:
             if cur_state is None:
-                raise Exception('Transition "{}" not inside any state! (line: {})'.format(line, lineno))
+                raise AutomatonReadingError('Transition "{}" not inside any state! (line: {})'.format(line, lineno))
             cur_state.add_transition(Transition(line))
         elif len(line) > 1:
             if aut is None:
-                raise Exception('Must declare the alphabet BEFORE declaring any states!')
+                raise AutomatonReadingError('Must declare the alphabet BEFORE declaring any states!')
 
             cur_state = aut.add_state(line)
 

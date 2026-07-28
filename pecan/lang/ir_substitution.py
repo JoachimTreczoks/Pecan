@@ -18,7 +18,7 @@ class IRSubstitution(IRTransformer):
             if isinstance(self.subs[original_str], PralineString):
                 return self.subs[original_str].get_string()
             else:
-                raise Exception('Cannot substitute a non-string for an identifier in "{}"; subs: {}'.format(node, self.subs))
+                raise TypeError('Cannot substitute a non-string for an identifier in "{}"; subs: {}'.format(node, self.subs))
         else:
             return original_str
 
@@ -38,7 +38,7 @@ class IRSubstitution(IRTransformer):
                 call = sub.get_term()
                 return Call(call.name, call.args + new_args).with_type(node.get_type())
             else:
-                raise Exception('Cannot substitute a non-string or non-call for an identifier in "{}"; subs: {}'.format(node, self.subs))
+                raise TypeError('Cannot substitute a non-string or non-call for an identifier in "{}"; subs: {}'.format(node, self.subs))
         else:
             return Call(node.name, new_args).with_type(node.get_type())
 

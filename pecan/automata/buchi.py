@@ -377,7 +377,7 @@ class BuchiAutomaton(Automaton):
 
         return var_vals
 
-    def process_formula(self, next_vals : dict[str, bool], formula : buddy.bdd) -> None:
+    def process_formula(self, next_vals : dict[str, bool], formula : buddy.bdd | spot.formula) -> None:
         if formula._is(spot.op_ap):
             next_vals[formula.ap_name()] = True
         elif formula._is(spot.op_Not):
@@ -388,7 +388,7 @@ class BuchiAutomaton(Automaton):
         elif formula._is(spot.op_tt):
             pass
         else:
-            raise Exception('Cannot process formula: {}'.format(formula))
+            raise ValueError('Cannot process formula: {}'.format(formula))
 
     def custom_convert(self, other : Automaton) -> BuchiAutomaton:
         return BuchiAutomaton.as_buchi(other)

@@ -113,7 +113,7 @@ class DirectiveStructure(ASTNode):
         elif isinstance(pred_ref, Call):
             self.pred_ref : Call = pred_ref.add_arg(VarRef('*'))
         else:
-            raise Exception('Pred ref {} is not a VarRef or Call'.format(pred_ref))
+            raise TypeError('Pred ref {} is not a VarRef or Call'.format(pred_ref))
 
         self.val_dict : dict[str, Call] = val_dict
 

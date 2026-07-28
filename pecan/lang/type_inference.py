@@ -5,6 +5,7 @@ from pecan.lang.ir_transformer import IRTransformer
 from pecan.lang.ir import *
 
 from pecan.logger import Logger
+from pecan.exceptions import CallResolvingError, UnificationError
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING :
@@ -57,6 +58,7 @@ class RestrictionType(Type):
         return self.restriction
 
     def restrict(self, var : VarRef) -> Call:
+        assert isinstance(self.restriction, Call) and not isinstance(self.restriction, NamedPred)
         if isinstance(self.restriction, Call):
             return self.restriction.subs_last(var)
         else:
@@ -108,13 +110,13 @@ class TypeEnv:
         elif isinstance(type_a, AnyType) and isinstance(type_b, AnyType):
             return AnyType()
         elif isinstance(type_a, AnyType):
-            raise Exception(f'Cannot unify AnyType expression {a} with {b}')
+            raise UnificationError('Cannot unify AnyType expression {} with {}'.format(a, b))
         elif isinstance(type_b, AnyType):
-            raise Exception(f'Cannot unify AnyType expression {b} with {a}')
+            raise UnificationError('Cannot unify AnyType expression {} with {}'.format(b, a))
         elif isinstance(type_a, RestrictionType) and isinstance(type_b, RestrictionType):
             return self.try_unify_type(a, type_a.get_restriction(), b, type_b.get_restriction())
         else:
-            raise Exception(f'Unknown types {a} : {type_a} and {b} : {type_b}')
+            raise UnificationError('Unknown types {} : {} and {} : {}'.format(a, type_a, b, type_b))
 
     def unify_with(self, t_a, t_b) -> bool:
         if t_b in self.unification:
@@ -166,7 +168,7 @@ class TypeEnv:
             # unify
             self.unification.clear()
             self.unification.update(old_unification)
-            raise Exception(f'Could not unify {a} : {t_a} and {b} : {t_b}')
+            raise UnificationError('Could not unify {} : {} and {} : {}'.format(a, t_a, b, t_b))
 
     def remove(self, var_name : str) -> None:
         self.type_env.pop(var_name)
@@ -317,7 +319,7 @@ class TypeInferer(IRTransformer):
                 new_idx = idx
 
         if res_type == UndefinedType():
-            raise Exception('Missing output variable in resolved call: (was {}, resolved to {}, looking for {})'.format(node, new_call, out_var_ref))
+            raise CallResolvingError('Missing output variable in resolved call: (was {}, resolved to {}, looking for {})'.format(node, new_call, out_var_ref))
 
         return FunctionExpression(new_call.name, new_call.args, new_idx).with_type(res_type)
 

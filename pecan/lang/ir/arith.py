@@ -8,6 +8,8 @@ from pecan.lang.ir.bool import BoolConst, Complement, Conjunction, Disjunction
 from pecan.lang.ir.prog import Call, VarRef
 from pecan.lang.ir.quant import Exists
 
+from pecan.exceptions import AutomatonArithmeticError
+
 from typing import TYPE_CHECKING
 if TYPE_CHECKING :
     from typing import Any
@@ -313,7 +315,3 @@ class PredicateExpr(IRExpression):
 
     def __hash__(self) -> int:
         return hash((self.var, self.pred))
-
-class AutomatonArithmeticError(Exception):
-    pass
-

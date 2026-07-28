@@ -3,6 +3,8 @@
 
 from pecan.lang.ast.base import BinaryExpression, Expression, Predicate, UnaryExpression
 
+from pecan.exceptions import AutomatonArithmeticError
+
 from typing import TYPE_CHECKING
 if TYPE_CHECKING :
     from pecan.lang.ast.base import TypeHint
@@ -183,7 +185,3 @@ class PredicateExpr(Expression):
 
     def __str__(self) -> str:
         return 'Expr({}, {})'.format(self.var_name, self.pred)
-
-class AutomatonArithmeticError(Exception):
-    pass
-

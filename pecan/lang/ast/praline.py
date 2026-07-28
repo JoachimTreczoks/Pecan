@@ -3,6 +3,8 @@
 
 from pecan.lang.ast.base import ASTNode
 
+from pecan.exceptions import PralineLogicError
+
 from typing import TYPE_CHECKING
 if TYPE_CHECKING :
     from pecan.lang.ast_transformer import AstTransformer
@@ -23,7 +25,7 @@ def split_arg(arg : PralineTuple | PralineVar, body : PralineTerm) -> tuple[Pral
         placeholder_arg = PralineVar(PralineTerm.fresh_name())
         return placeholder_arg, PralineMatch(placeholder_arg, [PralineMatchArm(arg.build_match(), body)])
     else:
-        raise Exception('Unexpected term in argument position: {}'.format(arg))
+        raise PralineLogicError('Unexpected term in argument position: {}'.format(arg))
 
 class PralineTerm(ASTNode):
     var_counter = 0

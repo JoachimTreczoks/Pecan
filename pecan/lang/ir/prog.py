@@ -15,6 +15,7 @@ from pecan.lang.ir.base import *
 from pecan.settings import settings
 from pecan.logger import Logger
 from pecan.utility import VarMap
+from pecan.exceptions import CallResolvingError, MatchingError, UnificationError
 
 from pecan.lang.ir.bool import BoolConst
 
@@ -121,7 +122,7 @@ class Match:
 
         new_args = []
         if self.pred_name != other.pred_name or self.arity() != other.arity():
-            raise Exception(f'Could not unify {self} and {other}')
+            raise UnificationError('Could not unify {} and {}'.format(self, other))
 
         for arg1, arg2 in zip(self.pred_args, other.pred_args):
             if arg1 == 'any' and arg2 == 'any':
@@ -134,20 +135,20 @@ class Match:
                 if arg1 == arg2:
                     new_args.append(arg1)
                 else:
-                    raise Exception(f'Could not unify {self} and {other}: cannot unify {arg1} and {arg2}')
+                    raise UnificationError('Could not unify {} and {}: cannot unify {} and {}'.format(self, other, arg1, arg2))
 
         return Match(self.pred_name, new_args)
 
     def call_with(self, pred_name : str, unification : dict[str, str], rest_args : list[VarRef]) -> Call:
         if self.match_any:
-            raise Exception(f'Predicate not found: {pred_name}')
+            raise CallResolvingError('Predicate not found: {}'.format(pred_name))
         i = 0
         final_args : list[VarRef] = []
         for arg in self.pred_args:
             if arg.var_name == 'any':
                 if i >= len(rest_args):
                     # TODO: We should check this in the linter probably
-                    raise Exception(f'Not enough arguments to call {self}: {rest_args}')
+                    raise CallResolvingError('Not enough arguments to call {}: {}'.format(self, rest_args))
 
                 final_args.append(rest_args[i])
                 i += 1
@@ -155,7 +156,7 @@ class Match:
                 final_args.append(VarRef(unification.get(arg.var_name, arg.var_name)))
 
         if not self.pred_name:
-            raise Exception('Missing predicate name')
+            raise CallResolvingError('Missing predicate name')
         return Call(self.pred_name, final_args)
 
     def __str__(self) -> str:
@@ -278,7 +279,7 @@ class NamedPred(Call):
                 return self.body_evaluated
             else:
                 if len(arg_names) < len(self.args):
-                    raise Exception('Not enough arguments for {}. Expected {}, got {}'.format(self.name, len(self.args), len(arg_names)))
+                    raise CallResolvingError('Not enough arguments for {}. Expected {}, got {}'.format(self.name, len(self.args), len(arg_names)))
                 subs_dict = {arg.var_name: name.var_name for arg, name in zip(self.args, arg_names)}
                 return self.body_evaluated.substitute(subs_dict, prog.get_var_map())
         finally:
@@ -364,7 +365,7 @@ class Program(IRNode):
             from pecan.lang.ir.praline import PralineString
             return PralineString(name)
 
-        raise Exception('Unknown symbol: "{}"'.format(name))
+        raise ValueError('Unknown symbol: "{}"'.format(name))
 
     def praline_env_clone(self) -> dict:
         return dict(self.praline_envs[-1])
@@ -376,7 +377,7 @@ class Program(IRNode):
         if name in self.praline_aliases:
             return self.praline_aliases[name]
         else:
-            raise Exception('Unknown alias name: {}'.format(name))
+            raise ValueError('Unknown alias name: {}'.format(name))
 
     def praline_define(self, name : str, val : Closure) -> None:
         self.praline_defs[name] = val
@@ -507,7 +508,7 @@ class Program(IRNode):
     def global_restrict(self, var_name : str, pred : Call) -> None:
         if pred is not None and pred not in self.get_restrictions(var_name):
             if not isinstance(pred, Call) or not pred.args:
-                raise Exception('Unexpected predicate used as restriction (must be Call with the first argument as the variable to restrict): {}'.format(pred))
+                raise CallResolvingError('Unexpected predicate used as restriction (must be Call with the first argument as the variable to restrict): {}'.format(pred))
 
             if var_name in self.global_restrictions:
                 self.global_restrictions[var_name].append(pred)
@@ -517,7 +518,7 @@ class Program(IRNode):
     def restrict(self, var_name : str, pred : Call) -> None:
         if pred is not None and pred not in self.get_restrictions(var_name, local_only=True):
             if not isinstance(pred, Call) or not pred.args:
-                raise Exception('Unexpected predicate used as restriction (must be Call with the first argument as the variable to restrict): {}'.format(pred))
+                raise CallResolvingError('Unexpected predicate used as restriction (must be Call with the first argument as the variable to restrict): {}'.format(pred))
 
             if var_name in self.restrictions[-1]:
                 self.restrictions[-1][var_name].append(pred)
@@ -539,7 +540,7 @@ class Program(IRNode):
         if self.restrictions:
             self.restrictions.pop(-1)
         else:
-            raise Exception('Cannot exit the last scope!')
+            raise RuntimeError('Cannot exit the last scope!')
 
     def enter_var_map_scope(self, var_map : VarMap | None = None) -> None:
         self.var_map.append(var_map or VarMap())
@@ -561,10 +562,10 @@ class Program(IRNode):
                 if pred_name in self.preds:
                     return self.preds[pred_name].call(self, args)
                 else:
-                    raise Exception(f'Predicate {pred_name}({args}) not found (known predicates: {self.preds.keys()}!')
+                    raise CallResolvingError('Predicate {}({}) not found (known predicates: {}!'.format(pred_name, args, self.preds.keys()))
             else:
                 return self.dynamic_call(pred_name, args)
-        except Exception as e:
+        except CallResolvingError as e:
             if pred_name in self.context:
                 return self.call(self.context[pred_name], args)
             else:
@@ -607,7 +608,7 @@ class Program(IRNode):
         if pred_name in self.preds:
             return self.preds[pred_name]
         else:
-            raise Exception(f'Predicate {pred_name} not found (known predicates: {self.preds.keys()}!')
+            raise CallResolvingError('Predicate {} not found (known predicates: {}!'.format(pred_name, self.preds.keys()))
 
     def lookup_call(self, pred_name : str, arg : VarRef, unification : dict[str, str]) -> Match:
         from pecan.lang.type_inference import UndefinedType
@@ -626,12 +627,12 @@ class Program(IRNode):
         return Match(match_any=True)
 
     def lookup_dynamic_call(self, pred_name : str, args : list[VarRef]) -> Call:
-        matches = []
+        matches : list[Match] = []
         unification : dict[str, str] = {}
         for arg in args:
             match = self.lookup_call(pred_name, arg, unification)
             if match is None:
-                raise Exception(f'No matching predicate found for {arg} called {pred_name}')
+                raise MatchingError('No matching predicate found for {} called {}'.format(arg, pred_name))
             matches.append(match)
 
         # There will always be at least one match because there should always be
@@ -677,9 +678,9 @@ class Result:
     def result_str(self) -> str:
         if settings.get_show_progress():
             if self.succeeded():
-                return f'{Fore.GREEN}{self.msg}{Style.RESET_ALL}'
+                return '{}{}{}'.format(Fore.GREEN, self.msg, Style.RESET_ALL)
             else:
-                return f'{Fore.RED}{self.msg}{Style.RESET_ALL}'
+                return '{}{}{}'.format(Fore.RED, self.msg, Style.RESET_ALL)
         else: # No colors
             return self.msg
 

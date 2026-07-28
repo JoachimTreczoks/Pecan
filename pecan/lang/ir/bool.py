@@ -13,6 +13,8 @@ if TYPE_CHECKING :
 class Conjunction(BinaryIRPredicate):
     def __init__(self, a : IRPredicate, b : IRPredicate):
         super().__init__(a, b)
+        if a is None or b is None:
+            raise ValueError('Attempted creating a conjunction with invalid values ({} and {})'.format(a, b))
 
     def evaluate_node(self, prog : Program) -> IREvaluation:
         a_aut = self.a.evaluate(prog)
@@ -36,6 +38,8 @@ class Conjunction(BinaryIRPredicate):
 class Disjunction(BinaryIRPredicate):
     def __init__(self, a : IRPredicate, b : IRPredicate):
         super().__init__(a, b)
+        if a is None or b is None:
+            raise ValueError('Attempted creating a disjunction with invalid values ({} and {})'.format(a, b))
 
     def evaluate_node(self, prog : Program) -> IREvaluation:
         a_aut = self.a.evaluate(prog)
@@ -55,6 +59,8 @@ class Disjunction(BinaryIRPredicate):
 class Complement(UnaryIRPredicate):
     def __init__(self, a : IRPredicate):
         super().__init__(a)
+        if a is None:
+            raise ValueError('Attempted creating a complement with invalid value ({})'.format(a))
 
     def evaluate_node(self, prog : Program) -> IREvaluation:
         return self.a.evaluate(prog).complement()

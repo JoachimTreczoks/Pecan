@@ -4,6 +4,8 @@ from pecan.lang.ir.praline.base import PralineIRNode, PralineTerm, PralineDummy
 from pecan.lang.ir.praline.variables import PralineTuple, PralineList
 from pecan.lang.ir.praline.functional import PralinePecanLiteral
 
+from pecan.exceptions import MatchingError
+
 from typing import TYPE_CHECKING
 if TYPE_CHECKING :
     from typing import Any
@@ -38,7 +40,7 @@ class PralineMatch(PralineTerm):
                 prog.praline_local_cleanup(match_env.keys())
                 return result
 
-        raise Exception('Inexhaustive match arms in "{}" (got "{}")'.format(self, eval_t))
+        raise MatchingError('Inexhaustive match arms in "{}" (got "{}")'.format(self, eval_t))
 
     def __eq__(self, other : Any) -> bool:
         return other is not None and isinstance(other, self.__class__) and self.t == other.t and self.arms == other.arms
@@ -159,7 +161,7 @@ class PralineMatchPecan(PralineMatchPat):
                 unif = self.combine_unification(unif, self.unify_terms(arg_a, arg_b))
             return unif
 
-        raise Exception('Unsupported Pecan term on LHS of a match arm: {}'.format(term_a))
+        raise MatchingError('Unsupported Pecan term on LHS of a match arm: {}'.format(term_a))
 
     def combine_unification(self, unif_a : dict, unif_b : dict) -> dict | None:
         unif = {}

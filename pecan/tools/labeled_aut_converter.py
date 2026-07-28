@@ -4,6 +4,8 @@
 from pecan.tools.walnut_converter import convert_walnut_lines
 from pecan.automata.buchi import BuchiAutomaton
 
+from pecan.exceptions import AutomatonReadingError
+
 class Transition:
     def __init__(self, input_size : int, input_line : str):
         split : list[str] = input_line.split('->')
@@ -11,7 +13,7 @@ class Transition:
         self.dest_label : str = split[1].strip()
 
         if len(self.inputs) != input_size:
-            raise Exception('Expected {} input symbols for transition, only got {} in "{}"'.format(input_size, len(self.inputs), input_line))
+            raise AutomatonReadingError('Expected {} input symbols for transition, only got {} in "{}"'.format(input_size, len(self.inputs), input_line))
 
     def to_str(self, state_map : dict[str, int]) -> str:
         return '{} -> {}'.format(self.input_str(), state_map[self.dest_label])
@@ -66,7 +68,7 @@ def convert_labeled_aut(filename : str, input_names : list[str]) -> BuchiAutomat
                 alphabet_line = line
             elif '->' in line:
                 if cur_state is None:
-                    raise Exception('Transition "{}" not inside any state! (line: {})'.format(line, lineno))
+                    raise AutomatonReadingError('Transition "{}" not inside any state! (line: {})'.format(line, lineno))
                 cur_state.add_transition(Transition(len(input_names), line))
             elif len(line) > 1:
                 cur_state = State(state_idx, line)

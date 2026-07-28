@@ -80,7 +80,7 @@ class NamedPred(ASTNode):
                 self.args.append(var)
                 self.arg_restrictions[var] = Restriction([var], arg.with_args(arg.args[:-1]))
             else:
-                raise Exception("Argument '{}' is not: VarRef, or Call!".format(arg))
+                raise TypeError("Argument '{}' is not: VarRef, or Call!".format(arg))
 
         self.body : Predicate = body
 
@@ -122,7 +122,7 @@ class Program(ASTNode):
                     safe_name = d.term.vals[0].val.replace(' ', '_').replace('.', '')
 
                     if a is not None and b is not None:
-                        print(f'Implication ("{safe_name}", {{{a}}}, {{{b}}}).')
+                        print('Implication ("{}", {{{}}}, {{{}}}).'.format(safe_name, a, b))
             elif isinstance(d, DirectiveLoadAut):
                 print(d)
             elif isinstance(d, Restriction):
@@ -174,7 +174,7 @@ class Restriction(ASTNode):
             if isinstance(var, VarRef):
                 self.restrict_vars.append(var)
             else:
-                raise Exception("Argument '{}' is not a valid var name (string or VarRef)".format(var)) # TODO: This error implies strings are accepted, even though they aren't. Need to work out which behaviour is the correct one
+                raise TypeError("Argument '{}' is not a valid VarRef".format(var))
         self.pred : Call = pred
 
     def transform(self, transformer : AstTransformer) -> Restriction:

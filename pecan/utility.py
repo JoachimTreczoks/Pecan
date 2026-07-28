@@ -59,7 +59,7 @@ class VarMap:
                 merged_reps = merged_var_map[var]
 
                 if len(merged_reps) != len(reps):
-                    raise Exception('Cannot merge {}: representations differ in length ({}, {})'.format(var, merged_reps, reps))
+                    raise ValueError('Cannot merge {}: representations differ in length ({}, {})'.format(var, merged_reps, reps))
 
                 for a, b in zip(merged_reps, reps):
                     subs[b] = a

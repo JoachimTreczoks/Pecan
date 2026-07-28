@@ -7,6 +7,7 @@ from pecan.automata.buchi import BuchiAutomaton
 
 from pecan.settings import settings
 from pecan.logger import Logger
+from pecan.exceptions import PlottingError
 
 # A multidimensional bitmap
 class Bitmap:
@@ -232,11 +233,11 @@ class BuchiPlotter:
         self.dimensions = list(self.alphabet_sizes.keys())
 
         if plot_method not in BuchiPlotter.PLOT_METHOD_MAP:
-            raise Exception("unsupported plot method {}".format(plot_method))
+            raise PlottingError("unsupported plot method {}".format(plot_method))
 
         dim = len(self.dimensions)
         if dim not in BuchiPlotter.PLOT_METHOD_MAP[plot_method]:
-            raise Exception("plot method {} cannot plot in dimension {}".format(plot_method, dim))
+            raise PlottingError("plot method {} cannot plot in dimension {}".format(plot_method, dim))
 
         self.plot_method = BuchiPlotter.PLOT_METHOD_MAP[plot_method][dim]()
 

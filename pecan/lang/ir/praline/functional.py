@@ -42,7 +42,6 @@ class PralineDirective(PralineIRNode):
         super().__init__()
         self.name : str = name
         self.term : PralineTerm = term
-        assert isinstance(name, str)
 
     def evaluate(self, prog : Program) -> PralineTerm:
         if self.name == 'Execute':
@@ -101,7 +100,7 @@ class PralineApp(PralineTerm):
         if isinstance(evaluation, Closure):
             return evaluation.apply(prog, self.arg.evaluate(prog)).evaluate(prog)
         else:
-            raise Exception('Expected {} to evaluate to Closure, but got {} instead'.format(self.receiver, type(evaluation)))
+            raise TypeError('Expected {} to evaluate to Closure, but got {} instead'.format(self.receiver, type(evaluation)))
 
     def transform(self, transformer : IRTransformer) -> PralineApp:
         return transformer.transform_PralineApp(self)
@@ -264,9 +263,9 @@ class Closure(PralineTerm):
     def __str__(self) -> str:
         return 'Closure({}, {}, {})'.format(self.env, self.args, self.body)
 
-    def apply(self, prog : Program, arg) -> PralineTerm:
+    def apply(self, prog : Program, arg : PralineTerm) -> PralineTerm:
         if not self.args:
-            raise Exception('Closure accepts no arguments!')
+            raise ValueError('Closure accepts no arguments!')
 
         new_env = dict(self.env)
         new_env[self.args[0].var_name] = arg
@@ -368,7 +367,7 @@ class PralineAutomaton(PralineTerm):
 
     def add_transition(self, state_label, transition_line) -> PralineAutomaton:
         if state_label not in self.state_map:
-            raise Exception('No state "{}" in {}'.format(state_label, self))
+            raise KeyError('No state "{}" in {}'.format(state_label, self))
 
         self.states[self.state_map[state_label]].add_transition(Transition(len(self.input_names), transition_line))
 

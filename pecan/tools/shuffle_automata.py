@@ -4,6 +4,8 @@
 import buddy
 import spot
 
+from pecan.exceptions import AutomatonReadingError
+
 class ShuffleAutomata:
     def __init__(self, aut_a : spot.twa_graph, aut_b : spot.twa_graph):
         if aut_a.is_sba():
@@ -69,5 +71,5 @@ class ShuffleAutomata:
         elif acc == spot.mark_t([]):
             return spot.mark_t([])
         else:
-            raise Exception('Unexpected acceptance condition on edge: {}'.format(acc))
+            raise AutomatonReadingError('Unexpected acceptance condition on edge: {}'.format(acc))
 

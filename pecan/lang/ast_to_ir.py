@@ -228,7 +228,7 @@ class ASTToIR(AstTransformer):
             for i, arg in enumerate(new_args):
                 if isinstance(arg, ir.VarRef) and arg.var_name == '_':
                     if idx != -1:
-                        raise Exception('Multiple outputs specified for function expression: {}({})'.format(node.name, node.args))
+                        raise ValueError('Multiple outputs specified for function expression: {}({})'.format(node.name, node.args))
                     idx = i
 
             # If no '_' is passed, then assume the output is the last arguments. This lets us write things like "add(a, b)" and get "add(a, b, _)"

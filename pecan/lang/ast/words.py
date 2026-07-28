@@ -48,11 +48,11 @@ class EqualsCompareIndex(Predicate):
                 self.index_b : BoolConst | Index = BoolConst(True)
             else:
                 # TODO: Remove this restriction
-                raise Exception('Automatic words can only be binary (i.e., 0 or 1), {} is not allowed (in "{} = {}")'.format(index_b.val, index_a, index_b))
+                raise ValueError('Automatic words can only be binary (i.e., 0 or 1), {} is not allowed (in "{} = {}")'.format(index_b.val, index_a, index_b))
         elif isinstance(index_b, Index):
             self.index_b : BoolConst | Index = index_b
         else:
-            raise Exception('Unexpected index expression on RHS: {} = {}'.format(index_a, index_b))
+            raise IndexError('Unexpected index expression on RHS: {} = {}'.format(index_a, index_b))
 
     def transform(self, transformer : AstTransformer) -> EqualsCompareIndex:
         return transformer.transform_EqualsCompareIndex(self)

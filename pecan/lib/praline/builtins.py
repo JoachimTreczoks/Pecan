@@ -11,6 +11,7 @@ from pecan.lib.plot import BuchiPlotter
 
 from pecan.settings import settings
 from pecan.logger import Logger
+from pecan.exceptions import PralineConversionError
 
 def as_praline(val : list | str | bool | int | tuple) -> PralineList | PralineString | PralineBool | PralineInt | PralineTuple:
     if isinstance(val, list):
@@ -29,7 +30,7 @@ def as_praline(val : list | str | bool | int | tuple) -> PralineList | PralineSt
     elif isinstance(val, tuple):
         return PralineTuple([as_praline(v) for v in val])
     else:
-        raise Exception("Can't convert {} ({}) to a Praline value".format(type(val), val))
+        raise PralineConversionError("Can't convert {} ({}) to a Praline value".format(type(val), val))
 
 def as_python(val, expected = None) -> list | str | bool | int | tuple: # TODO: Type for PralinePecanLiteral.val
     if isinstance(val, PralineList):
@@ -57,12 +58,12 @@ def as_python(val, expected = None) -> list | str | bool | int | tuple: # TODO: 
         if expected is None or isinstance(val, expected):
             return val.get_term()
     else:
-        raise Exception("Can't convert {} ({}) to a Python value".format(type(val), val))
+        raise PralineConversionError("Can't convert {} ({}) to a Python value".format(type(val), val))
 
     if expected is not None:
-        raise Exception('Expected type was {}, but got value: {}'.format(expected, val))
+        raise TypeError('Expected type was {}, but got value: {}'.format(expected, val))
     else:
-        raise Exception('Unexpected error while converting {} to a Python value (expected type: {})'.format(val, expected))
+        raise PralineConversionError('Unexpected error while converting {} to a Python value (expected type: {})'.format(val, expected))
 
 class TruthValue(Builtin):
     def __init__(self):
@@ -186,10 +187,11 @@ class AddState(Builtin):
 
     def evaluate(self, prog : Program) -> PralineAutomaton:
         aut = prog.praline_lookup('aut').evaluate(prog)
+        assert isinstance(aut, PralineAutomaton)
         label = prog.praline_lookup('stateLabel').evaluate(prog).get_string()
         isAccepting = prog.praline_lookup('isAccepting').evaluate(prog).get_bool()
 
-        state_str = f'{label}: {1 if isAccepting else 0}'
+        state_str = '{}: {}'.format(label, 1 if isAccepting else 0)
         aut.add_state(state_str)
 
         return aut
@@ -227,9 +229,9 @@ class AutToStr(Builtin):
             if isinstance(term, AutLiteral):
                 return PralineString(term.aut.to_str())
             else:
-                raise Exception('Expected an AutLiteral but got {}'.format(term))
+                raise TypeError('Expected an AutLiteral but got {}'.format(term))
         else:
-            raise Exception('Expected a PralinePecanTerm, but got: {}'.format(aut))
+            raise TypeError('Expected a PralinePecanLiteral, but got: {}'.format(aut))
 
 class WriteFile(Builtin):
     def __init__(self):
@@ -318,7 +320,7 @@ class SetSettings(Builtin):
         if name in settings_dict:
             settings_dict[name](value)
         else:
-            raise Exception('Tried to set unknown setting {} to {}'.format(name, value))
+            raise KeyError('Tried to set unknown setting {} to {}'.format(name, value))
 
         return PralineBool(True)
 

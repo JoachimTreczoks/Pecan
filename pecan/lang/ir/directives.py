@@ -149,9 +149,9 @@ class DirectiveAssertProp(DirectiveIRNode):
         pred_truth_value = self.pred_truth_value(prog)
 
         if pred_truth_value == self.truth_val:
-            result = Result(f'{self.pred_name} is {self.display_truth_val()}.', True)
+            result = Result('{} is {}.'.format(self.pred_name, self.display_truth_val()), True)
         else:
-            result = Result(f'{self.pred_name} is not {self.display_truth_val()}.', False)
+            result = Result('{} is not {}.'.format(self.pred_name, self.display_truth_val()), False)
 
         Logger.log(result.result_str())
 
@@ -198,7 +198,7 @@ class DirectiveLoadAut(DirectiveIRNode):
         elif self.aut_format == 'fsa-dict':
             aut = load_finite(realpath, [v.var_name for v in self.pred.args])
         else:
-            raise Exception('Unknown format: {}'.format(self.aut_format))
+            raise KeyError('Unknown format: {}'.format(self.aut_format))
 
         end_time = time.time()
 

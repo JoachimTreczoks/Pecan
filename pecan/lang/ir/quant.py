@@ -62,7 +62,7 @@ class Exists(IRPredicate):
             return reduce(Conjunction, [c for c in conds if c is not None])
 
     def __str__(self) -> str:
-        return '(∃{}. {})'.format(self.var_refs, self.with_cond(self.conds, self.pred))
+        return '(∃{}. {})'.format(', '.join(map(str, self.var_refs)), self.with_cond(self.conds, self.pred))
 
     def __eq__(self, other : Any) -> bool:
         return other is not None and isinstance(other, self.__class__) and self.var_refs == other.var_refs and self.conds == other.conds and self.pred == other.pred

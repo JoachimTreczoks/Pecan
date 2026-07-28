@@ -61,7 +61,7 @@ class Annotation(IRPredicate):
                 evaluation.merge_states()
             return evaluation
         else:
-            raise Exception('Unknown annotation: {}'.format(self.annotation_name))
+            raise ValueError('Unknown annotation: {}'.format(self.annotation_name))
 
     def transform(self, transformer : IRTransformer) -> Annotation:
         return transformer.transform_Annotation(self)
