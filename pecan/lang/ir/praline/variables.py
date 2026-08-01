@@ -1,9 +1,9 @@
 
 from pecan.lang.ir.praline.base import PralineTerm, PralineDummy
 
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING
 if TYPE_CHECKING :
-    from typing import Any
+    from typing import Any, Literal
     from pecan.lang.ir_transformer import IRTransformer
     from pecan.lang.ir.prog import Program
 

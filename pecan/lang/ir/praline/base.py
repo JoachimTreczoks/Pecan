@@ -4,7 +4,7 @@ from pecan.lang.ir.base import IRNode
 from pecan.lang.ir.prog import Program
 from pecan.tools.labeled_aut_converter import *
 
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING
 if TYPE_CHECKING :
     from typing import Any, Literal
 
@@ -83,11 +83,3 @@ class PralineUnaryOp(PralineTerm):
 
     def __hash__(self) -> int:
         return hash(self.a)
-
-
-
-
-
-
-
-
