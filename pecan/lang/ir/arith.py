@@ -160,7 +160,7 @@ class IntConst(IRExpression):
             return IREvaluation(aut, ref)
 
         if self.val == 0:
-            res = prog.call('zero', [self.label_var()])
+            res = prog.lookup_dynamic_call('zero', [self.label_var()]).evaluate_node(prog)
             constants_map[(self.val, self.get_type())] = (res.aut, self.label_var())
         elif self.val == 1:
             res = prog.lookup_dynamic_call('one', [self.label_var()])
