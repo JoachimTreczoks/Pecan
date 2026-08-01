@@ -20,6 +20,7 @@ from pecan.settings import settings
 from pecan import utility
 
 def run_repl(env):
+    from pecan.logger import Logger
     utility.touch(settings.get_history_file())
     readline.read_history_file(settings.get_history_file())
 
@@ -37,9 +38,9 @@ def run_repl(env):
                         settings.set_debug_level(1 if settings.get_debug_level() <= 0 else 0)
             else:
                 prog = program.from_source(prog_str)
-                settings.log(0, lambda: str(prog))
+                Logger.log(str(prog), 0)
                 prog.include_with_restrictions(env)
-                env = prog.evaluate()
+                env = prog.evaluate_prog()
         except KeyboardInterrupt:
             print('') # newline to go "below" the prompt
             print("Use 'exit' to exit Pecan.")
@@ -49,7 +50,11 @@ def run_repl(env):
         except UnexpectedToken as e:
             print(e)
         except Exception as e:
-            print('An exception occurred:', e)
+            Logger.error('An exception occured: {}'.format(e))
+
+            if settings.debug_level > 0: # Swallowing the error is bad for debugging purposes, so we print the traceback if using debug mode
+                import traceback
+                traceback.print_exc()
 
     readline.write_history_file(settings.get_history_file())
 
@@ -126,7 +131,7 @@ def main():
         try:
             prog = program.load(args.file)
             if not settings.get_extract_implications():
-                env = prog.evaluate()
+                env = prog.evaluate_prog()
         except UnexpectedToken as e:
             print(e)
             return None
@@ -144,7 +149,7 @@ def main():
     if args.interactive:
         if env is None:
             prog = program.from_source('')
-            env = prog.evaluate()
+            env = prog.evaluate_prog()
 
         prog = run_repl(env)
 

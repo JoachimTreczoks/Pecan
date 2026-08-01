@@ -4,8 +4,10 @@
 import buddy
 import spot
 
+from pecan.exceptions import AutomatonReadingError
+
 class ShuffleAutomata:
-    def __init__(self, aut_a, aut_b):
+    def __init__(self, aut_a : spot.twa_graph, aut_b : spot.twa_graph):
         if aut_a.is_sba():
             self.aut_a = aut_a
         else:
@@ -18,7 +20,7 @@ class ShuffleAutomata:
 
         self.state_encoding = {}
 
-    def shuffle(self, disjunction=False):
+    def shuffle(self, disjunction : bool = False) -> spot.twa_graph:
         new_aut = spot.make_twa_graph()
 
         # We want to make sure that it visits infinitely often BOTH automata's accepting states
@@ -63,11 +65,11 @@ class ShuffleAutomata:
 
         return new_aut.postprocess('BA')
 
-    def transform_acc(self, acc, new_acc_num):
+    def transform_acc(self, acc : spot.mark_t, new_acc_num : int) -> spot.mark_t:
         if acc == spot.mark_t([0]):
             return spot.mark_t([new_acc_num])
         elif acc == spot.mark_t([]):
             return spot.mark_t([])
         else:
-            raise Exception('Unexpected acceptance condition on edge: {}'.format(e.acc))
+            raise AutomatonReadingError('Unexpected acceptance condition on edge: {}'.format(acc))
 

@@ -6,6 +6,8 @@ import numpy as np
 from pecan.automata.buchi import BuchiAutomaton
 
 from pecan.settings import settings
+from pecan.logger import Logger
+from pecan.exceptions import PlottingError
 
 # A multidimensional bitmap
 class Bitmap:
@@ -16,7 +18,7 @@ class Bitmap:
         self.bitmap = 0 # use pylong as the bitmap
 
     def get_index(self, indices):
-        if type(indices) is int:
+        if isinstance(indices, int):
             assert indices < self.dims[0]
             return indices
 
@@ -104,7 +106,7 @@ class Matplotlib2DPlotMethod(MatplotlibPlotMethod):
         for x in range(k1 ** layer):
             for y in range(k2 ** layer):
                 if settings.get_show_progress():
-                    print("\r\033[2Kdrawing {}/{} squares".format(x * k2 ** layer + y + 1, total), end="")
+                    Logger.log("\r\033[2Kdrawing {}/{} squares".format(x * k2 ** layer + y + 1, total), end="")
 
                 if cell_bitmap[x, y]:
                     self.pt.fill(
@@ -130,7 +132,7 @@ class Matplotlib3DPlotMethod(MatplotlibPlotMethod):
 
         voxels = np.zeros((k1 ** layer, k2 ** layer, k3 ** layer), dtype=np.uint8)
 
-        settings.log(lambda: "Preparing voxel map...")
+        Logger.log("Preparing voxel map...")
 
         for x in range(k1 ** layer):
             for y in range(k2 ** layer):
@@ -139,7 +141,7 @@ class Matplotlib3DPlotMethod(MatplotlibPlotMethod):
                         voxels[x, y, z] = 1
 
         if color_by_axis is not None:
-            settings.log(lambda: "Preparing color map...")
+            Logger.log("Preparing color map...")
             colors = np.empty(np.shape(voxels), dtype=object)
             cmap = self.pt.get_cmap("jet")
 
@@ -155,7 +157,7 @@ class Matplotlib3DPlotMethod(MatplotlibPlotMethod):
                         elif axis_index == 2:
                             colors[x, y, z] = cmap(z / k3 ** layer)
 
-        settings.log(lambda: "Drawing voxels...")
+        Logger.log("Drawing voxels...")
 
         fig = self.pt.figure()
         ax = fig.add_subplot(projection="3d")
@@ -231,11 +233,11 @@ class BuchiPlotter:
         self.dimensions = list(self.alphabet_sizes.keys())
 
         if plot_method not in BuchiPlotter.PLOT_METHOD_MAP:
-            raise Exception("unsupported plot method {}".format(plot_method))
+            raise PlottingError("unsupported plot method {}".format(plot_method))
 
         dim = len(self.dimensions)
         if dim not in BuchiPlotter.PLOT_METHOD_MAP[plot_method]:
-            raise Exception("plot method {} cannot plot in dimension {}".format(plot_method, dim))
+            raise PlottingError("plot method {} cannot plot in dimension {}".format(plot_method, dim))
 
         self.plot_method = BuchiPlotter.PLOT_METHOD_MAP[plot_method][dim]()
 
@@ -360,7 +362,7 @@ class BuchiPlotter:
             )
 
         if self.save_to:
-            settings.log(lambda: '[INFO] Saving plot to {}'.format(self.save_to))
+            Logger.info('Saving plot to {}'.format(self.save_to))
             self.plot_method.save(self.save_to)
             self.prog.add_generated_file(self.save_to)
 

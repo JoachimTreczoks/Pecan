@@ -9,7 +9,7 @@ def run_file(filename):
     settings.set_quiet(True)
 
     prog = program.load(filename)
-    assert prog.evaluate().result.succeeded()
+    assert prog.evaluate_prog().result.succeeded()
 
     settings.set_quiet(orig_quiet)
 

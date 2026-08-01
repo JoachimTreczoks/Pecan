@@ -10,33 +10,35 @@ from pecan.lang.ir import AutLiteral
 from pecan.lib.plot import BuchiPlotter
 
 from pecan.settings import settings
+from pecan.logger import Logger
+from pecan.exceptions import PralineConversionError
 
-def as_praline(val):
-    if type(val) is list:
+def as_praline(val : list | str | bool | int | tuple) -> PralineList | PralineString | PralineBool | PralineInt | PralineTuple:
+    if isinstance(val, list):
         result = PralineList(None, None)
 
         for v in val[::-1]:
             result = PralineList(as_praline(v), result)
 
         return result
-    elif type(val) is str:
+    elif isinstance(val, str):
         return PralineString(val)
-    elif type(val) is bool:
+    elif isinstance(val, bool):
         return PralineBool(val)
-    elif type(val) is int:
+    elif isinstance(val, int):
         return PralineInt(val)
-    elif type(val) is tuple:
+    elif isinstance(val, tuple):
         return PralineTuple([as_praline(v) for v in val])
     else:
-        raise Exception("Can't convert {} ({}) to a Praline value".format(type(val), val))
+        raise PralineConversionError("Can't convert {} ({}) to a Praline value".format(type(val), val))
 
-def as_python(val, expected=None):
+def as_python(val, expected = None) -> list | str | bool | int | tuple: # TODO: Type for PralinePecanLiteral.val
     if isinstance(val, PralineList):
         if expected is None or isinstance(val, expected):
             result = []
-            while val.a is not None:
-                result.append(as_python(val.a))
-                val = val.b
+            while not isinstance(val.head, PralineDummy):
+                result.append(as_python(val.head))
+                val = val.tail
 
             return result
     elif isinstance(val, PralineString):
@@ -56,50 +58,49 @@ def as_python(val, expected=None):
         if expected is None or isinstance(val, expected):
             return val.get_term()
     else:
-        raise Exception("Can't convert {} ({}) to a Python value".format(type(val), val))
+        raise PralineConversionError("Can't convert {} ({}) to a Python value".format(type(val), val))
 
     if expected is not None:
-        raise Exception('Expected type was {}, but got value: {}'.format(expected, val))
+        raise TypeError('Expected type was {}, but got value: {}'.format(expected, val))
     else:
-        raise Exception('Unexpected error while converting {} to a Python value (expected type: {})'.format(val, expected))
+        raise PralineConversionError('Unexpected error while converting {} to a Python value (expected type: {})'.format(val, expected))
 
 class TruthValue(Builtin):
     def __init__(self):
         super().__init__(PralineVar('truthValue'), [PralineVar('t')])
 
-    def evaluate(self, prog):
+    def evaluate(self, prog : Program) -> PralineString:
         pecan_node = prog.praline_lookup('t').evaluate(prog).get_term()
         res = pecan_node.evaluate(prog)
-        if isinstance(res, tuple):
-            tval = res[0].truth_value()
-        else:
-            tval = res.truth_value()
+        tval = res.truth_value()
         return PralineString(tval)
 
 class ToString(Builtin):
     def __init__(self):
         super().__init__(PralineVar('toString'), [PralineVar('x')])
 
-    def evaluate(self, prog):
+    def evaluate(self, prog : Program) -> PralineString:
         t = prog.praline_lookup('x').evaluate(prog)
 
-        return PralineString(t.display())
+        return PralineString(str(t))
 
 class PralinePrint(Builtin):
     def __init__(self):
         super().__init__(PralineVar('print'), [PralineVar('s')])
 
-    def evaluate(self, prog):
-        settings.print(prog.praline_lookup('s').evaluate(prog).display())
+    def evaluate(self, prog : Program) -> PralineBool:
+        Logger.log(str(prog.praline_lookup('s').evaluate(prog)))
         return PralineBool(True)
 
 class Emit(Builtin):
     def __init__(self):
         super().__init__(PralineVar('emit'), [PralineVar('pecanTerm')])
 
-    def evaluate(self, prog):
-        term = prog.praline_lookup('pecanTerm').evaluate(prog).get_term()
-        settings.log(0, lambda: '[DEBUG] Emitted: "{}"'.format(term))
+    def evaluate(self, prog : Program) -> PralineBool:
+        pecan_term = prog.praline_lookup('pecanTerm').evaluate(prog)
+        assert isinstance(pecan_term, PralinePecanLiteral) # This is always the case, but asserting it shuts up static code type checkers
+        term = pecan_term.get_term()
+        Logger.debug('Emitted: "{}"'.format(term))
         prog.emit_definition(term)
         return PralineBool(True)
 
@@ -107,15 +108,15 @@ class FreshVar(Builtin):
     def __init__(self):
         super().__init__(PralineVar('freshVar'), [])
 
-    def evaluate(self, prog):
+    def evaluate(self, prog : Program) -> PralineString:
         return PralineString(prog.fresh_name())
 
 class ToChars(Builtin):
     def __init__(self):
         super().__init__(PralineVar('toChars'), [PralineVar('s')])
 
-    def evaluate(self, prog):
-        str_val = prog.praline_lookup('s').evaluate(prog).get_value()
+    def evaluate(self, prog : Program) -> PralineList:
+        str_val = prog.praline_lookup('s').evaluate(prog).get_string()
 
         result = PralineList(None, None)
 
@@ -128,20 +129,17 @@ class Cons(Builtin):
     def __init__(self):
         super().__init__(PralineVar('cons'), [PralineVar('head'), PralineVar('tail')])
 
-    def evaluate(self, prog):
+    def evaluate(self, prog : Program) -> PralineList:
         return PralineList(prog.praline_lookup('head').evaluate(prog), prog.praline_lookup('tail').evaluate(prog))
 
 class AcceptingWord(Builtin):
     def __init__(self):
         super().__init__(PralineVar('acceptingWord'), [PralineVar('pecanTerm')])
 
-    def evaluate(self, prog):
+    def evaluate(self, prog : Program) -> PralineList:
         res = prog.praline_lookup('pecanTerm').evaluate(prog).get_term().evaluate(prog)
 
-        if isinstance(res, tuple):
-            acc_word = res[0].accepting_word()
-        else:
-            acc_word = res.accepting_word()
+        acc_word = res.accepting_word()
 
         result = PralineList(None, None)
         for var_name, vs in acc_word.items():
@@ -153,9 +151,9 @@ class Compare(Builtin):
     def __init__(self):
         super().__init__(PralineVar('compare'), [PralineVar('a'), PralineVar('b')])
 
-    def evaluate(self, prog):
-        a_val = prog.praline_lookup('a').evaluate(prog).get_value()
-        b_val = prog.praline_lookup('b').evaluate(prog).get_value()
+    def evaluate(self, prog : Program) -> PralineInt:
+        a_val = prog.praline_lookup('a').evaluate(prog).get_int()
+        b_val = prog.praline_lookup('b').evaluate(prog).get_int()
 
         if a_val < b_val:
             return PralineInt(-1)
@@ -168,7 +166,7 @@ class Equal(Builtin):
     def __init__(self):
         super().__init__(PralineVar('equal'), [PralineVar('a'), PralineVar('b')])
 
-    def evaluate(self, prog):
+    def evaluate(self, prog : Program) -> PralineBool:
         a_val = prog.praline_lookup('a').evaluate(prog)
         b_val = prog.praline_lookup('b').evaluate(prog)
         return PralineBool(a_val == b_val)
@@ -178,7 +176,7 @@ class MkAutomaton(Builtin):
     def __init__(self):
         super().__init__(PralineVar('mkAut'), [PralineVar('inputNames'), PralineVar('inputBases')])
 
-    def evaluate(self, prog):
+    def evaluate(self, prog : Program) -> PralineAutomaton:
         input_names = as_python(prog.praline_lookup('inputNames').evaluate(prog))
         input_bases = as_python(prog.praline_lookup('inputBases').evaluate(prog))
         return PralineAutomaton(input_names, input_bases, [], {})
@@ -187,12 +185,13 @@ class AddState(Builtin):
     def __init__(self):
         super().__init__(PralineVar('addState'), [PralineVar('aut'), PralineVar('stateLabel'), PralineVar('isAccepting')])
 
-    def evaluate(self, prog):
+    def evaluate(self, prog : Program) -> PralineAutomaton:
         aut = prog.praline_lookup('aut').evaluate(prog)
-        label = prog.praline_lookup('stateLabel').evaluate(prog).get_value()
-        isAccepting = prog.praline_lookup('isAccepting').evaluate(prog).get_value()
+        assert isinstance(aut, PralineAutomaton)
+        label = prog.praline_lookup('stateLabel').evaluate(prog).get_string()
+        isAccepting = prog.praline_lookup('isAccepting').evaluate(prog).get_bool()
 
-        state_str = f'{label}: {1 if isAccepting else 0}'
+        state_str = '{}: {}'.format(label, 1 if isAccepting else 0)
         aut.add_state(state_str)
 
         return aut
@@ -201,11 +200,11 @@ class AddTransition(Builtin):
     def __init__(self):
         super().__init__(PralineVar('addTransition'), [PralineVar('aut'), PralineVar('src'), PralineVar('dst'), PralineVar('syms')])
 
-    def evaluate(self, prog):
+    def evaluate(self, prog : Program) -> PralineAutomaton:
         aut = prog.praline_lookup('aut').evaluate(prog)
-        src = prog.praline_lookup('src').evaluate(prog).get_value()
-        dst = prog.praline_lookup('dst').evaluate(prog).get_value()
-        syms = prog.praline_lookup('syms').evaluate(prog).get_value()
+        src = prog.praline_lookup('src').evaluate(prog).get_string()
+        dst = prog.praline_lookup('dst').evaluate(prog).get_string()
+        syms = prog.praline_lookup('syms').evaluate(prog).get_string()
 
         aut.add_transition(src, '{} -> {}'.format(syms, dst))
 
@@ -215,7 +214,7 @@ class BuildAut(Builtin):
     def __init__(self):
         super().__init__(PralineVar('buildAut'), [PralineVar('aut')])
 
-    def evaluate(self, prog):
+    def evaluate(self, prog : Program) -> PralinePecanTerm:
         aut = prog.praline_lookup('aut').evaluate(prog)
         return PralinePecanTerm(AutLiteral(aut.build()))
 
@@ -223,24 +222,24 @@ class AutToStr(Builtin):
     def __init__(self):
         super().__init__(PralineVar('autToStr'), [PralineVar('aut')])
 
-    def evaluate(self, prog):
+    def evaluate(self, prog : Program) -> PralineString:
         aut = prog.praline_lookup('aut').evaluate(prog)
-        if type(aut) is PralinePecanLiteral:
+        if isinstance(aut, PralinePecanLiteral):
             term = aut.get_term()
-            if type(term) is AutLiteral:
+            if isinstance(term, AutLiteral):
                 return PralineString(term.aut.to_str())
             else:
-                raise Exception('Expected an AutLiteral but got {}'.format(term))
+                raise TypeError('Expected an AutLiteral but got {}'.format(term))
         else:
-            raise Exception('Expected a PralinePecanTerm, but got: {}'.format(aut))
+            raise TypeError('Expected a PralinePecanLiteral, but got: {}'.format(aut))
 
 class WriteFile(Builtin):
     def __init__(self):
         super().__init__(PralineVar('writeFile'), [PralineVar('filepath'), PralineVar('str')])
 
-    def evaluate(self, prog):
-        filepath = prog.praline_lookup('filepath').evaluate(prog).get_value()
-        s = prog.praline_lookup('str').evaluate(prog).get_value()
+    def evaluate(self, prog : Program) -> PralineBool:
+        filepath = prog.praline_lookup('filepath').evaluate(prog).get_string()
+        s = prog.praline_lookup('str').evaluate(prog).get_string()
 
         with open(filepath, 'w') as f:
             f.write(s)
@@ -253,8 +252,8 @@ class ReadFile(Builtin):
     def __init__(self):
         super().__init__(PralineVar('readFile'), [PralineVar('filepath')])
 
-    def evaluate(self, prog):
-        filepath = prog.praline_lookup('filepath').evaluate(prog).get_value()
+    def evaluate(self, prog : Program) -> PralineString:
+        filepath = prog.praline_lookup('filepath').evaluate(prog).get_string()
         with open(filepath, 'r') as f:
             return PralineString(f.read())
 
@@ -262,8 +261,8 @@ class DeleteFile(Builtin):
     def __init__(self):
         super().__init__(PralineVar('deleteFile'), [PralineVar('filepath')])
 
-    def evaluate(self, prog):
-        filepath = prog.praline_lookup('filepath').evaluate(prog).get_value()
+    def evaluate(self, prog : Program) -> PralineBool:
+        filepath = prog.praline_lookup('filepath').evaluate(prog).get_string()
         pathlib.Path(filepath).unlink()
         return PralineBool(True)
 
@@ -271,9 +270,9 @@ class Split(Builtin):
     def __init__(self):
         super().__init__(PralineVar('splitStr'), [PralineVar('sep'), PralineVar('s')])
 
-    def evaluate(self, prog):
-        sep = prog.praline_lookup('sep').evaluate(prog).get_value()
-        s = prog.praline_lookup('s').evaluate(prog).get_value()
+    def evaluate(self, prog : Program):
+        sep = prog.praline_lookup('sep').evaluate(prog).get_string()
+        s = prog.praline_lookup('s').evaluate(prog).get_string()
 
         return as_praline(s.split(sep))
 
@@ -284,13 +283,13 @@ class Plot(Builtin):
     def __init__(self):
         super().__init__(PralineVar('plot'), [PralineVar('options'), PralineVar('numSystems'), PralineVar('aut')])
 
-    def evaluate(self, prog):
+    def evaluate(self, prog : Program) -> PralineBool:
         options = dict(as_python(prog.praline_lookup('options').evaluate(prog)))
         num_systems = dict(as_python(prog.praline_lookup('numSystems').evaluate(prog)))
         term = as_python(prog.praline_lookup('aut').evaluate(prog), PralinePecanLiteral)
-        settings.log(lambda: '[INFO] Plotting {} using numeration systems {} with options: {}'.format(term, num_systems, options))
-        aut = term.evaluate(prog)
-        plotter = BuchiPlotter(prog, num_systems, aut, **options)
+        Logger.info('Plotting {} using numeration systems {} with options: {}'.format(term, num_systems, options))
+        evaluation = term.evaluate(prog)
+        plotter = BuchiPlotter(prog, num_systems, evaluation.aut, **options)
         plotter.plot()
         return PralineBool(True)
 
@@ -298,7 +297,7 @@ class SetSettings(Builtin):
     def __init__(self):
         super().__init__(PralineVar('set'), [PralineVar('name'), PralineVar('value')])
 
-    def evaluate(self, prog):
+    def evaluate(self, prog : Program) -> PralineBool:
         name = as_python(prog.praline_lookup('name').evaluate(prog), PralineString)
         value = as_python(prog.praline_lookup('value').evaluate(prog))
 
@@ -321,7 +320,7 @@ class SetSettings(Builtin):
         if name in settings_dict:
             settings_dict[name](value)
         else:
-            raise Exception('Tried to set unknown setting {} to {}'.format(name, value))
+            raise KeyError('Tried to set unknown setting {} to {}'.format(name, value))
 
         return PralineBool(True)
 

@@ -8,8 +8,14 @@ from pecan.automata.automaton import Automaton, FalseAutomaton
 from pecan.tools.shuffle_automata import ShuffleAutomata
 from pecan.utility import VarMap
 from pecan.settings import settings
+from pecan.logger import Logger
 
-def merge(merge_f, aut_a, aut_b):
+from typing import TYPE_CHECKING
+if TYPE_CHECKING :
+    from typing import Literal, Iterable, Callable
+    from pecan.lang.ir.prog import VarRef
+
+def merge(merge_f : Callable[[spot.twa_graph, spot.twa_graph], spot.twa_graph], aut_a : BuchiAutomaton, aut_b : BuchiAutomaton) -> BuchiAutomaton:
     if aut_a.num_states() < aut_b.num_states():
         merged_var_map, subs = aut_b.get_var_map().merge_with(aut_a.get_var_map())
         # print('merge(a into b)', merged_var_map, subs)
@@ -23,14 +29,14 @@ def merge(merge_f, aut_a, aut_b):
 
     return BuchiAutomaton(merge_f(new_a.get_aut(), new_b.get_aut()), merged_var_map)
 
-def merge_maps(aut, map_a: VarMap, map_b: VarMap):
+def merge_maps(aut : spot.twa_graph, map_a: VarMap, map_b: VarMap) -> BuchiAutomaton:
     merged_var_map, subs = map_a.merge_with(map_b)
     return BuchiAutomaton(aut, merged_var_map).ap_substitute(subs)
 
 class BuchiAutomaton(Automaton):
     id = 0
     @staticmethod
-    def fresh_ap():
+    def fresh_ap() -> str:
         label = f"__ap{BuchiAutomaton.id}"
         BuchiAutomaton.id += 1
         return label
@@ -39,13 +45,13 @@ class BuchiAutomaton(Automaton):
     # It gets called by the various methods that may create an automaton which already uses of the reserved __ap#N names
     # such as loading an automaton from a file.
     @staticmethod
-    def update_counter(ap_name):
+    def update_counter(ap_name : str) -> None:
         if ap_name.startswith('__ap'):
             ap_num = int(ap_name.split('__ap')[1])
             BuchiAutomaton.id = max(BuchiAutomaton.id, ap_num) + 1
 
     @classmethod
-    def as_buchi(cls, aut):
+    def as_buchi(cls, aut : Automaton) -> BuchiAutomaton:
         if aut.get_aut_type() == 'buchi':
             return aut
         elif aut.get_aut_type() == 'true':
@@ -55,19 +61,19 @@ class BuchiAutomaton(Automaton):
         else:
             raise NotImplementedError
 
-    def __init__(self, aut, var_map):
+    def __init__(self, aut : spot.twa_graph, var_map : VarMap):
         super().__init__('buchi')
 
         # The interal automaton representation
-        self.aut = aut
+        self.aut : spot.twa_graph = aut
 
         # Maps pecan variables to internal variables
-        self.var_map = var_map
+        self.var_map : VarMap = var_map
 
-    def get_var_map(self):
+    def get_var_map(self) -> VarMap:
         return self.var_map
 
-    def with_var_map(self, new_var_map):
+    def with_var_map(self, new_var_map : VarMap) -> BuchiAutomaton:
         self.var_map = new_var_map
 
         for v, aps in self.var_map.items():
@@ -76,33 +82,33 @@ class BuchiAutomaton(Automaton):
 
         return self
 
-    def make_empty_aut(self):
+    def make_empty_aut(self) -> BuchiAutomaton:
         return BuchiAutomaton.as_buchi(FalseAutomaton()).with_var_map(self.var_map)
 
-    def conjunction(self, other):
+    def conjunction(self, other : BuchiAutomaton) -> BuchiAutomaton:
         result = merge(spot.product, self, other)
         result.dump_aut()
         return result
 
-    def disjunction(self, other):
+    def disjunction(self, other : BuchiAutomaton) -> BuchiAutomaton:
         result = merge(spot.product_or, self, other)
         result.dump_aut()
         return result
 
-    def complement(self):
+    def complement(self) -> BuchiAutomaton:
         if settings.get_simplification_level() > 0:
             self.postprocess()
         result = BuchiAutomaton(spot.complement(self.get_aut()), self.var_map)
         result.dump_aut()
         return result
 
-    def dump_aut(self):
+    def dump_aut(self) -> None:
         hoa_file = settings.get_output_hoa()
         if hoa_file:
             with open(hoa_file, "a") as fd:
                 fd.write(self.get_aut().to_str() + "\n\n")
 
-    def relabel(self):
+    def relabel(self) -> BuchiAutomaton:
         level_before = settings.get_simplification_level()
         settings.set_simplification_level(0)
 
@@ -118,14 +124,14 @@ class BuchiAutomaton(Automaton):
 
             new_aps[ap.ap_name()] = new_ap
 
-        settings.log(3, lambda: 'Relabeling: {}'.format(new_aps))
+        Logger.log('Relabeling: {}'.format(new_aps), 3)
 
         res = self.ap_substitute(new_aps)
 
         settings.set_simplification_level(level_before)
         return res
 
-    def substitute(self, arg_map, env_var_map):
+    def substitute(self, arg_map : dict[str, str], env_var_map : VarMap) -> BuchiAutomaton:
         new_var_map = VarMap()
         ap_subs = {}
 
@@ -147,7 +153,7 @@ class BuchiAutomaton(Automaton):
 
         return BuchiAutomaton(self.aut, new_var_map).ap_substitute(ap_subs)
 
-    def ap_substitute(self, ap_subs):
+    def ap_substitute(self, ap_subs : dict[str, str]) -> BuchiAutomaton:
         # If we try something like [x/x]P, just don't do anything
         ap_subs = {k: v for k, v in ap_subs.items() if k != v}
 
@@ -156,7 +162,7 @@ class BuchiAutomaton(Automaton):
 
         bdd_subs = {self.aut.register_ap(k): v for k, v in ap_subs.items()}
 
-        settings.log(3, lambda: 'ap_subs: {}'.format(ap_subs))
+        Logger.log('ap_subs: {}'.format(ap_subs), 3)
 
         if settings.get_simplification_level() > 0:
             self.postprocess()
@@ -172,7 +178,7 @@ class BuchiAutomaton(Automaton):
                 new_var_map[v].append(new_ap)
                 to_register.append(new_ap)
 
-        settings.log(3, lambda: 'ap_subs: {}, {}, {}'.format(ap_subs, self.var_map, new_var_map))
+        Logger.log('ap_subs: {}, {}, {}'.format(ap_subs, self.var_map, new_var_map), 3)
 
         new_aut = buchi_transform(self.aut, Substitution(bdd_subs))
 
@@ -181,13 +187,13 @@ class BuchiAutomaton(Automaton):
 
         return BuchiAutomaton(new_aut, new_var_map) #.postprocess()
 
-    def project(self, var_refs, env_var_map):
+    def project(self, var_refs : Iterable[VarRef], env_var_map : VarMap) -> BuchiAutomaton:
         from pecan.lang.ir.prog import VarRef
         aps = []
         pecan_var_names = []
 
         for v in var_refs:
-            if type(v) is VarRef:
+            if isinstance(v, VarRef):
                 aps.extend(self.var_map[v.var_name])
                 pecan_var_names.append(v.var_name)
 
@@ -207,11 +213,11 @@ class BuchiAutomaton(Automaton):
 
         return result
 
-    def ap_project(self, aps):
+    def ap_project(self, aps : list[str]) -> BuchiAutomaton:
         if not aps:
             return self
 
-        settings.log(3, lambda: 'ap_project: {}'.format(aps))
+        Logger.log('ap_project: {}'.format(aps), 3)
 
         # Do a quick check here to simplify if we're empty; the emptiness checking algorithm is very fast (can be done in linear time)
         # Compared to the cost of postprocessing (depends on the underlying automaton, but generally atrocious)
@@ -227,10 +233,10 @@ class BuchiAutomaton(Automaton):
 
         return BuchiAutomaton(res_aut, self.get_var_map())
 
-    def is_empty(self):
+    def is_empty(self) -> bool:
         return self.aut.is_empty()
 
-    def truth_value(self):
+    def truth_value(self) -> Literal['false', 'true', 'sometimes']:
         if self.aut.is_empty(): # If we accept nothing, we are false
             return 'false'
         elif self.complement().is_empty(): # If our complement accepts nothing, we accept everything, so we are true
@@ -238,34 +244,33 @@ class BuchiAutomaton(Automaton):
         else: # Otherwise, we are neither true nor false: i.e., not all variables have been eliminated
             return 'sometimes'
 
-    def num_states(self):
+    def num_states(self) -> int:
         return self.aut.num_states()
 
-    def num_edges(self):
+    def num_edges(self) -> int:
         return self.aut.num_edges()
 
-    # Should return a string of SVG data
-    def show(self):
+    def show(self): # Should return a string of SVG data. **Not a String object!!!**
         return self.postprocess().aut.show()
 
     def get_aut(self):
         return self.aut
 
-    def simplify_edges(self):
+    def simplify_edges(self) -> BuchiAutomaton:
         return self.merge_edges()
 
-    def simplify_states(self):
+    def simplify_states(self) -> BuchiAutomaton:
         self.get_aut().purge_dead_states()
-        settings.log(3, lambda: 'after purge_dead_states: {}'.format(self.num_states()))
+        Logger.log('after purge_dead_states: {}'.format(self.num_states()), 3)
         self.get_aut().purge_unreachable_states()
-        settings.log(3, lambda: 'after purge_unreachable_states: {}'.format(self.num_states()))
+        Logger.log('after purge_unreachable_states: {}'.format(self.num_states()), 3)
 
         self.aut = self.get_aut().scc_filter()
-        settings.log(3, lambda: 'after scc_filter: {}'.format(self.num_states()))
+        Logger.log('after scc_filter: {}'.format(self.num_states()), 3)
 
         if self.num_states() < 10 & self.get_aut().is_deterministic():
             self.aut = spot.sat_minimize(self.get_aut())
-            settings.log(3, lambda: 'after sat_minimize: {}'.format(self.num_states()))
+            Logger.log('after sat_minimize: {}'.format(self.num_states()), 3)
 
         if settings.use_heuristics():
             self.merge_states()
@@ -275,9 +280,9 @@ class BuchiAutomaton(Automaton):
 
         return self
 
-    def postprocess(self, level=None):
-        settings.log(3, lambda: 'Empty: {}'.format(self.is_empty()))
-        # settings.log(3, lambda: 'Universal: {}'.format(spot.is_universal(self.get_aut())))
+    def postprocess(self, level : str | None=None) -> BuchiAutomaton:
+        Logger.log('Empty: {}'.format(self.is_empty()), 3)
+        # Logger.log('Universal: {}'.format(spot.is_universal(self.get_aut())), 3)
 
         postprocess_settings = ['BA']
         if level is not None:
@@ -294,37 +299,37 @@ class BuchiAutomaton(Automaton):
                     else:
                         postprocess_settings.append('High')
 
-            settings.log(1, lambda: 'Postprocessing (before) using {}: {} states and {} edges'.format(postprocess_settings, self.num_states(), self.num_edges()))
+            Logger.log('Postprocessing (before) using {}: {} states and {} edges'.format(postprocess_settings, self.num_states(), self.num_edges()), 1)
 
             self.aut = self.aut.postprocess(*postprocess_settings)
 
-            settings.log(1, lambda: 'Postprocessing (after): {} states and {} edges'.format(self.num_states(), self.num_edges()))
+            Logger.log('Postprocessing (after): {} states and {} edges'.format(self.num_states(), self.num_edges()), 1)
         return self
 
-    def simplify(self):
+    def simplify(self) -> BuchiAutomaton:
         return self.postprocess()
 
-    def merge_states(self):
+    def merge_states(self) -> BuchiAutomaton:
         if settings.get_simplification_level() > 1:
             ran = False
             while self.get_aut().merge_states() > 0:
                 ran = True
-                settings.log(3, lambda: 'after merge_states: {}'.format(self.num_states()))
+                Logger.log('after merge_states: {}'.format(self.num_states()), 3)
 
             # If we didn't merge any states, we still want to show the message once
             if not ran:
-                settings.log(3, lambda: 'after merge_states: {}'.format(self.num_states()))
+                Logger.log('after merge_states: {}'.format(self.num_states()), 3)
         else:
             self.get_aut().merge_states()
-            settings.log(3, lambda: 'after merge_states: {}'.format(self.num_states()))
+            Logger.log('after merge_states: {}'.format(self.num_states()), 3)
 
         return self
 
-    def merge_edges(self):
+    def merge_edges(self) -> BuchiAutomaton:
         self.get_aut().merge_edges()
         return self
 
-    def accepting_word(self):
+    def accepting_word(self) -> dict | None:
         acc_word = self.get_aut().accepting_word()
 
         if acc_word is None:
@@ -356,7 +361,7 @@ class BuchiAutomaton(Automaton):
 
         return result
 
-    def to_binary(self, var_names, bdd_list):
+    def to_binary(self, var_names : list[str], bdd_list : list[buddy.bdd]) -> dict:
         var_vals = {k: [] for k in var_names}
 
         for bdd in bdd_list[::-1]:
@@ -372,7 +377,7 @@ class BuchiAutomaton(Automaton):
 
         return var_vals
 
-    def process_formula(self, next_vals, formula):
+    def process_formula(self, next_vals : dict[str, bool], formula : buddy.bdd | spot.formula) -> None:
         if formula._is(spot.op_ap):
             next_vals[formula.ap_name()] = True
         elif formula._is(spot.op_Not):
@@ -383,26 +388,26 @@ class BuchiAutomaton(Automaton):
         elif formula._is(spot.op_tt):
             pass
         else:
-            raise Exception('Cannot process formula: {}'.format(formula))
+            raise ValueError('Cannot process formula: {}'.format(formula))
 
-    def custom_convert(self, other):
+    def custom_convert(self, other : Automaton) -> BuchiAutomaton:
         return BuchiAutomaton.as_buchi(other)
 
-    def shuffle(self, is_disj, other):
+    def shuffle(self, is_disj : bool, other : Automaton):
         # Don't need to convert ourselves, but may need to convert other aut to Buchi
         aut_a = self
         aut_b = self.convert(other)
 
         return merge_maps(ShuffleAutomata(aut_a.get_aut(), aut_b.get_aut()).shuffle(is_disj), aut_a.get_var_map(), aut_b.get_var_map())
 
-    def to_str(self):
+    def to_str(self) -> str:
         return 'VAR_MAP: {}\n{}'.format(self.var_map.to_str(), self.aut.to_str('hoa'))
 
-    def save(self, filename):
+    def save(self, filename : str) -> None:
         with open(filename, 'w') as f:
             f.write(self.to_str())
 
-def buchi_transform(original_aut, builder):
+def buchi_transform(original_aut : spot.twa_graph, builder : Builder):
     # Build a new automata with different edges
     new_aut = spot.make_twa_graph()
 
@@ -441,25 +446,25 @@ def buchi_transform(original_aut, builder):
     return new_aut
 
 class Builder:
-    def pre_build(self, new_aut):
+    def pre_build(self, new_aut : spot.twa_graph):
         pass
 
-    def post_build(self, new_aut):
+    def post_build(self, new_aut : spot.twa_graph):
         pass
 
-    def build_cond(self, cond):
+    def build_cond(self, cond : buddy.bdd):
         return cond
 
 class Substitution(Builder):
-    def __init__(self, subs):
+    def __init__(self, subs : dict):
         self.subs = subs
 
-    def pre_build(self, new_aut):
+    def pre_build(self, new_aut : spot.twa_graph):
         for k, v in self.subs.items():
-            if type(v) is str:
+            if isinstance(v, str):
                 self.subs[k] = buddy.bdd_ithvar(new_aut.register_ap(v))
 
-    def build_cond(self, cond):
+    def build_cond(self, cond : buddy.bdd):
         # TODO: ideally we could use the bdd_veccompose to do them all at once instead of
         #   one at a time, but spot doesn't expose the bdd_newpair function to python at the moment...
         for var, new_formula in self.subs.items():

@@ -9,7 +9,7 @@ def run_file(filename):
     orig_level = settings.get_opt_level()
     settings.set_opt_level(0)
     prog = program.load(filename)
-    assert prog.evaluate().result.succeeded()
+    assert prog.evaluate_prog().result.succeeded()
     settings.set_opt_level(orig_level)
 
 def test_load_pred():

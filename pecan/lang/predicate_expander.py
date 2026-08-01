@@ -7,11 +7,11 @@ from pecan.lang.ir_transformer import IRTransformer
 from pecan.lang.ir_substitution import IRSubstitution
 
 class PredicateExpander(IRTransformer):
-    def __init__(self, prog):
+    def __init__(self, prog : Program):
         super().__init__()
-        self.prog = prog
+        self.prog : Program = prog
 
-    def transform_Call(self, node):
+    def transform_Call(self, node : Call) -> IRNode:
         if not node.args:
             final_call = node
         else:

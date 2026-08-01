@@ -2,50 +2,53 @@
 # -*- coding=utf-8 -*-
 
 from pecan.tools.walnut_converter import convert_walnut_lines
+from pecan.automata.buchi import BuchiAutomaton
+
+from pecan.exceptions import AutomatonReadingError
 
 class Transition:
-    def __init__(self, input_size, input_line):
-        split = input_line.split('->')
-        self.inputs = [inp.strip() for inp in split[0].split()]
-        self.dest_label = split[1].strip()
+    def __init__(self, input_size : int, input_line : str):
+        split : list[str] = input_line.split('->')
+        self.inputs : list[str] = [inp.strip() for inp in split[0].split()]
+        self.dest_label : str = split[1].strip()
 
         if len(self.inputs) != input_size:
-            raise Exception('Expected {} input symbols for transition, only got {} in "{}"'.format(input_size, len(self.inputs), input_line))
+            raise AutomatonReadingError('Expected {} input symbols for transition, only got {} in "{}"'.format(input_size, len(self.inputs), input_line))
 
-    def to_str(self, state_map):
+    def to_str(self, state_map : dict[str, int]) -> str:
         return '{} -> {}'.format(self.input_str(), state_map[self.dest_label])
 
-    def input_str(self):
+    def input_str(self) -> str:
         return ' '.join(self.inputs)
 
-    def __repr__(self):
+    def __str__(self) -> str:
         return 'Transition({}, {})'.format(self.inputs, self.dest_label)
 
 class State:
-    def __init__(self, idx, input_line):
-        self.idx = idx
+    def __init__(self, idx : int, input_line : str):
+        self.idx : int = idx
 
-        split = input_line.split(':')
-        self.label = split[0].strip()
-        self.acc = int(split[1]) == 1
+        split : list[str] = input_line.split(':')
+        self.label : str = split[0].strip()
+        self.acc : bool = int(split[1]) == 1
 
-        self.transitions = []
+        self.transitions : list[Transition] = []
 
-    def add_transition(self, transition):
+    def add_transition(self, transition : Transition) -> None:
         self.transitions.append(transition)
 
-    def to_str(self, state_map):
+    def to_str(self, state_map : dict[str, int]) -> list[str]:
         lines = []
         lines.append('{} {}'.format(self.idx, 1 if self.acc else 0))
         for transition in self.transitions:
             lines.append(transition.to_str(state_map))
         return lines
 
-    def __repr__(self):
+    def __str__(self) -> str:
         return 'State({}, {}, {})'.format(self.label, self.acc, self.transitions)
 
 # TODO: It would be nice if we used a real parser for all this stuff
-def convert_labeled_aut(filename, input_names):
+def convert_labeled_aut(filename : str, input_names : list[str]) -> BuchiAutomaton:
     state_idx = 0
     cur_state = None
 
@@ -65,7 +68,7 @@ def convert_labeled_aut(filename, input_names):
                 alphabet_line = line
             elif '->' in line:
                 if cur_state is None:
-                    raise Exception('Transition "{}" not inside any state! (line: {})'.format(line, lineno))
+                    raise AutomatonReadingError('Transition "{}" not inside any state! (line: {})'.format(line, lineno))
                 cur_state.add_transition(Transition(len(input_names), line))
             elif len(line) > 1:
                 cur_state = State(state_idx, line)
@@ -75,7 +78,7 @@ def convert_labeled_aut(filename, input_names):
 
     return build_aut(alphabet_line, states, state_map, input_names)
 
-def build_aut(alphabet_line, states, state_map, input_names):
+def build_aut(alphabet_line : str, states : list[State], state_map : dict[str, int], input_names : list[str]) -> BuchiAutomaton:
     lines = [alphabet_line]
 
     for state in states:

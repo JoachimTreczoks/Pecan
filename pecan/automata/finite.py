@@ -2,34 +2,65 @@
 # -*- coding=utf-8 -*-
 
 import itertools as it
+from collections import deque
 
-from pecan.automata.automaton import Automaton, FalseAutomaton
-from pecan.utility import VarMap
+from pecan.automata.automaton import Automaton
 from pecan.settings import settings
 
 import PySimpleAutomata.NFA as NFA
 
 # import foma.foma.python.foma as foma
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING :
+    from typing import Literal, Iterable
+    from pecan.lang.ir.prog import VarRef
+
 class FiniteAutomaton(Automaton):
-    fresh_counter = 0
+    """
+    Model of finite automata
+
+    Parameters
+    ----------
+    aut : dict
+    var_map : dict
+
+    Attributes
+    ----------
+    aut : dict
+          The internal automaton representation
+    var_map : dict
+              A map (V \to (N x Sigma)) mapping variables to their index in the symbol and the alphabet of the symbol
+    special_attr : Literal['false', 'true', None]
+                   Whether the given automaton is the finite version of `TrueAutomaton`, `FalseAutomaton`, or neither
+    """
+    _id = 0
     @staticmethod
-    def fresh_ap():
-        label = f"__finvar{FiniteAutomaton.fresh_counter}"
-        FiniteAutomaton.fresh_counter += 1
+    def fresh_ap() -> str:
+        """Returns a unique label to ensure unique automaton names."""
+        label = f"__finvar{FiniteAutomaton._id}"
+        FiniteAutomaton._id += 1
         return label
 
-    # This exists so that we ensure all names generated are fresh.
-    # It gets called by the various methods that may create an automaton which already uses of the reserved __ap#N names
-    # such as loading an automaton from a file.
     @staticmethod
-    def update_counter(ap_name):
+    def update_counter(ap_name : str) -> None:
+        """
+        This exists so that we ensure all names generated are fresh.
+        It gets called by the various methods that may create an automaton which already uses of the reserved `__ap#N` names,
+        such as loading an automaton from a file.
+
+        Parameters
+        ----------
+        ap_name : str
+                  Name of an automaton
+        """
         if ap_name.startswith('var'):
             ap_num = int(ap_name.split('var')[1])
-            FiniteAutomaton.id = max(FiniteAutomaton.id, ap_num) + 1
+            FiniteAutomaton._id = max(FiniteAutomaton._id, ap_num) + 1
 
     @classmethod
-    def as_finite(cls, aut):
+    def as_finite(cls, aut : Automaton) -> FiniteAutomaton:
+        """Turns automata into finite automata."""
         if aut.get_aut_type() == 'true':
             return cls.true_aut()
         elif aut.get_aut_type() == 'false':
@@ -37,11 +68,13 @@ class FiniteAutomaton(Automaton):
         else:
             raise NotImplementedError('No known conversion from {} to NFA.'.format(aut.get_aut_type()))
 
-    def custom_convert(self, other):
+    def custom_convert(self, other : Automaton) -> FiniteAutomaton:
+        """Redirects to FiniteAutomaton.as_finite()."""
         return FiniteAutomaton.as_finite(other)
 
     @classmethod
-    def true_aut(cls):
+    def true_aut(cls) -> FiniteAutomaton:
+        """Creates and returns a finite automaton that accepts anything."""
         f = FiniteAutomaton({
                 'alphabet': set(),
                 'states': set(),
@@ -53,7 +86,8 @@ class FiniteAutomaton(Automaton):
         return f
 
     @classmethod
-    def false_aut(cls):
+    def false_aut(cls) -> FiniteAutomaton:
+        """Creates and returns a finite automaton that accepts nothing."""
         f = FiniteAutomaton({
                 'alphabet': set(),
                 'states': set(),
@@ -64,21 +98,35 @@ class FiniteAutomaton(Automaton):
         f.special_attr = 'false'
         return f
 
-    def __init__(self, aut, var_map):
+    def __init__(self, aut : dict, var_map : dict):
         super().__init__('finite')
 
-        # The internal automaton representation
-        self.aut = aut
+        self.aut : dict = aut
+        self.var_map : dict = var_map
+        self.special_attr : Literal['false', 'true', None] = None
 
-        # A map (V \to (N x Sigma)) mapping variables to their index in the symbol and the alphabet of the symbol
-        self.var_map = var_map
-
-        self.special_attr = None
-
-    def get_var_map(self):
+    def get_var_map(self) -> dict:
         return self.var_map
 
-    def augment_vars(self, other):
+    def augment_vars(self, other : FiniteAutomaton) -> tuple[dict, dict, dict]:
+        """Merges the variable maps of `self` and `other`.
+
+        Parameters
+        ----------
+        other : FiniteAutomaton
+                Other automaton to merge variable map with
+
+        Returns
+        -------
+        new_l : dict
+                Modified automaton based on `self` with the merged variable map, in NFA representation
+
+        new_r : dict
+                Modified automaton based on `other` with the merged variable map, in NFA representation
+
+        new_var_map : dict
+                      Merged variable map combining those of `self` and `other`
+        """
         new_var_map = dict(self.var_map)
         cur_idx = len(new_var_map)
 
@@ -92,7 +140,19 @@ class FiniteAutomaton(Automaton):
 
         return new_l, new_r, new_var_map
 
-    def with_var_map(self, new_var_map):
+    def with_var_map(self, new_var_map : dict) -> dict:
+        """Replaces the variable map of `self` with `new_var_map`.
+
+        Parameters
+        ----------
+        new_var_map : dict
+                      New variable map for `self`
+
+        Returns
+        -------
+        FiniteAutomaton
+                        Modified automaton based on `self` with the new variable map, in NFA representation
+        """
         alphabets = list(range(len(new_var_map)))
         for v, (idx, alphabet) in new_var_map.items():
             alphabets[idx] = alphabet
@@ -100,25 +160,25 @@ class FiniteAutomaton(Automaton):
         if len(alphabets) == 0:
             new_alphabet = set()
         else:
-            new_alphabet = set(' '.join(syms) for syms in it.product(*alphabets))
+            new_alphabet = set(' '.join(symbol) for symbol in it.product(*alphabets))
 
         new_transitions = {}
-        for (src, sym), dsts in self.aut['transitions'].items():
-            new_syms = list(range(len(new_var_map)))
+        for (src, symbols), dsts in self.aut['transitions'].items():
+            new_symbols = list(range(len(new_var_map)))
 
             # Copy over the old symbols
-            syms = sym.split(' ')
+            symbols = symbols.split(' ')
             for v, (idx, alphabet) in self.var_map.items():
                 # If a symbol isn't in the new map, just drop it
                 if v in new_var_map:
-                    new_syms[new_var_map[v][0]] = [syms[idx]]
+                    new_symbols[new_var_map[v][0]] = [symbols[idx]]
 
             for v, (idx, alphabet) in new_var_map.items():
                 if not v in self.var_map:
-                    new_syms[idx] = alphabet
+                    new_symbols[idx] = alphabet
 
-            for new_sym in it.product(*new_syms):
-                new_transitions[(src, ' '.join(new_sym))] = dsts
+            for new_symbol in it.product(*new_symbols):
+                new_transitions[(src, ' '.join(new_symbol))] = dsts
 
         # Rename all states because PySimpleAutomata can't union automata with the same state names...
         # TODO: Probably very inefficient.
@@ -130,7 +190,7 @@ class FiniteAutomaton(Automaton):
             'transitions': new_transitions
         }, FiniteAutomaton.fresh_ap())
 
-    def conjunction(self, other):
+    def conjunction(self, other : FiniteAutomaton) -> FiniteAutomaton:
         if self.special_attr == 'true' or other.special_attr == 'false':
             return other
         elif self.special_attr == 'false' or other.special_attr == 'true':
@@ -139,16 +199,16 @@ class FiniteAutomaton(Automaton):
             aut_l, aut_r, new_var_map = self.augment_vars(other)
             return FiniteAutomaton(NFA.nfa_intersection(aut_l, aut_r), new_var_map)
 
-    def disjunction(self, other):
-        if self.special_attr == 'true' or other.special_attr == 'true':
+    def disjunction(self, other : FiniteAutomaton) -> FiniteAutomaton:
+        if self.special_attr == 'true' or other.special_attr == 'false':
             return self
-        elif self.special_attr == 'false' or other.special_attr == 'false':
+        elif self.special_attr == 'false' or other.special_attr == 'true':
             return other
         else:
             aut_l, aut_r, new_var_map = self.augment_vars(other)
             return FiniteAutomaton(NFA.nfa_union(aut_l, aut_r), new_var_map)
 
-    def complement(self):
+    def complement(self) -> FiniteAutomaton:
         if self.special_attr == 'true':
             return FiniteAutomaton.false_aut()
         elif self.special_attr == 'false':
@@ -166,10 +226,10 @@ class FiniteAutomaton(Automaton):
             # print(res.relabel_states().to_str())
             return res
 
-    def relabel(self):
+    def relabel(self) -> FiniteAutomaton:
         return self
 
-    def substitute(self, arg_map, env_var_map):
+    def substitute(self, arg_map : dict, env_var_map : dict) -> FiniteAutomaton:
         new_var_map = {}
         unified = {}
 
@@ -220,7 +280,7 @@ class FiniteAutomaton(Automaton):
 
         return FiniteAutomaton(aut, new_var_map)
 
-    def project(self, var_refs, env_var_map):
+    def project(self, var_refs : Iterable[VarRef], env_var_map : dict) -> FiniteAutomaton:
         from pecan.lang.ir.prog import VarRef
 
         # print('Projecting', self.var_map, var_refs)
@@ -249,7 +309,7 @@ class FiniteAutomaton(Automaton):
             # print(res.relabel_states().to_str())
             return res
 
-    def is_empty(self):
+    def is_empty(self) -> bool:
         if self.special_attr == 'true':
             return False
         elif self.special_attr == 'false':
@@ -257,7 +317,7 @@ class FiniteAutomaton(Automaton):
         else:
             return not NFA.nfa_nonemptiness_check(self.aut)
 
-    def truth_value(self):
+    def truth_value(self) -> Literal['false', 'true', 'sometimes']:
         if self.is_empty(): # If we accept nothing, we are false
             return 'false'
         elif self.complement().is_empty(): # If our complement accepts nothing, we accept everything, so we are true
@@ -265,7 +325,8 @@ class FiniteAutomaton(Automaton):
         else: # Otherwise, we are neither true nor false: i.e., not all variables have been eliminated
             return 'sometimes'
 
-    def relabel_states(self):
+    def relabel_states(self) -> FiniteAutomaton:
+        """Changes state labels to be stringified integers in the range `[0, n)`, where `n` is the total number of states"""
         state_map = {}
         for i, s in enumerate(self.aut['states']):
             state_map[s] = str(i)
@@ -284,13 +345,13 @@ class FiniteAutomaton(Automaton):
 
         return FiniteAutomaton(new_aut, self.var_map)
 
-    def accepting_word(self):
+    def accepting_word(self) -> dict | None:
         # mostly copied from PySimpleAutomata's emptiness checking code
 
         # BFS
         symbol_history = {}
 
-        queue = list()
+        queue = deque()
         visited = set()
         for state in self.aut['initial_states']:
             visited.add(state)
@@ -298,7 +359,7 @@ class FiniteAutomaton(Automaton):
 
         final_state = None
         while queue:
-            state = queue.pop(0)
+            state = queue.popleft()
             visited.add(state)
             for a in self.aut['alphabet']:
                 if (state, a) in self.aut['transitions']:
@@ -313,7 +374,6 @@ class FiniteAutomaton(Automaton):
                             queue.append(next_state)
 
         if final_state is not None:
-            from pecan.lib.praline.builtins import as_praline
             res = []
             while not final_state in self.aut['initial_states']:
                 final_state, next_sym = symbol_history[final_state]
@@ -327,23 +387,23 @@ class FiniteAutomaton(Automaton):
 
         return None
 
-    def num_states(self):
+    def num_states(self) -> int:
         return len(self.aut['states'])
 
-    def num_edges(self):
+    def num_edges(self) -> int:
         return len(self.aut['transitions'])
 
     # Should return a string of SVG data
-    def show(self):
+    def __str__(self) -> str:
         return str(self.aut)
 
-    def get_aut(self):
+    def get_aut(self) -> dict:
         return self.aut
 
-    def to_str(self):
+    def to_str(self) -> str:
         return '{}'.format({'var_map': self.var_map, 'special_attr': self.special_attr, 'aut': self.aut})
 
-    def save(self, filename):
+    def save(self, filename : str) -> None:
         with open(filename, 'w') as f:
             f.write(self.to_str())
 

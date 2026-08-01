@@ -1,185 +1,187 @@
 #!/usr/bin/env python3.6
 # -*- coding=utf-8 -*-
 
-import spot
+from pecan.lang.ast.base import BinaryExpression, Expression, Predicate, UnaryExpression
 
-from pecan.lang.ast import *
+from pecan.exceptions import AutomatonArithmeticError
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING :
+    from pecan.lang.ast.base import TypeHint
+    from pecan.lang.ast.prog import Program
+    from pecan.lang.ast_transformer import AstTransformer
 
 class Add(BinaryExpression):
-    def __init__(self, a, b):
+    def __init__(self, a : Expression, b : Expression):
         super().__init__(a, b)
 
-    def change_label(self, label): # for changing label to __constant#
-        self.label = label
+    def change_label(self, label : str) -> None: # for changing label to __constant#
+        self.label : str = label
 
-    def show(self):
-        return '({} + {})'.format(self.a.show(), self.b.show())
+    def __str__(self) -> str:
+        return '({} + {})'.format(self.a, self.b)
 
-    def transform(self, transformer):
+    def transform(self, transformer : AstTransformer) -> Add:
         return transformer.transform_Add(self)
 
-    def evaluate_int(self, prog):
+    def evaluate_int(self, prog : Program) -> int:
         assert self.is_int
         return self.a.evaluate_int(prog) + self.b.evaluate_int(prog)
 
 class Sub(BinaryExpression):
-    def __init__(self, a, b):
+    def __init__(self, a : Expression, b : Expression):
         super().__init__(a, b)
 
-    def show(self):
+    def __str__(self) -> str:
         return '({} - {})'.format(self.a, self.b)
 
-    def transform(self, transformer):
+    def transform(self, transformer : AstTransformer) -> Sub:
         return transformer.transform_Sub(self)
 
-    def evaluate_int(self, prog):
+    def evaluate_int(self, prog : Program) -> int:
         assert self.is_int
         return self.a.evaluate_int(prog) - self.b.evaluate_int(prog)
 
 class Mul(BinaryExpression):
-    def __init__(self, a, b):
+    def __init__(self, a : Expression, b : Expression):
         super().__init__(a, b)
 
-    def transform(self, transformer):
+    def transform(self, transformer : AstTransformer) -> Mul:
         return transformer.transform_Mul(self)
 
-    def show(self):
+    def __str__(self) -> str:
         return '({} * {})'.format(self.a, self.b)
 
-    def evaluate_int(self, prog):
+    def evaluate_int(self, prog : Program) -> int:
         assert self.is_int
         return self.a.evaluate_int(prog) * self.b.evaluate_int(prog)
 
 class Div(BinaryExpression):
-    def __init__(self, a, b):
+    def __init__(self, a : Expression, b : Expression):
         super().__init__(a, b)
         if not self.b.is_int:
             raise AutomatonArithmeticError("Second argument of division must be an integer in {}".format(self))
 
-    def show(self):
+    def __str__(self) -> str:
         return '({} / {})'.format(self.a, self.b)
 
-    def evaluate_int(self, prog):
+    def evaluate_int(self, prog : Program) -> int:
         assert self.is_int
         return self.a.evaluate_int(prog) // self.b.evaluate_int(prog)
 
-    def transform(self, transformer):
+    def transform(self, transformer : AstTransformer) -> Div:
         return transformer.transform_Div(self)
 
 class IntConst(Expression):
-    def __init__(self, val):
+    def __init__(self, val : int):
         super().__init__()
-        self.val = val
-        self.label = "__constant{}".format(self.val)
+        self.val : int = val
+        self.label : str = "__constant{}".format(self.val)
 
-    def transform(self, transformer):
+    def transform(self, transformer : AstTransformer) -> IntConst:
         return transformer.transform_IntConst(self)
 
-    def evaluate_int(self, prog):
+    def evaluate_int(self, prog : Program) -> int:
         return self.val
 
-    def show(self):
+    def __str__(self) -> str:
         return str(self.val)
 
 class Equals(Predicate):
-    def __init__(self, a, b):
+    def __init__(self, a : Expression, b : Expression):
         super().__init__()
-        self.a = a
-        self.b = b
+        self.a : Expression = a
+        self.b : Expression = b
 
-    def transform(self, transformer):
+    def transform(self, transformer : AstTransformer) -> Equals:
         return transformer.transform_Equals(self)
 
-    def __repr__(self):
+    def __str__(self) -> str:
         return '({} = {})'.format(self.a, self.b)
 
 class NotEquals(Predicate):
-    def __init__(self, a, b):
+    def __init__(self, a : Expression, b : Expression):
         super().__init__()
-        self.a = a
-        self.b = b
+        self.a : Expression = a
+        self.b : Expression = b
 
-    def transform(self, transformer):
+    def transform(self, transformer : AstTransformer) -> NotEquals:
         return transformer.transform_NotEquals(self)
 
-    def __repr__(self):
+    def __str__(self) -> str:
         return '({} ≠ {})'.format(self.a, self.b)
 
 class Less(Predicate):
-    def __init__(self, a, b):
+    def __init__(self, a : Expression, b : Expression):
         super().__init__()
-        self.a = a
-        self.b = b
+        self.a : Expression = a
+        self.b : Expression = b
 
-    def transform(self, transformer):
+    def transform(self, transformer : AstTransformer) -> Less:
         return transformer.transform_Less(self)
 
-    def __repr__(self):
+    def __str__(self) -> str:
         return '({} < {})'.format(self.a, self.b)
 
 class Greater(Predicate):
-    def __init__(self, a, b):
+    def __init__(self, a : Expression, b : Expression):
         super().__init__()
-        self.a = a
-        self.b = b
+        self.a : Expression= a
+        self.b : Expression= b
 
-    def transform(self, transformer):
+    def transform(self, transformer : AstTransformer) -> Greater:
         return transformer.transform_Greater(self)
 
-    def __repr__(self):
+    def __str__(self) -> str:
         return '({} > {})'.format(self.a, self.b)
 
 class LessEquals(Predicate):
-    def __init__(self, a, b):
+    def __init__(self, a : Expression, b : Expression):
         super().__init__()
-        self.a = a
-        self.b = b
+        self.a : Expression = a
+        self.b : Expression = b
 
-    def transform(self, transformer):
+    def transform(self, transformer : AstTransformer) -> LessEquals:
         return transformer.transform_LessEquals(self)
 
-    def __repr__(self):
+    def __str__(self) -> str:
         return '({} ≤ {})'.format(self.a, self.b)
 
 class GreaterEquals(Predicate):
-    def __init__(self, a, b):
+    def __init__(self, a : Expression, b : Expression):
         super().__init__()
-        self.a = a
-        self.b = b
+        self.a : Expression = a
+        self.b : Expression = b
 
-    def transform(self, transformer):
+    def transform(self, transformer : AstTransformer) -> GreaterEquals:
         return transformer.transform_GreaterEquals(self)
 
-    def __repr__(self):
+    def __str__(self) -> str:
         return '({} ≥ {})'.format(self.a, self.b)
 
 class Neg(UnaryExpression): # Should this be allowed?
-    def __init__(self, a):
+    def __init__(self, a : Expression):
         super().__init__(a)
-        self.a = a
+        self.a : Expression = a
 
-    def transform(self, transformer):
+    def transform(self, transformer : AstTransformer) -> Neg:
         return transformer.transform_Neg(self)
 
-    def show(self):
+    def __str__(self) -> str:
         return '(-{})'.format(self.a)
 
-    def evaluate_int(self, prog):
+    def evaluate_int(self, prog : Program) -> int:
         assert self.is_int
         return -self.a.evaluate_int(prog)
 
 class PredicateExpr(Expression):
-    def __init__(self, var_name, pred):
+    def __init__(self, var_name : str, pred : TypeHint):
         super().__init__()
-        self.var_name = var_name
-        self.pred = pred
+        self.var_name : str = var_name
+        self.pred : TypeHint = pred
 
-    def transform(self, transformer):
+    def transform(self, transformer : AstTransformer) -> PredicateExpr:
         return transformer.transform_PredicateExpr(self)
 
-    def show(self):
+    def __str__(self) -> str:
         return 'Expr({}, {})'.format(self.var_name, self.pred)
-
-class AutomatonArithmeticError(Exception):
-    pass
-

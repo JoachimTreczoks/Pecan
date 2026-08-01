@@ -4,25 +4,25 @@
 from pecan.lang.ir_transformer import IRTransformer
 from pecan.lang.ir import *
 
-def implies(a, b):
+def implies(a : IRPredicate, b : IRPredicate) -> Disjunction:
     return Disjunction(Complement(a), b)
 
-def iff(a, b):
+def iff(a : IRPredicate, b : IRPredicate) -> Conjunction:
     return Conjunction(implies(a, b), implies(b, a))
 
 # This class performs a number of simplifications on the IR representation, eliminating constructs that we need to know the type of to eliminate
 class TypedIRLowering(IRTransformer):
-    def __init__(self, current_program):
+    def __init__(self, current_program : Program):
         super().__init__()
-        self.current_program = current_program
+        self.current_program : Program = current_program
 
-    def transform_Call(self, node):
+    def transform_Call(self, node : Call) -> Call | Exists:
         # We may need to compute some values for the args
         arg_preds = []
         final_args = []
         for arg in node.args:
             # If it's not just a variable, we need to actually do something
-            if type(arg) is not VarRef:
+            if not isinstance(arg, VarRef):
                 # For some reason we need to import again here?
                 from pecan.lang.ir.arith import Equals, FunctionExpression
 
@@ -39,7 +39,7 @@ class TypedIRLowering(IRTransformer):
 
         return final_pred
 
-    def transform_EqualsCompareRange(self, node):
+    def transform_EqualsCompareRange(self, node : EqualsCompareRange) -> Complement | Conjunction:
         idx_var = VarRef(self.current_program.fresh_name()).with_type(node.index_a.start.get_type())
 
         # We want to make sure that the two words that we are comparing are the same length;

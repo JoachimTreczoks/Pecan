@@ -28,7 +28,7 @@ class ExpressionExtractor(IRTransformer):
 
         self.changed = False
 
-    def merge(self, other):
+    def merge(self, other : ExpressionExtractor) -> ExpressionExtractor:
         self.expressions.update(other.expressions)
         self.expressions_compute.update(other.expressions_compute)
         self.to_compute.update(other.to_compute)
@@ -39,7 +39,7 @@ class ExpressionExtractor(IRTransformer):
 
         return self
 
-    def dep_order(self, new_vars):
+    def dep_order(self, new_vars : list[str | VarRef]) -> list[str | VarRef]:
         compute_vars = []
 
         def add_var(new_var):
@@ -57,6 +57,7 @@ class ExpressionExtractor(IRTransformer):
         return compute_vars
 
     def compute_vars_for(self, pred):
+        from pecan.lang.type_inference import UndefinedType
         compute_vars = self.dep_order(list(self.dep_graph.keys()))
 
         done = set()
@@ -67,23 +68,24 @@ class ExpressionExtractor(IRTransformer):
             expr = self.to_compute[var_name]
             to_compute = self.expressions_compute[expr]
 
-            if type(to_compute) is VarRef:
+            if isinstance(to_compute, VarRef):
                 new_pred = NodeSubstitution({v: to_compute}).transform(new_pred)
             else:
-                if v.get_type() is not None and v.get_type().get_restriction() is not None:
+                if v.get_type() is not UndefinedType and v.get_type().get_restriction() is not UndefinedType:
                     new_pred = Exists([v], [v.get_type().restrict(v)], Conjunction(Equals(to_compute, v), new_pred))
                 else:
                     new_pred = Exists([v], [None], Conjunction(Equals(to_compute, v), new_pred))
 
         return new_pred
 
-    def is_var(self, var):
+    def is_var(self, var : str | VarRef) -> bool:
         if isinstance(var, VarRef):
             return var.var_name in self.dep_graph
         else: # if str
             return var in self.dep_graph
 
-    def transform_Sub(self, node):
+    def transform_Sub(self, node : Sub) -> Sub:
+        from pecan.lang.type_inference import UndefinedType
         if node.is_int:
             return node
 
@@ -99,10 +101,10 @@ class ExpressionExtractor(IRTransformer):
                 new_a = self.transform(node.a)
                 new_b = self.transform(node.b)
 
-                if type(new_a) is not IntConst and type(new_b) is not IntConst:
+                if not isinstance(new_a, IntConst) and not isinstance(new_b, IntConst):
                     self.changed = True
 
-                    t = node.get_type() if node.get_type() is not None else InferredType()
+                    t = node.get_type() if node.get_type() != UndefinedType() else InferredType()
                     new_var = VarRef(self.prog.fresh_name()).with_type(t)
 
                     self.var_map[new_var.var_name] = new_var
@@ -120,7 +122,7 @@ class ExpressionExtractor(IRTransformer):
             new_b = self.transform(node.b)
             return Sub(new_a, new_b).with_type(node.get_type())
 
-    def transform_Add(self, node):
+    def transform_Add(self, node : Add) -> Add:
         if node.is_int:
             return node
 
@@ -136,10 +138,10 @@ class ExpressionExtractor(IRTransformer):
                 new_a = self.transform(node.a)
                 new_b = self.transform(node.b)
 
-                if type(new_a) is not IntConst and type(new_b) is not IntConst:
+                if not isinstance(new_a, IntConst) and not isinstance(new_b, IntConst):
                     self.changed = True
 
-                    t = node.get_type() if node.get_type() is not None else InferredType()
+                    t = node.get_type() if node.get_type() != UndefinedType() else InferredType()
                     new_var = VarRef(self.prog.fresh_name()).with_type(t)
 
                     self.var_map[new_var.var_name] = new_var
@@ -148,11 +150,6 @@ class ExpressionExtractor(IRTransformer):
                     self.to_compute[new_var.var_name] = node
                     deps = {v for v in VariableUsage().analyze(self.expressions_compute[node])}
                     self.dep_graph[new_var.var_name] = list({ v.var_name for v in [new_a, new_b] if self.is_var(v) }.union(deps))
-                    # print(new_var)
-                    # print(self.expressions)
-                    # print(self.expressions_compute)
-                    # print(self.to_compute)
-                    # print(self.dep_graph)
                 else:
                     return Add(new_a, new_b).with_type(node.get_type())
 
@@ -169,13 +166,13 @@ class CSEOptimizer(BasicOptimizer):
         self.frequency_threshold = 2
 
     def worth_optimization(self, node):
-        if type(node) is VarRef:
+        if isinstance(node, VarRef):
             return False
 
         if not isinstance(node, BinaryIRExpression):
             return False
 
-        if (type(node.a) is VarRef or type(node.a) is IntConst) and (type(node.b) is VarRef or type(node.b) is IntConst):
+        if isinstance(node.a, (VarRef, IntConst)) and isinstance(node.b, (VarRef, IntConst)):
             return False
 
         return True
@@ -202,11 +199,11 @@ class CSEOptimizer(BasicOptimizer):
 
         return extractor.compute_vars_for(Equals(new_a, new_b))
 
-    def multipass_cse(self, extractors, node):
+    def multipass_cse(self, extractors : list[ExpressionExtractor], node : IRPredicate):
         new_node = node
         for extractor in extractors:
             new_node = extractor.transform(new_node)
-            if type(new_node) is VarRef:
+            if isinstance(new_node, VarRef):
                 break
 
         return new_node
@@ -214,7 +211,7 @@ class CSEOptimizer(BasicOptimizer):
     def pre_optimize(self, node):
         self.current_scope = {arg.var_name for arg in self.pred.args}
 
-    def transform(self, node):
+    def transform[T : IRNode](self, node : T) -> T:
         node = super().transform(node)
         if isinstance(node, IRPredicate):
             frequency = ExpressionFrequency().count(node)
@@ -241,3 +238,5 @@ class CSEOptimizer(BasicOptimizer):
 
         return res
 
+    def __str__(self) -> str:
+        return 'CSEOptimizer'
