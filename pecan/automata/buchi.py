@@ -189,13 +189,16 @@ class BuchiAutomaton(Automaton):
 
     def project(self, var_refs : Iterable[VarRef], env_var_map : VarMap) -> BuchiAutomaton:
         from pecan.lang.ir.prog import VarRef
-        aps = []
-        pecan_var_names = []
+        aps : list[str] = []
+        pecan_var_names : list[str] = []
 
         for v in var_refs:
             if isinstance(v, VarRef):
-                aps.extend(self.var_map[v.var_name])
-                pecan_var_names.append(v.var_name)
+                if v.var_name in self.var_map:
+                    aps.extend(self.var_map[v.var_name])
+                    pecan_var_names.append(v.var_name)
+                else:
+                    Logger.warn('Skipped projecting {}, missing entry in the variable map. This may indicate unused variables getting quantified instead of being optimized away'.format(v))
 
         result = self.ap_project(aps)
 
