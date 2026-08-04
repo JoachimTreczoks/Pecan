@@ -44,7 +44,7 @@ class Exists(IRPredicate):
         return all_constraints
 
     def with_cond(self, conds : list[Call], pred : IRPredicate) -> IRPredicate:
-        cond = self.build_cond(set(conds))
+        cond = self.build_cond(conds)
         if cond is None:
             return pred
         else:
@@ -53,13 +53,14 @@ class Exists(IRPredicate):
     def transform(self, transformer : IRTransformer) -> Exists:
         return transformer.transform_Exists(self)
 
-    def build_cond(self, conds : set[IRPredicate]) -> IRPredicate | None:
-        filtered_cs = [c for c in conds if c is not None]
+    def build_cond(self, conds : list[Call]) -> IRPredicate | None:
+        seen_predicates = set()
+        filtered_cs = [c for c in conds if not (c in seen_predicates or seen_predicates.add(c)) and c is not None]
 
         if len(filtered_cs) == 0:
             return None
         else:
-            return reduce(Conjunction, [c for c in conds if c is not None])
+            return reduce(Conjunction, filtered_cs)
 
     def __str__(self) -> str:
         return '(∃{}. {})'.format(', '.join(map(str, self.var_refs)), self.with_cond(self.conds, self.pred))
