@@ -394,16 +394,16 @@ class FiniteAutomaton(Automaton):
         return len(self.aut['transitions'])
 
     # Should return a string of SVG data
-    def __str__(self) -> str:
+    def show(self) -> str:
         return str(self.aut)
 
     def get_aut(self) -> dict:
         return self.aut
 
-    def to_str(self) -> str:
+    def __str__(self) -> str:
         return '{}'.format({'var_map': self.var_map, 'special_attr': self.special_attr, 'aut': self.aut})
 
     def save(self, filename : str) -> None:
         with open(filename, 'w') as f:
-            f.write(self.to_str())
+            f.write(str(self))
 
