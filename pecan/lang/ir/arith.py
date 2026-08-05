@@ -30,11 +30,7 @@ class Add(BinaryIRExpression):
         return self
 
     def __str__(self) -> str:
-        # The operands should always have the same type, but in the interest of debugging, we should display when this is not the case
-        if self.a.get_type() == self.b.get_type():
-            return self.format_type('({} + {})'.format(self.a, self.b))
-        else:
-            return self.format_type('({} + {})'.format(self.a, self.b))
+        return self.format_type('({} + {})'.format(self.a, self.b))
 
     def evaluate_node(self, prog : Program) -> IREvaluation:
         if self.is_int and self.evaluate_int(prog) >= 0:
@@ -88,11 +84,7 @@ class Mul(BinaryIRExpression):
         return self
 
     def __str__(self) -> str:
-        # The operands should always have the same type, but in the interest of debugging, we should display when this is not the case
-        if self.a.get_type() == self.b.get_type():
-            return self.format_type('({} * {})'.format(self.a, self.b))
-        else:
-            return self.format_type('({} * {})'.format(self.a, self.b))
+        return self.format_type('({} * {})'.format(self.a, self.b))
 
     def evaluate_node(self, prog : Program) -> IREvaluation:
         if self.is_int:
@@ -100,7 +92,7 @@ class Mul(BinaryIRExpression):
             if n >= 0:
                 return IntConst(n).with_type(self.get_type()).evaluate(prog)
             else:
-                return Sub(IntConst(0), IntConst(n)).with_type(self.get_type()).evaluate(prog) # TODO: shouldn't it be Sub(IntConst(0), IntConst(-n))?
+                return Sub(IntConst(0), IntConst(n)).with_type(self.get_type()).evaluate(prog)
 
         if not self.a.is_int and not self.b.is_int:
             raise AutomatonArithmeticError("At least one argument of multiplication must be an constant integer in {}".format(self))
@@ -160,7 +152,7 @@ class IntConst(IRExpression):
             return IREvaluation(aut, ref)
 
         if self.val == 0:
-            res = prog.lookup_dynamic_call('zero', [self.label_var()]).evaluate_node(prog)
+            res = prog.call('zero', [self.label_var()])
             constants_map[(self.val, self.get_type())] = (res.aut, self.label_var())
         elif self.val == 1:
             res = prog.lookup_dynamic_call('one', [self.label_var()])

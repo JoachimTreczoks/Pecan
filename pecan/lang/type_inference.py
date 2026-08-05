@@ -58,14 +58,16 @@ class RestrictionType(Type):
         return self.restriction
 
     def restrict(self, var : VarRef) -> Call:
-        assert isinstance(self.restriction, Call) and not isinstance(self.restriction, NamedPred)
-        if isinstance(self.restriction, Call):
+        #if isinstance(self.restriction, Call):
             return self.restriction.subs_last(var)
-        else:
-            return self.restriction.add_arg(var)
+        #else:
+        #    return self.restriction.add_arg(var)
 
     def __str__(self) -> str:
         return str(self.restriction)
+
+    def __repr__(self) -> str:
+        return self.__str__()
 
     def __eq__(self, other : Any) -> bool:
         return other is not None and other.__class__ == self.__class__ and self.restriction == other.restriction

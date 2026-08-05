@@ -9,6 +9,7 @@ from pecan.tools.shuffle_automata import ShuffleAutomata
 from pecan.utility import VarMap
 from pecan.settings import settings
 from pecan.logger import Logger
+from pecan.exceptions import AutomatonArithmeticError
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING :
@@ -189,13 +190,16 @@ class BuchiAutomaton(Automaton):
 
     def project(self, var_refs : Iterable[VarRef], env_var_map : VarMap) -> BuchiAutomaton:
         from pecan.lang.ir.prog import VarRef
-        aps = []
-        pecan_var_names = []
+        aps : list[str] = []
+        pecan_var_names : list[str] = []
 
         for v in var_refs:
             if isinstance(v, VarRef):
-                aps.extend(self.var_map[v.var_name])
-                pecan_var_names.append(v.var_name)
+                if v.var_name in self.var_map:
+                    aps.extend(self.var_map[v.var_name])
+                    pecan_var_names.append(v.var_name)
+                else:
+                    raise AutomatonArithmeticError('Failed projecting {}, missing entry in the variable map ({})'.format(v, self.var_map))
 
         result = self.ap_project(aps)
 
@@ -400,12 +404,12 @@ class BuchiAutomaton(Automaton):
 
         return merge_maps(ShuffleAutomata(aut_a.get_aut(), aut_b.get_aut()).shuffle(is_disj), aut_a.get_var_map(), aut_b.get_var_map())
 
-    def to_str(self) -> str:
-        return 'VAR_MAP: {}\n{}'.format(self.var_map.to_str(), self.aut.to_str('hoa'))
+    def __str__(self) -> str:
+        return 'VAR_MAP: {}\n{}'.format(str(self.var_map), self.aut.to_str('hoa'))
 
     def save(self, filename : str) -> None:
         with open(filename, 'w') as f:
-            f.write(self.to_str())
+            f.write(str(self))
 
 def buchi_transform(original_aut : spot.twa_graph, builder : Builder):
     # Build a new automata with different edges

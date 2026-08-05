@@ -24,9 +24,6 @@ class Conjunction(BinaryIRPredicate):
 
         b_aut = self.b.evaluate(prog)
 
-        if b_aut.is_empty():
-            return b_aut
-
         return a_aut & b_aut
 
     def transform(self, transformer : IRTransformer) -> Conjunction:

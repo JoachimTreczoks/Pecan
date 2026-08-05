@@ -548,7 +548,7 @@ class Program(IRNode):
     def exit_var_map_scope(self) -> VarMap:
         return self.var_map.pop()
 
-    def get_restrictions(self, var_name: str, local_only : bool = False) -> list[Call]:
+    def get_restrictions(self, var_name: str, local_only : bool = False) -> list[IRPredicate]:
         result = []
         # for scope in self.restrictions:
         for r in self.get_restriction_env(local_only).get(var_name, []):
@@ -557,6 +557,7 @@ class Program(IRNode):
         return result
 
     def call(self, pred_name : str, args : list[VarRef] | None = None) -> IREvaluation:
+        """Returns the evaluation of a saved predicate, using type-specific predicates if typed arguments are given"""
         try:
             if not args:
                 if pred_name in self.preds:
@@ -579,6 +580,7 @@ class Program(IRNode):
             return True
 
     def unify_type(self, t1 : Call | VarRef | None, t2 : Call | VarRef | None, unification : dict[str, str]) -> bool:
+        """Returns true if the unification of the types of the two given parameters was successful"""
         if isinstance(t1, VarRef) and isinstance(t2, VarRef):
             return self.unify_with(t1.var_name, t2.var_name, unification)
         elif isinstance(t1, Call) and isinstance(t2, Call):
@@ -594,6 +596,7 @@ class Program(IRNode):
             return False
 
     def try_unify_type(self, t1 : Call | VarRef | None, t2 : Call | VarRef | None, unification : dict[str, str]) -> bool:
+        """Returns true if the unification of the types of the two given parameters was successful, wrapping `self.unify_type()` to undo unwanted changes"""
         old_unification = dict(unification)
         result = self.unify_type(t1, t2, unification)
         if result:
@@ -605,12 +608,14 @@ class Program(IRNode):
             return False
 
     def lookup_pred_by_name(self, pred_name : str) -> NamedPred:
+        """Returns a predicate of the given name if it exists"""
         if pred_name in self.preds:
             return self.preds[pred_name]
         else:
             raise CallResolvingError('Predicate {} not found (known predicates: {}!'.format(pred_name, self.preds.keys()))
 
     def lookup_call(self, pred_name : str, arg : VarRef, unification : dict[str, str]) -> Match:
+        """Returns the closest fitting match for a given predicate"""
         from pecan.lang.type_inference import UndefinedType
         if arg.get_type() == UndefinedType():
             return Match(match_any=True)
@@ -627,6 +632,7 @@ class Program(IRNode):
         return Match(match_any=True)
 
     def lookup_dynamic_call(self, pred_name : str, args : list[VarRef]) -> Call:
+        """Returns the closest fitting Call for a predicate of given name and parameters"""
         matches : list[Match] = []
         unification : dict[str, str] = {}
         for arg in args:
@@ -645,8 +651,8 @@ class Program(IRNode):
         else:
             return final_match.call_with(pred_name, unification, args)
 
-    # Dynamic dispatch based on argument types
-    def dynamic_call(self, pred_name : str, args : list[VarRef]):
+    def dynamic_call(self, pred_name : str, args : list[VarRef]) -> IREvaluation:
+        """Returns the evaluation of a predicate, using type-specific predicates if possible"""
         final_call = self.lookup_dynamic_call(pred_name, args)
         return self.lookup_pred_by_name(final_call.name).call(self, final_call.args)
 

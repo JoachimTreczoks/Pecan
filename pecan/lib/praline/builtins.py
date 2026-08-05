@@ -227,7 +227,7 @@ class AutToStr(Builtin):
         if isinstance(aut, PralinePecanLiteral):
             term = aut.get_term()
             if isinstance(term, AutLiteral):
-                return PralineString(term.aut.to_str())
+                return PralineString(str(term.aut))
             else:
                 raise TypeError('Expected an AutLiteral but got {}'.format(term))
         else:

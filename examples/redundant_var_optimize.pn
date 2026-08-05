@@ -1,6 +1,9 @@
-Let k,l,m be nat.
+Let k,l,m,x,y,_zero,_one be nat.
 
 Theorem ("test", {
     forall k. forall l. forall m. (((l = m) /\ (l < k)) => (m < k))
 }).
 
+Theorem ("test2", {
+    forall x,y,_zero,_one are nat. if zero(_zero) & bin_one(_one) & bin_less(y, _one) then zero(y)
+}).
