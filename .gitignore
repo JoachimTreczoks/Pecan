@@ -108,3 +108,7 @@ venv.bak/
 
 # VS Code stuff
 .vscode/
+
+# Spot installation files
+/spot-2.15.1/
+spot-2.15.1.tar

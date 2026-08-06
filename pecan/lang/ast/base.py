@@ -45,12 +45,12 @@ class Predicate(ASTNode):
     def __init__(self):
         super().__init__()
 
-class TypeHint(ASTNode): # TODO: type hinting
-    def __init__(self, expr_a, expr_b, body):
+class TypeHint(ASTNode):
+    def __init__(self, expr_a : Expression, expr_b : Expression, body : Predicate):
         super().__init__()
-        self.expr_a = expr_a
-        self.expr_b = expr_b
-        self.body = body
+        self.expr_a : Expression = expr_a
+        self.expr_b : Expression = expr_b
+        self.body : Predicate = body
 
     def transform(self, transformer : AstTransformer) -> TypeHint:
         return transformer.transform_TypeHint(self)

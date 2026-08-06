@@ -28,7 +28,6 @@ class IRNode:
         # TODO: detect used labels and avoid those
         self.label : None | str = None
         self.type : Type = UndefinedType()
-        assert self.type == UndefinedType()
 
     def label_var(self) -> VarRef:
         from pecan.lang.ir.prog import VarRef
@@ -78,7 +77,7 @@ class IRNode:
         if not isinstance(result, IREvaluation):
             raise TypeError('Not an evaluation, error from {}'.format(type(self)))
         sn = result.num_states()
-        en = result.num_states()
+        en = result.num_edges()
 
         if sn >= 0 and en >= 0:
             result = self.simplify(prog, result)
@@ -86,7 +85,7 @@ class IRNode:
         prog.eval_level -= 1
 
         sn = result.num_states()
-        en = result.num_states()
+        en = result.num_edges()
 
         end_time = time.time()
 

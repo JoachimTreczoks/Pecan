@@ -64,7 +64,7 @@ class RestrictionType(Type):
         #    return self.restriction.add_arg(var)
 
     def __str__(self) -> str:
-        return str(self.restriction)
+        return str(self.restriction.name)
 
     def __repr__(self) -> str:
         return self.__str__()
