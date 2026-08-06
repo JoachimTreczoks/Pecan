@@ -28,7 +28,6 @@ class IRNode:
         # TODO: detect used labels and avoid those
         self.label : None | str = None
         self.type : Type = UndefinedType()
-        assert self.type == UndefinedType()
 
     def label_var(self) -> VarRef:
         from pecan.lang.ir.prog import VarRef
