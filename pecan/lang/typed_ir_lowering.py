@@ -35,7 +35,8 @@ class TypedIRLowering(IRTransformer):
 
         final_pred = Call(node.name, final_args)
         for pred, var in arg_preds:
-            final_pred = Exists([var], [None], Conjunction(pred, final_pred))
+            restriction = var.get_type().get_restriction()
+            final_pred = Exists([var], [restriction.subs_last(var) if restriction is not None else None], Conjunction(pred, final_pred))
 
         return final_pred
 
