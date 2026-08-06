@@ -78,7 +78,7 @@ class IRNode:
         if not isinstance(result, IREvaluation):
             raise TypeError('Not an evaluation, error from {}'.format(type(self)))
         sn = result.num_states()
-        en = result.num_states()
+        en = result.num_edges()
 
         if sn >= 0 and en >= 0:
             result = self.simplify(prog, result)
@@ -86,7 +86,7 @@ class IRNode:
         prog.eval_level -= 1
 
         sn = result.num_states()
-        en = result.num_states()
+        en = result.num_edges()
 
         end_time = time.time()
 
