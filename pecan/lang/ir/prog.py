@@ -34,7 +34,7 @@ class VarRef(IRExpression):
         self.var_name : str = var_name
         self.is_int : bool = False
 
-    def evaluate(self, prog) -> IREvaluation:
+    def evaluate(self, prog : Program) -> IREvaluation:
         # The automata accepts everything (because this isn't a predicate)
         from pecan.lang.ir.bool import BoolConst
         return BoolConst(True).evaluate(prog).with_ref(self)
@@ -212,7 +212,7 @@ class NamedPred(Call):
                  args : list[VarRef],
                  arg_restrictions : dict,
                  body : IRPredicate,
-                 restriction_env : dict | None = None,
+                 restriction_env : dict[str, list[Call]] | None = None,
                  body_evaluated : IREvaluation | None = None,
                  arg_name_map : dict | None = None):
         super().__init__(name, args)
@@ -220,7 +220,7 @@ class NamedPred(Call):
         self.arg_restrictions : dict = arg_restrictions
         self.body : IRPredicate = body
 
-        self.restriction_env : dict = restriction_env or {}
+        self.restriction_env : dict[str, list[Call]] = restriction_env or {}
         self.body_evaluated : IREvaluation | None = body_evaluated
         self.arg_name_map : dict = arg_name_map or {}
 
@@ -548,7 +548,7 @@ class Program(IRNode):
     def exit_var_map_scope(self) -> VarMap:
         return self.var_map.pop()
 
-    def get_restrictions(self, var_name: str, local_only : bool = False) -> list[IRPredicate]:
+    def get_restrictions(self, var_name: str, local_only : bool = False) -> list[Call]:
         result = []
         # for scope in self.restrictions:
         for r in self.get_restriction_env(local_only).get(var_name, []):

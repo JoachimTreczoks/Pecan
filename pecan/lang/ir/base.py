@@ -126,9 +126,9 @@ class IRExpression(IRNode):
             return '{} : {}'.format(string, self.get_type())
 
 class UnaryIRExpression(IRExpression):
-    def __init__(self, a):
+    def __init__(self, a : IRExpression):
         super().__init__()
-        self.a = a
+        self.a : IRExpression = a
 
     def with_type(self, new_type : Type) -> UnaryIRExpression:
         self.a = self.a.with_type(new_type)
@@ -141,11 +141,11 @@ class UnaryIRExpression(IRExpression):
         return hash((self.a, self.get_type()))
 
 class BinaryIRExpression(IRExpression):
-    def __init__(self, a, b):
+    def __init__(self, a : IRExpression, b : IRExpression):
         super().__init__()
         self.is_int = a.is_int and b.is_int
-        self.a = a
-        self.b = b
+        self.a : IRExpression = a
+        self.b : IRExpression = b
 
     def with_type(self, new_type : None | Type) -> Self:
         self.a = self.a.with_type(new_type)
@@ -227,11 +227,11 @@ class UnaryIRPredicate(IRPredicate):
         return hash(self.a)
 
 class TypeHint(IRNode):
-    def __init__(self, expr_a, expr_b, body):
+    def __init__(self, expr_a: IRExpression, expr_b : IRExpression, body : IRPredicate):
         super().__init__()
-        self.expr_a = expr_a
-        self.expr_b = expr_b
-        self.body = body
+        self.expr_a : IRExpression = expr_a
+        self.expr_b : IRExpression = expr_b
+        self.body : IRPredicate = body
 
     def transform(self, transformer : IRTransformer) -> TypeHint:
         return transformer.transform_TypeHint(self)

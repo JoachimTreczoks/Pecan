@@ -15,6 +15,7 @@ from pecan.logger import Logger
 from typing import TYPE_CHECKING
 if TYPE_CHECKING :
     from typing import Any
+    from pecan.lang.ast.prog import Program as ASTProgram
     from pecan.lang.ir.prog import Program
 
 def make_search_paths(filename : str | None=None) -> list[str]:
@@ -39,18 +40,18 @@ def load(pecan_file : str, *args : tuple, **kwargs : Any) -> Program:
         return from_source(f.read(), *args, **kwargs)
 
 def from_source(source_code : str, *args : tuple, **kwargs : Any) -> Program:
-    prog = pecan_parser.parse(source_code)
+    astprog : ASTProgram = pecan_parser.parse(source_code)
 
     Logger.log('Parsed program:', 4)
-    Logger.log(str(prog), 4)
+    Logger.log(str(astprog), 4)
 
-    prog.search_paths = make_search_paths(filename=kwargs.get('filename', None))
-    prog.loader = load
+    astprog.search_paths = make_search_paths(filename=kwargs.get('filename', None))
+    astprog.loader = load
 
     if settings.get_extract_implications():
-        prog.extract_implications()
+        astprog.extract_implications()
 
-    prog = ASTToIR().transform(prog)
+    prog : Program = ASTToIR().transform(astprog)
 
     Logger.log('Search path: {}'.format(prog.search_paths), 0)
 

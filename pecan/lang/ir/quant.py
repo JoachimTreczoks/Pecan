@@ -14,10 +14,10 @@ if TYPE_CHECKING :
     from pecan.lang.ir.base import IREvaluation
 
 class Exists(IRPredicate):
-    def __init__(self, var_refs : list[VarRef], conds : list[Call], pred : IRPredicate):
+    def __init__(self, var_refs : list[VarRef], conds : list[Call | None], pred : IRPredicate):
         super().__init__()
         self.var_refs : list[VarRef] = var_refs
-        self.conds : list[Call] = conds
+        self.conds : list[Call | None] = conds
         self.pred : IRPredicate = pred
 
     def evaluate_node(self, prog : Program) -> IREvaluation:
@@ -43,7 +43,7 @@ class Exists(IRPredicate):
 
         return all_constraints
 
-    def with_cond(self, conds : list[Call], pred : IRPredicate) -> IRPredicate:
+    def with_cond(self, conds : list[Call | None], pred : IRPredicate) -> IRPredicate:
         cond = self.build_cond(conds)
         if cond is None:
             return pred
@@ -53,7 +53,7 @@ class Exists(IRPredicate):
     def transform(self, transformer : IRTransformer) -> Exists:
         return transformer.transform_Exists(self)
 
-    def build_cond(self, conds : list[Call]) -> IRPredicate | None:
+    def build_cond(self, conds : list[Call | None]) -> IRPredicate | None:
         seen_predicates = set()
         filtered_cs = [c for c in conds if not (c in seen_predicates or seen_predicates.add(c)) and c is not None]
 
@@ -63,6 +63,8 @@ class Exists(IRPredicate):
             return reduce(Conjunction, filtered_cs)
 
     def __str__(self) -> str:
+        # Since there is no program context given, the string representation lacks any global restrictions.
+        # However, since the context is given for the actual evaluation, this is merely a cosmetic issue
         return '(∃{}. {})'.format(', '.join(map(str, self.var_refs)), self.with_cond(self.conds, self.pred))
 
     def __eq__(self, other : Any) -> bool:
