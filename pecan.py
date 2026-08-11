@@ -5,14 +5,12 @@ import argparse
 import colorama
 import json
 import readline
-import os
 import sys
 
 from pecan.lang.lark.parser import UnexpectedToken
 
 import spot
 
-import pecan.tools.theorem_generator as theorem_generator
 from pecan import program
 
 from pecan.settings import settings
@@ -69,7 +67,6 @@ def main():
     parser.add_argument('--no-opt', help='Turns off optimizations', required=False, action='store_true')
     parser.add_argument('--min-opt', help='Set optimizations to minimal levels (only boolean and arithmetic optimizations).', required=False, action='store_true')
     parser.add_argument('--no-stdlib', help='Turns off the default behavior of loading the standard library (from library/std.pn in your Pecan installation)', required=False, action='store_false')
-    parser.add_argument('--generate', help='Enumerate true statements, argument is how many variables to use', type=int, required=False)
     parser.add_argument('--heuristics', help='Use heuristics to determine how to simplify automata. This flag is typically useful with large automata (>10000 states), and can cause worse performance with smaller automata.', required=False, action='store_true')
     parser.add_argument('--extract-implications', help='Alternate mode of running a program involving going through each theorem, extracting the top-level implication that needs to be checked (if applicable).', required=False, action='store_true')
     parser.add_argument('--use-var-map', help='Use the var_map from the specified file and convert the main file to use the same var map (i.e., the argument corresponding to <file>)', required=False, type=str)
@@ -124,10 +121,7 @@ def main():
 
     env = None
     prog = None
-    if args.generate is not None:
-        for pred in theorem_generator.gen_thms(args.generate):
-            print(pred)
-    elif args.file is not None:
+    if args.file is not None:
         try:
             prog = program.load(args.file)
             if not settings.get_extract_implications():
@@ -136,10 +130,11 @@ def main():
             print(e)
             return None
 
-    elif not args.interactive:
-        parser.print_help()
-
     if args.expand_definition is not None:
+        if prog is None:
+            prog = program.from_source('')
+            env = prog.evaluate_prog()
+        
         from pecan.lang.predicate_expander import PredicateExpander
         from pecan.lang.ir.prog import Call
         pred = prog.lookup_pred_by_name(args.expand_definition)
@@ -152,6 +147,8 @@ def main():
             env = prog.evaluate_prog()
 
         prog = run_repl(env)
+    elif args.file is None and args.expand_definition is None:
+        parser.print_help()
 
     if settings.get_output_json():
         if prog is not None:
