@@ -24,9 +24,9 @@ if ! python3 -c "import spot"; then
     cd "spot-$SPOT_VERSION"
 
     # some distros may write-protect relevant directories, sudo-ing circumvents this issue
-    sudo ./configure --prefix ~/.local
+    sudo ./configure $1 --prefix ~/.local
     sudo make -j 4
-    sudo make install $1
+    sudo make install
 else
     echo "Skipped installing spot---already found."
 fi
