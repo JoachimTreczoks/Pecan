@@ -22,7 +22,8 @@ RUN apt-get update
 RUN apt-get install -y sudo vim wget curl
 
 # Install spot. Run this here so that if we make changes to the stuff below, we don't have to rebuild spot
-RUN curl -sSL https://raw.githubusercontent.com/JoachimTreczoks/Pecan/master/scripts/install-spot.sh | bash
+ARG max-accsets=32
+RUN curl -sSL https://raw.githubusercontent.com/JoachimTreczoks/Pecan/master/scripts/install-spot.sh | bash -s -- --enable-max-accsets=$max-accsets
 
 WORKDIR /home/pecan
 

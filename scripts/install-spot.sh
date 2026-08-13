@@ -26,7 +26,7 @@ if ! python3 -c "import spot"; then
     # some distros may write-protect relevant directories, sudo-ing circumvents this issue
     sudo ./configure --prefix ~/.local
     sudo make -j 4
-    sudo make install
+    sudo make install $1
 else
     echo "Skipped installing spot---already found."
 fi
