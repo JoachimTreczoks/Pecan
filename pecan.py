@@ -17,6 +17,9 @@ from pecan.settings import settings
 
 from pecan import utility
 
+pecan_version = '1.1.0'
+intended_python_version = '3.14.4'
+
 def run_repl(env):
     from pecan.logger import Logger
     utility.touch(settings.get_history_file())
@@ -61,6 +64,7 @@ def run_repl(env):
 def main():
     parser = argparse.ArgumentParser(description='An automated theorem prover for Büchi Automata')
     parser.add_argument('file', help='A Pecan file to execute', nargs='?')
+    parser.add_argument('-v', '--version', help='Show the current version of Pecan being used and exit', required=False, action='store_true')
     parser.add_argument('-i', '--interactive', help='Run Pecan in interactive mode (REPL)', required=False, action='store_true')
     parser.add_argument('-d', '--debug', help='Output debugging information', required=False, action='count')
     parser.add_argument('-q', '--quiet', help='Quiet mode', required=False, action='store_true')
@@ -79,6 +83,10 @@ def main():
     parser.add_argument('--expand-definition', help='Take the name of a predicate loaded from the main file and expands all uses of intermediate predicates (i.e., predicates not loaded from files).', required=False, type=str, metavar='PREDICATE_NAME')
 
     args = parser.parse_args()
+
+    if args.version:
+        print('Pecan {}, made for Python {}'.format(pecan_version, intended_python_version))
+        exit(0)
 
     settings.set_quiet(args.quiet)
     settings.set_opt_level(0 if args.no_opt else 1)
