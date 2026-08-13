@@ -18,6 +18,8 @@ class Settings:
         self.history_file = 'pecan_history'
         self.simplification_level = 1
         self.should_use_heuristics = False
+        self.postprocessing_preference = 'Small'
+        self.postprocessing_force_sbacc = False
         self.only_min_opt = False
         self.extract_implications = False
         self.write_statistics = False
@@ -162,6 +164,20 @@ class Settings:
                 self.set_debug_level(orig_debug_level)
 
         return prog
+
+    def set_postprocessing_preference(self, val : str) -> Settings:
+        self.postprocessing_preference = val
+        return self
+
+    def get_postprocessing_preference(self) -> str:
+        return self.postprocessing_preference
+
+    def set_postprocessing_force_sbacc(self, val : bool) -> Settings:
+        self.postprocessing_force_sbacc = val
+        return self
+
+    def get_postprocessing_force_sbacc(self) -> bool:
+        return self.postprocessing_force_sbacc
 
 settings = Settings()
 

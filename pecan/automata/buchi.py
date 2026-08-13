@@ -272,6 +272,8 @@ class BuchiAutomaton(Automaton):
         self.aut = self.get_aut().scc_filter()
         Logger.log('after scc_filter: {}'.format(self.num_states()), 3)
 
+        # If this is a small and deterministic automaton, we can use optimizations using boolean satisfiability (SAT)
+        # See also: https://spot.lre.epita.fr/satmin.html
         if self.num_states() < 10 & self.get_aut().is_deterministic():
             self.aut = spot.sat_minimize(self.get_aut())
             Logger.log('after sat_minimize: {}'.format(self.num_states()), 3)
@@ -288,26 +290,51 @@ class BuchiAutomaton(Automaton):
         Logger.log('Empty: {}'.format(self.is_empty()), 3)
         # Logger.log('Universal: {}'.format(spot.is_universal(self.get_aut())), 3)
 
-        postprocess_settings = ['BA']
+        # 'Buchi' ensures the resulting automaton is a Büchi automaton
+        # 'SBAcc' ensures the resulting automaton uses state-based acceptance (SBA), rather than transition-based acceptance (TBA)
+        # 'Low' causes Spot to only apply a minimal amount of optimizations
+        # 'Medium' causes Spot to chain several optimizations together
+        # 'High' causes Spot to test out various possible optimizations and output the best one
+        # 'Deterministic' tells Spot to aim for a deterministic automaton as output. *OUTPUT IS NOT GUARANTEED TO BE DETERMINISTIC!*
+        # 'Small' tells spot to aim for a smaller automaton as output. *OUTPUT IS NOT GUARANTEED TO BE MINIMAL!*
+        # For more details, check https://spot.lre.epita.fr/doxygen/classspot_1_1postprocessor.html
+
+        # Both Spot and the HOA format use TBA, so SBA is not necessarily required for anything.
+        # Because of that we make it opt-in via a command line argument
+        postprocess_settings = ['Buchi', 'SBAcc'] if settings.get_postprocessing_force_sbacc() else ['Buchi']
+        
         if level is not None:
             postprocess_settings.append(level)
-        if not self.aut.is_sba():
-            # Use 'BA' in the option list to ensure that the automata we have is a Buchi (possible nondeterministic) automata
-            if settings.use_heuristics():
-                postprocess_settings.append('Deterministic')
-                if level is None:
-                    if self.aut.num_states() > 300:
-                        postprocess_settings.append('Low')
-                    elif self.aut.num_states() > 100:
-                        postprocess_settings.append('Medium')
-                    else:
-                        postprocess_settings.append('High')
 
-            Logger.log('Postprocessing (before) using {}: {} states and {} edges'.format(postprocess_settings, self.num_states(), self.num_edges()), 1)
+        if settings.use_heuristics():
+            if level is None:
+                # Somewhat counter-intuitively, it can be beneficial to do _less_ optimization on large automata,
+                # since more complicated optimizations may not always be successful enough to justify the effort.
+                if self.aut.num_states() > 300:
+                    postprocess_settings.append('Low')
+                    postprocess_settings.append('Small')
+                elif self.aut.num_states() > 100:
+                    postprocess_settings.append('Medium')
+                    postprocess_settings.append('Deterministic')
+                else:
+                    postprocess_settings.append('High')
+                    postprocess_settings.append('Deterministic')
+            else:
+                if self.aut.num_states() > 300:
+                    postprocess_settings.append('Small')
+                elif self.aut.num_states() > 100:
+                    postprocess_settings.append('Deterministic')
+                else:
+                    postprocess_settings.append('Deterministic')
+        else:
+            postprocess_settings.append('High')
+            postprocess_settings.append(settings.get_postprocessing_preference())
 
-            self.aut = self.aut.postprocess(*postprocess_settings)
+        Logger.log('Postprocessing (before) using {}: {} states and {} edges'.format(postprocess_settings, self.num_states(), self.num_edges()), 1)
 
-            Logger.log('Postprocessing (after): {} states and {} edges'.format(self.num_states(), self.num_edges()), 1)
+        self.aut = self.aut.postprocess(*postprocess_settings)
+
+        Logger.log('Postprocessing (after): {} states and {} edges'.format(self.num_states(), self.num_edges()), 1)
         return self
 
     def simplify(self) -> BuchiAutomaton:
