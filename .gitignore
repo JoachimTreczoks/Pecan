@@ -112,3 +112,11 @@ venv.bak/
 # Spot installation files
 /spot-2.15.1/
 spot-2.15.1.tar
+
+# TeX compilation files
+*.aux
+*.fdb_latexmk
+*.fls
+*.log
+*.synctex.gz
+*.toc
