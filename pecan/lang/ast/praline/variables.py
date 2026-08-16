@@ -110,8 +110,11 @@ class PralineList(PralineValueHolder):
 
         while cur.head is not None:
             elems.append(cur.head)
-            assert isinstance(cur.tail, PralineList)
-            cur = cur.tail
+            if isinstance(cur.tail, PralineList):
+                cur = cur.tail
+            else:
+                elems.append(cur.tail)
+                break
 
         return '[{}]'.format(', '.join([str(e) for e in elems]))
 

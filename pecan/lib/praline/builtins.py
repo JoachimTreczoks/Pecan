@@ -32,13 +32,17 @@ def as_praline(val : list | str | bool | int | tuple) -> PralineList | PralineSt
     else:
         raise PralineConversionError("Can't convert {} ({}) to a Praline value".format(type(val), val))
 
-def as_python(val, expected = None) -> list | str | bool | int | tuple: # TODO: Type for PralinePecanLiteral.val
+def as_python(val, expected = None) -> list | str | bool | int | tuple | IRNode:
     if isinstance(val, PralineList):
         if expected is None or isinstance(val, expected):
             result = []
             while not isinstance(val.head, PralineDummy):
                 result.append(as_python(val.head))
-                val = val.tail
+                if isinstance(val.tail, PralineList):
+                    val = val.tail
+                else:
+                    result.append(as_python(val.tail))
+                    break
 
             return result
     elif isinstance(val, PralineString):

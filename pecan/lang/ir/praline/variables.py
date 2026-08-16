@@ -139,10 +139,13 @@ class PralineTuple(PralineValueHolder):
         return hash(self.vals)
 
 class PralineList(PralineValueHolder):
-    def __init__(self, head : None | PralineTerm, tail : None | PralineList):
+    def __init__(self, head : None | PralineTerm, tail : None | PralineTerm):
         super().__init__()
         self.head : PralineTerm = head or PralineDummy()
-        self.tail : PralineList | PralineDummy = tail or PralineDummy()
+        self.tail : PralineTerm = tail or PralineDummy()
+
+        # Sanity check: self.tail is only non-trivial if self.head is non-trivial
+        assert not (isinstance(self.head, PralineDummy) and not isinstance(self.tail, PralineDummy))
 
     def transform(self, transformer : IRTransformer) -> PralineList:
         return transformer.transform_PralineList(self)
@@ -153,13 +156,16 @@ class PralineList(PralineValueHolder):
 
         while not isinstance(cur.head, PralineDummy):
             elems.append(cur.head)
-            assert isinstance(cur.tail, PralineList)
-            cur = cur.tail
+            if isinstance(cur.tail, PralineList):
+                cur = cur.tail
+            else:
+                elems.append(cur.tail)
+                break
 
         return '[{}]'.format(', '.join([str(e) for e in elems]))
 
     def __repr__(self) -> str:
-        if self.tail is None:
+        if isinstance(self.tail, PralineDummy):
             return '[]'
         else:
             return '({} :: {})'.format(self.head, self.tail)
