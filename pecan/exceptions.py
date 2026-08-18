@@ -11,6 +11,10 @@ class PralineLogicError(Exception):
     """Raised when something breaks the internal logic of Praline"""
     pass
 
+class PralineTypeError(TypeError):
+    """Raised when a Praline method is called with arguments of incorrect type"""
+    pass
+
 class AutomatonReadingError(Exception):
     """Raised when issues arise related to reading Automatons from files"""
     pass
