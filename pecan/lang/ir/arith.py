@@ -1,9 +1,7 @@
 #!/usr/bin/env python3.6
 # -*- coding=utf-8 -*-
 
-#from pecan.lang.ir import *
-
-from pecan.lang.ir.base import BinaryIRExpression, IREvaluation, IRExpression, IRComparison
+from pecan.lang.ir.base import BinaryIRExpression, IREvaluation, IRExpression, IRComparison, IRPredicate
 from pecan.lang.ir.bool import BoolConst, Complement, Conjunction, Disjunction
 from pecan.lang.ir.prog import Call, VarRef
 from pecan.lang.ir.quant import Exists
@@ -285,12 +283,11 @@ class FunctionExpression(IRExpression):
         temp_args[self.val_idx] = 'out({})'.format(self.args[self.val_idx])
         return self.format_type('{}({})'.format(self.pred_name, ', '.join(temp_args)))
 
-class PredicateExpr(IRExpression):
-    def __init__(self, var : VarRef, pred):
+class PredicateExpr(IRExpression, IRPredicate):
+    def __init__(self, var : VarRef, pred : IRPredicate):
         super().__init__()
-        from pecan.lang.ir_substitution import IRSubstitution # TODO: Check what is up with this import
         self.var : VarRef = var
-        self.pred = pred
+        self.pred : IRPredicate = pred
         self.is_int : bool = False
 
     def evaluate_node(self, prog : Program) -> IREvaluation:
