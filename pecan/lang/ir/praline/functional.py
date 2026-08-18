@@ -365,7 +365,7 @@ class PralineAutomaton(PralineTerm):
 
         return self
 
-    def add_transition(self, state_label, transition_line) -> PralineAutomaton:
+    def add_transition(self, state_label : str, transition_line : str) -> PralineAutomaton:
         if state_label not in self.state_map:
             raise KeyError('No state "{}" in {}'.format(state_label, self))
 
