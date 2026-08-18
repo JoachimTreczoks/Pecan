@@ -24,7 +24,7 @@ if ! python3 -c "import spot"; then
     cd "spot-$SPOT_VERSION"
 
     # some distros may write-protect relevant directories, sudo-ing circumvents this issue
-    sudo ./configure $1 --prefix ~/.local
+    sudo ./configure $1 --enable-pthread --prefix ~/.local
     sudo make -j 4
     sudo make install
 else
