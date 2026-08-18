@@ -9,6 +9,10 @@ from pecan.settings import settings
 from pecan.logger import Logger
 from pecan.exceptions import PlottingError
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING :
+    from pecan.lang.ir.prog import Program
+
 # A multidimensional bitmap
 class Bitmap:
     # order of the dimension follows the same order as in C
@@ -106,7 +110,7 @@ class Matplotlib2DPlotMethod(MatplotlibPlotMethod):
         for x in range(k1 ** layer):
             for y in range(k2 ** layer):
                 if settings.get_show_progress():
-                    Logger.log("\r\033[2Kdrawing {}/{} squares".format(x * k2 ** layer + y + 1, total), end="")
+                    print("\r\033[2Kdrawing {}/{} squares".format(x * k2 ** layer + y + 1, total), end="")
 
                 if cell_bitmap[x, y]:
                     self.pt.fill(
@@ -196,31 +200,31 @@ class BuchiPlotter:
 
     def __init__(
         self,
-        prog,
+        prog : Program,
         alphabets,
-        buchi_aut,
-        layer=None,
-        layer_from=None,
-        layer_to=None,
-        save_to='plot.png',
-        show=False,
-        plot_method="matplotlib",
-        color_by_axis=None,
+        buchi_aut : BuchiAutomaton,
+        layer = None,
+        layer_from = None,
+        layer_to = None,
+        save_to : str = 'plot.png',
+        show : bool = False,
+        plot_method : str = "matplotlib",
+        color_by_axis = None,
     ):
         super().__init__()
-        self.prog = prog
-        self.buchi_aut = buchi_aut
+        self.prog : Program = prog
+        self.buchi_aut : BuchiAutomaton = buchi_aut
         self.layer = layer
         self.layer_from = layer_from
         self.layer_to = layer_to
-        self.save_to = save_to
-        self.alphabet_sizes = {}
+        self.save_to : str = save_to
+        self.alphabet_sizes : dict = {}
         self.color_by_axis = color_by_axis # only available for 3d
-        self.show = show
+        self.show : bool = show
 
-        self.translation_cache = {}
+        self.translation_cache : dict = {}
 
-        self.bdds = {}
+        self.bdds : dict = {}
         for var, aps in buchi_aut.var_map.items():
             self.bdds[var] = [ buddy.bdd_ithvar(buchi_aut.aut.register_ap(ap)) for ap in aps ]
         self.prefix_word = spot.twa_word(buchi_aut.aut.get_dict())

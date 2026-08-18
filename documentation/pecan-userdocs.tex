@@ -1,0 +1,622 @@
+\documentclass{report}
+
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel}
+\usepackage{lmodern}
+\usepackage[babel]{microtype}
+\usepackage{csquotes}
+
+\usepackage[a4paper]{geometry}
+\usepackage{mathtools}
+\usepackage{amssymb}
+\usepackage{amsthm}
+
+\usepackage{tikz}
+\usepackage{algorithm}
+\usepackage[noEnd=false]{algpseudocodex}
+\usepackage{listings}
+
+\usepackage{titlesec}
+
+\title{Pecan User Documentation}
+\date{}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\begin{document}
+
+\maketitle{}
+
+\tableofcontents
+
+\chapter{Introduction}
+
+Pecan is an automatic theorem prover based on Büchi automata, by utilizing the open source C++ library \emph{Spot} to decide the truth value of predicates.
+This document serves as documentation for the features it provides, to make it more usable for anyone without the need to scour the source code.
+
+Although an effort is made to be as clear as possible in the definitions of this documentation, this is not always going to work for everyone.
+Notably, code examples are out-of-scope for this, hence it is recommended to take a look at the standard library if any questions arise.
+
+If there is anything notable missing from the documentation, or something is phrased in an unclear or even wrong way, please open an issue or pull request on the Github repo.
+
+
+
+\chapter{Built-in functionality}
+
+Pecan provides various features built-in, no matter if you have loaded any libraries or not.
+This built-in functionality can be separated into two distinct parts, the features that are part of Pecan, and those which are technically part of the Praline scripting language.
+
+
+\section{Pecan}
+
+This section is about all things defined by or definable within Pecan, even if the standard library is not imported.
+
+
+
+\subsection{Expressions}
+
+An \emph{expression} is either a numerical constant, a variable, or an arithmetic combination of these.
+Since a completely rigorous formulation of these in first order logic gets complicated rather fast, Pecan provides certain constructs to make them easy to write:
+
+
+\subsubsection{Arithmetic expressions}
+
+Expressions can use addition (\(+\)), subtraction (\(-\)), multiplication by an integer constant (\(*\)) and division by an integer constant (\(/\)).
+
+
+\subsubsection{Constants}
+
+Expressions can use any integer constant, which Pecan infers from 0 and 1 via repeated addition.
+If no predicate for 1 is given it is implicitly defined as the smallest value larger than 0, assuming such a value exists.
+
+
+
+\subsection{Types}
+
+Variables in Pecan always have types associated with themselves, which are used for resolving arithmetic expressions.
+
+
+\subsubsection{Restrictions}
+
+You can globally restrict the type of variables by using:
+
+\begin{verbatim}
+    Restrict <variables> are <predicate name> .
+\end{verbatim}
+
+wherein the variables are in a comma-separated list.
+If the predicate only has one argument only the predicate name should be written, otherwise all but the last argument need to specified in parenthesis.
+
+Global restrictions are additive, so you can apply multiple restrictions on a variable.
+However only the last is used for arithmetic resolving, while all previous restrictions are merely kept for quantifiers.
+
+If a global restriction is applied to a variable within an imported file, that restriction will not be carried over into your file.
+
+
+\subsubsection{Structures}
+
+To use types in resolving arithmetic expressions, it is necessary to define a structure.
+
+\begin{verbatim}
+    Structure <predicate name> defining <python dictionary>
+\end{verbatim}
+
+The same rules as in type restrictions apply here for the predicate name.
+The python dictionary is simply a mapping from names to predicates, formatted the following way:
+
+\begin{verbatim}
+    "<name>": <predicate name> ( <variables> )
+\end{verbatim}
+
+with each entry separated by a comma.
+
+Note that variables used in the type can be used in the variable lists for predicates in the structure.
+Furthermore, unlike the type restriction, the predicates must list every variable.
+The variables that get replaced during arithmetic resolving should simply be written as \verb+any+ by convention.
+
+The following names are used by default for arithmetic expressions:
+
+\begin{itemize}
+    \item \verb+adder+ for \(+\)
+    \item \verb+less+ for \(<\)
+    \item \verb+equal+ for \(=\)
+    \item \verb+zero+ for \(0\)
+    \item \verb+one+ for \(1\)
+\end{itemize}
+
+Any of these that is not explicitly defined in a structure will be resolved using the respective predicates used by the natural numbers, assuming the standard library is loaded.
+
+
+
+\subsection{Predicates}
+
+A \emph{predicate} is a statement that can either be always true, always false, or sometimes true.
+Predicates are usually built as a conjunction and / or disjunction of various other predicates, for which Pecan provides a notational standard:
+
+
+\subsubsection{Comparisons}
+
+Comparisons combine two expressions into a predicate.
+They are written using infix notation with any of the following operator symbols:
+
+\begin{itemize}
+    \item \verb+=+
+    \item \verb+!=+, \(\lnot\)\verb+=+, \verb+~=+, \(\neq\)
+    \item \verb+>+
+    \item \verb+>=+, \(\ge\)
+    \item \verb+<+
+    \item \verb+<=+, \(\le\)
+\end{itemize}
+
+
+\subsubsection{Conjunctions}
+
+Conjunctions combine two predicates into one, which is true if and only if both contained predicates are true.
+They are written using infix notation with any of the following operator symbols:
+
+\begin{itemize}
+    \item \verb+and+
+    \item \verb+&+
+    \item \verb+/\+
+    \item \(\land\)
+\end{itemize}
+
+
+\subsubsection{Disjunctions}
+
+Disjunctions combine two predicates into one, which is true if and only if at least one of the contained predicates is true.
+They are written using infix notation with any of the following operator symbols:
+
+\begin{itemize}
+    \item \verb+or+
+    \item \verb+|+
+    \item \verb+\/+
+    \item \(\lor\)
+\end{itemize}
+
+
+\subsubsection{Complements}
+
+Complements invert a predicate, being true if and only if the contained predicate is false.
+They are written using prefix notation with any of the following operator symbols:
+
+\begin{itemize}
+    \item \verb+not+
+    \item \verb+!+
+    \item \verb+~+
+    \item \(\lnot\)
+\end{itemize}
+
+
+\subsubsection{Quantifiers}
+
+Quantifiers add restrictions on the existence of variables used within a predicate.
+They are written using prefix notation in the following form:
+
+\begin{verbatim}
+    <quantifier> <variables> .
+\end{verbatim}
+
+with the variables comma-separated.
+You can also use the same notation as in global type restrictions to restrict the variables to fulfill that predicate.
+
+\begin{verbatim}
+    <quantifier> <variables> are <predicate name> .
+\end{verbatim}
+
+Note that if a variable has global type restriction, it will be implicitly included when evaluating a quantifier.
+
+There are two quantifiers available in Pecan:
+
+\begin{itemize}
+    \item \verb+exists+, \(\exists\)
+    \item \verb+forall+, \(\forall\)
+\end{itemize}
+
+
+\subsubsection{Named predicates}
+
+For many purposes, including saving, definining other predicates, or defining types, you need to assign a name to a predicate.
+This can be done by writing:
+
+\begin{verbatim}
+    <predicate name> ( <variables> ) := <predicate>
+\end{verbatim}
+
+wherein the variables are in a comma-separated list.
+
+
+
+\subsection{Annotations}
+
+You can wrap any predicate in an annotation to affect how Pecan evaluates the contained predicate.
+All annotations are declared with the following notation:
+
+\begin{verbatim}
+    @<annotation name> [ <predicate> ]
+\end{verbatim}
+
+\subsubsection{no\_simplify}
+
+The \verb+no_simplify+ annotation sets the internal simplification level to 0.
+This reduces the amount of attempted simplifications and postprocessing to a minimum.
+
+
+\subsubsection{simplify}
+
+The \verb+simplify+ annotation sets the internal simplification level to 1.
+This applies the default level of attempted simplifications and postprocessing.
+
+
+\subsubsection{simplify\_high}
+
+The \verb+simplify_high+ annotation sets the internal simplification level to 2.
+This increases the amount of attempted simplifications and postprocessing to the maximum.
+
+
+\subsubsection{postprocess\_low}
+
+The \verb+postprocess_low+ annotation applies postprocessing on the contained predicate.
+This postprocessing is called with the \verb+low+ argument, meaning only a small amount of optimizations are attempted.
+
+
+\subsubsection{postprocess\_medium}
+
+The \verb+postprocess_medium+ annotation applies postprocessing on the contained predicate.
+This postprocessing is called with the \verb+medium+ argument, meaning several optimizations are attempted and chained together.
+
+
+\subsubsection{postprocess\_high}
+
+The \verb+postprocess_high+ annotation applies postprocessing on the contained predicate.
+This postprocessing is called with the \verb+high+ argument, meaning many optimization strategies are attempted and the best result is returned.
+
+
+\subsubsection{postprocess}
+
+The \verb+postprocess+ annotation applies postprocessing on the contained predicate.
+This postprocessing is not called with any explicit argument, and hence defaults to \verb+high+ unless the \verb+--heuristics+ flag is used
+
+
+\subsubsection{simplify\_states}
+
+The \verb+simplify_states+ annotation attempts to reduce the number of states of the contained predicate.
+
+
+\subsubsection{simplify\_edges}
+
+The \verb+simplify_edges+ annotation attempts to reduce the number of edges of the contained predicate.
+
+
+\subsubsection{merge\_states}
+
+The \verb+merge_states+ annotation merges redundant states of the contained predicate, if there are any.
+This is implicitly called when using \verb+simplify_states+.
+
+
+\subsubsection{merge\_edges}
+
+The \verb+merge_edges+ annotation merges redundant edges of the contained predicate, if there are any.
+This is implicitly called when using \verb+simplify_edges+.
+
+
+\subsubsection{merge\_edges\_loop}
+
+The \verb+merge_edges_loop+ annotation repeatedly merges redundant edges of the contained predicate until none are present anymore
+
+
+
+\subsection{Directives}
+
+Pecan provides a number of special commands, called \emph{Directives}.
+These serve a variety of purposes and can be used with the following notation:
+
+\begin{verbatim}
+    #<directive name> ( <arguments> )
+\end{verbatim}
+
+
+\subsubsection{import}
+
+The \verb+import ( "<filename>" )+ directive loads a given file, making all definitions from that file available.
+Unless explicitly disabled with the \verb+--no-stdlib+ flag, the main file \verb+std.pn+ of the standard library is always implicitly \verb+import+ed.
+
+
+\subsubsection{load}
+
+The \verb+load ( "<filename>" , "<format>", <predicate name> ( <arguments> ) )+ directive loads an automaton from a given file and format.
+
+
+\subsubsection{save\_aut}
+
+The \verb+save_aut ( "<filename>" , <predicate name>)+ directive saves an automaton in \verb+HOA+ format in the given file.
+Although not binding, the convention used by Pecan is to have this filename use the \verb+.aut+ file extension.
+
+
+\subsubsection{save\_aut\_image}
+
+The \verb+save_aut_image ( "<filename>" , <predicate name>)+ directive saves a graphical depiction of an automaton in the given file.
+This depiction is a vector graphic using the \verb+.svg+ file format
+
+
+\subsubsection{context}
+
+The \verb+context ( "<context name>" , "<predicate name>" )+ directive associates a predicate to a given name.
+This predicate effectively acts as a "fallback" or "generic" value for that name, being used if no predicate sharing that name exists.
+
+
+\subsubsection{end\_context}
+
+The \verb+end_context ( "<context name>" )+ directive removes a previously established context name.
+
+
+\subsubsection{forget}
+
+The \verb+forget ( <variable name> )+ directive removes all previously established global restrictions on a given variable name.
+
+
+\subsubsection{assert\_prop}
+
+The \verb+assert_prop ( <truth value> , <predicate name> )+ directive evaluates a given predicate and checks if it holds the given truth value.
+This truth value can be either \verb+true+, \verb+false+, or \verb+sometimes+.
+Note that this check is strict, i.e. \verb+#assert_prop (sometimes, <predicate name>)+ will fail if that predicate is always true.
+
+
+\subsubsection{shuffle}
+
+The \verb+shuffle ( <predicate name> , <predicate name> , <predicate name> )+ directive computes the shuffle automaton of the first two named predicates and saves it under the third predicate name.
+
+
+\subsubsection{shuffle\_or}
+
+The \verb+shuffle_or ( <predicate name> , <predicate name> , <predicate name> )+ directive computes the disjoint shuffle automaton of the first two named predicates and saves it under the third predicate name.
+
+
+
+\section{Praline}
+
+Praline is a scripting language built into Pecan, allowing more complicated outputs, formatting, and macros.
+For this, it adds specific variable types and some built-in methods.
+
+
+
+\subsection*{Types}
+
+There are 5 base types which a value in Praline can assume.
+
+
+\subsubsection{PralineInt}
+
+\verb+PralineInt+ is the sole integer type for Praline.
+It can assume any value that a Python \verb+int+ can, i.e. they are signed and can be effectively arbitrarily large.
+
+
+\subsubsection{PralineString}
+
+\verb+PralineString+ is the type handling all text strings or characters for Praline.
+It can be created by wrapping text in a double quotation mark \verb+"<text>"+.
+
+
+\subsubsection{PralineBool}
+
+\verb+PralineBool+ is the boolean truth value type for Praline.
+It can either be \verb+true+ or \verb+false+, all lowercase.
+
+
+\subsubsection{PralineTuple}
+
+\verb+PralineTuple+ is the fixed size container type for Praline.
+It can be created by wrapping comma-separated values in parenthesis \verb+(<value 1>, <value 2>, ...)+.
+Note that tuples require at least two elements!
+
+
+\subsubsection{PralineList}
+
+\verb+PralineList+ is the dynamic size container type for Praline.
+It can be created by wrapping comma-separated values in square brackets \verb+[<value 1>, <value 2>, ...]+.
+These can be created with arbitrarily many elements
+
+
+\subsubsection{PralinePecanTerm}
+
+\verb+PralinePecanTerm+ is a Pecan wrapper type for Praline.
+It can hold any Pecan term, be it a predicate, an expression, or directive, by wrapping it in curly brackets \verb+{<pecan term>}+.
+
+
+\subsubsection{PralineAutomaton}
+
+\verb+PralineAutomaton+ is a factory object to create automatons for Praline.
+It can be created and modified by using built-in methods.
+
+
+
+\subsection{Built-in methods}
+
+Pecan provides several built-in methods to manipulate Praline variables.
+These are always loaded, even if the standard library is not.
+
+
+\subsubsection{truthValue}
+
+\verb+truthValue <pecan term>+ returns the truth value of a \verb+PralinePecanTerm+.
+The outputs can therefore be \verb+true+, \verb+false+, or \verb+sometimes+.
+
+
+\subsubsection{toString}
+
+\verb+toString <any>+ returns a \verb+PralineString+ containing the input value.
+
+
+\subsubsection{print}
+
+\verb+print <any>+ outputs the string representation of the input via the logger, then returns \verb+true+.
+
+
+\subsubsection{emit}
+
+\verb+emit <pecan term>+ outputs a string representation of the input Pecan term, then returns \verb+true+.
+If the term is a predicate definition or directive, it will also get processed by Pecan.
+
+
+\subsubsection{freshVar}
+
+\verb+freshVar+ returns a unique string that can act as an unused variable name.
+Repeated calling of this method will yield a new string every time.
+
+
+\subsubsection{toChars}
+
+\verb+toChars <string>+ returns a list consisting of strings of the individual characters making up the input.
+Non-string values are not accepted, but may be used if first combined with \verb+toString+
+
+
+\subsubsection{cons}
+
+\verb+cons <head> <tail>+ returns a list consisting of the head and tail values.
+If \verb+<tail>+ is a list, each element of this list will get appended separately, instead of being a single entry.
+
+
+\subsubsection{enumFromTo}
+
+\verb+enumFromTo <low> <high>+ returns a list consisting of all integer values from \verb+low+ to \verb+high+, endpoints included.
+This can also be called by writing \verb+[<low>..<high>]+.
+
+
+\subsubsection{acceptingWord}
+
+\verb+acceptingWord <pecan term>+ returns a list mapping variable names to accepted words of the given predicate.
+Each entry of this list is a tuple consisting of the variable name and a binary LSD representation of the prefix and cycle of the accepting word.
+Note that this is merely the internal representation of the value, and may not be easily human-readable!
+
+
+\subsubsection{compare}
+
+\verb+compare <left> <right>+ returns whether the left value is larger, smaller, or equal to the right value.
+If it is larger, it returns \verb+1+, if it is smaller it returns \verb+-1+, and if the values are equal it returns \verb+0+.
+
+
+\subsubsection{equal}
+
+\verb+equal <left> <right>+ returns whether the two values are equal or not.
+This works with all combinations of types!
+
+
+\subsubsection{mkAut}
+
+\verb+mkAut <input names> <input bases>+ returns a \verb+PralineAutomaton+ with the given input names and bases.
+The input names should be a list of strings, while the bases are a list of integers.
+
+
+\subsubsection{addState}
+
+\verb+addState <automaton> <state name> <acceptance>+ returns the given automaton with the specified state added.
+If the \verb+<acceptance>+ is \verb+true+, this will be set to be an acceptance state.
+
+
+\subsubsection{addTransition}
+
+\verb+addTransition <automaton> <source> <destination> <accepted values>+ returns the given automaton with the specified transition added.
+Note that the accepted values are given as a string containing space-separated values.
+
+
+\subsubsection{buildAut}
+
+\verb+buildAut <automaton>+ returns a \verb+PralinePecanTerm+ containing the built automaton of the given \verb+PralineAutomaton+ object.
+
+
+\subsubsection{writeFile}
+
+\verb+writeFile <filepath> <content>+ writes the contents to a file at the given filepath, then returns \verb+true+.
+
+
+\subsubsection{readFile}
+
+\verb+readFile <filepath>+ returns the contents of a file at the given filepath.
+
+
+\subsubsection{deleteFile}
+
+\verb+deleteFile <filepath>+ deletes the file at the given filepath, then returns \verb+true+.
+
+
+\subsubsection{splitStr}
+
+\verb+splitStr <separator> <input>+ returns a list of substrings of the given input, using the given separator.
+
+
+\subsubsection{plot}
+
+\verb+plot <options> <numeration systems> <pecan term>+ plots the automaton contained inside the Pecan term using the given options and numeration systems, then returns \verb+true+.
+Both the options and numeration systems should be lists of tuples.
+Note: This is primarily intended for displaying fractals, if you want an image of the given automaton use the \verb+save_aut_img+ directive instead!
+
+
+\subsubsection{set}
+
+\verb+set <setting> <value>+ sets the value of the setting to the given value, then returns \verb+true+.
+Currently the following settings can be set with this method:
+
+\begin{itemize}
+    \item \verb+output_json+
+    \item \verb+show_progress+
+    \item \verb+write_statistics+
+    \item \verb+extract_implications+
+    \item \verb+min_opt+
+    \item \verb+simplification_level+
+    \item \verb+history_file+
+    \item \verb+debug_level+
+    \item \verb+quiet+
+    \item \verb+opt_level+
+    \item \verb+heuristics+
+    \item \verb+postprocessing_preference+
+    \item \verb+postprocessing_force_sbacc+
+    \item \verb+load_stdlib+
+    \item \verb+output_hoa+
+\end{itemize}
+
+
+
+\subsection{Supplementary methods}
+
+Aside from the built-in methods which are used for actually interfacing with data, Praline also has some supplementary methods for working with regular methods.
+Keep in mind that, unlike Pecan directives, the calls for these always end with a period!
+
+
+\subsubsection{Execute}
+
+\verb+Execute <praline term> .+ is the Praline directive that causes any method given as argument to be executed.
+It is the only built-in Praline directive.
+
+
+\subsubsection{Define}
+
+\verb+Define <operator> := <term> .+ is the method used to define new methods during runtime.
+
+
+\subsubsection{Alias}
+
+\verb+Alias <string> ==> <praline directive> <praline term> .+ defines a new Praline directive with the given alias.
+Note that, since \verb+Execute+ is the only built-in Praline directive, all Praline directives defined at runtime will start with it, and hence can be used without explicitly calling it.
+
+
+
+
+
+\iffalse
+\chapter{Standard Library}
+
+\section{std}
+
+\section{integers}
+
+\section{reals}
+
+\section{scalar\_mul}
+\fi
+
+
+
+
+
+\end{document}

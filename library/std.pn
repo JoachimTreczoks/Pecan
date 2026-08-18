@@ -44,12 +44,6 @@ Structure binary defining {
     "odd": bin_odd(any)
 }
 
-Define enumFromTo low high :=
-    if low > high then
-        []
-    else
-        low :: enumFromTo (low + 1) high .
-
 Define (f ∘ g) x := f (g x).
 Define x :: xs := cons x xs.
 

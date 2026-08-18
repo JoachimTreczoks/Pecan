@@ -108,7 +108,7 @@ class IRExpression(IRNode):
         super().__init__()
         self.is_int : bool = True
 
-    def evaluate_node(self, prog : Program) -> Automaton | tuple[Automaton, VarRef]:
+    def evaluate_node(self, prog : Program) -> IREvaluation:
         raise NotImplementedError
     
     def evaluate_int(self, prog : Program) -> int:
@@ -175,7 +175,7 @@ class IRPredicate(IRNode):
     def __init__(self):
         super().__init__()
 
-    def evaluate_node(self, prog : Program) -> Automaton:
+    def evaluate_node(self, prog : Program) -> IREvaluation:
         raise NotImplementedError
     
 class IRComparison(IRPredicate):
@@ -287,7 +287,7 @@ class IREvaluation:
     def num_edges(self) -> int:
         return self.aut.num_edges()
     
-    def accepting_word(self) -> dict | None:
+    def accepting_word(self) -> dict:
         return self.aut.accepting_word() or {}
     
     def postprocess(self, level : str | None = None) -> IREvaluation:

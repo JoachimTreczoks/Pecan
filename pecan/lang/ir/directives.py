@@ -118,7 +118,10 @@ class DirectiveEndContext(DirectiveIRNode):
         self.context_key : str = context_key
 
     def evaluate(self, prog : Program) -> None:
-        prog.context.pop(self.context_key)
+        if self.context_key in prog.context:
+            prog.context.pop(self.context_key)
+        else:
+            Logger.warn('Attempted to remove context key "{}", but no such context key was defined! (Current context keys: {})'.format(self.context_key, list(prog.context.keys())))
         return None
 
     def transform(self, transformer : IRTransformer) -> DirectiveEndContext:
