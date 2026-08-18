@@ -64,6 +64,7 @@ Since a completely rigorous formulation of these in first order logic gets compl
 
 Expressions can use addition (\(+\)), subtraction (\(-\)), multiplication by an integer constant (\(*\)) and division by an integer constant (\(/\)).
 
+
 \subsubsection{Constants}
 
 Expressions can use any integer constant, which Pecan infers from 0 and 1 via repeated addition.
@@ -372,10 +373,237 @@ The \verb+shuffle ( <predicate name> , <predicate name> , <predicate name> )+ di
 The \verb+shuffle_or ( <predicate name> , <predicate name> , <predicate name> )+ directive computes the disjoint shuffle automaton of the first two named predicates and saves it under the third predicate name.
 
 
-\iffalse
+
 \section{Praline}
 
+Praline is a scripting language built into Pecan, allowing more complicated outputs, formatting, and macros.
+For this, it adds specific variable types and some built-in methods.
 
+
+
+\subsection*{Types}
+
+There are 5 base types which a value in Praline can assume.
+
+
+\subsubsection{PralineInt}
+
+\verb+PralineInt+ is the sole integer type for Praline.
+It can assume any value that a Python \verb+int+ can, i.e. they are signed and can be effectively arbitrarily large.
+
+
+\subsubsection{PralineString}
+
+\verb+PralineString+ is the type handling all text strings or characters for Praline.
+It can be created by wrapping text in a double quotation mark \verb+"<text>"+.
+
+
+\subsubsection{PralineBool}
+
+\verb+PralineBool+ is the boolean truth value type for Praline.
+It can either be \verb+true+ or \verb+false+, all lowercase.
+
+
+\subsubsection{PralineTuple}
+
+\verb+PralineTuple+ is the fixed size container type for Praline.
+It can be created by wrapping comma-separated values in parenthesis \verb+(<value 1>, <value 2>, ...)+.
+Note that tuples require at least two elements!
+
+
+\subsubsection{PralineList}
+
+\verb+PralineList+ is the dynamic size container type for Praline.
+It can be created by wrapping comma-separated values in square brackets \verb+[<value 1>, <value 2>, ...]+.
+These can be created with arbitrarily many elements
+
+
+\subsubsection{PralinePecanTerm}
+
+\verb+PralinePecanTerm+ is a Pecan wrapper type for Praline.
+It can hold any Pecan term, be it a predicate, an expression, or directive, by wrapping it in curly brackets \verb+{<pecan term>}+.
+
+
+\subsubsection{PralineAutomaton}
+
+\verb+PralineAutomaton+ is a factory object to create automatons for Praline.
+It can be created and modified by using built-in methods.
+
+
+
+\subsection{Built-in methods}
+
+Pecan provides several built-in methods to manipulate Praline variables.
+These are always loaded, even if the standard library is not.
+
+
+\subsubsection{truthValue}
+
+\verb+truthValue <pecan term>+ returns the truth value of a \verb+PralinePecanTerm+.
+The outputs can therefore be \verb+true+, \verb+false+, or \verb+sometimes+.
+
+
+\subsubsection{toString}
+
+\verb+toString <any>+ returns a \verb+PralineString+ containing the input value.
+
+
+\subsubsection{print}
+
+\verb+print <any>+ outputs the string representation of the input via the logger, then returns \verb+true+.
+
+
+\subsubsection{emit}
+
+\verb+emit <pecan term>+ outputs a string representation of the input Pecan term, then returns \verb+true+.
+If the term is a predicate definition or directive, it will also get processed by Pecan.
+
+
+\subsubsection{freshVar}
+
+\verb+freshVar+ returns a unique string that can act as an unused variable name.
+Repeated calling of this method will yield a new string every time.
+
+
+\subsubsection{toChars}
+
+\verb+toChars <string>+ returns a list consisting of strings of the individual characters making up the input.
+Non-string values are not accepted, but may be used if first combined with \verb+toString+
+
+
+\subsubsection{cons}
+
+\verb+cons <head> <tail>+ returns a list consisting of the head and tail values.
+If \verb+<tail>+ is a list, each element of this list will get appended separately, instead of being a single entry.
+
+
+\subsubsection{enumFromTo}
+
+\verb+enumFromTo <low> <high>+ returns a list consisting of all integer values from \verb+low+ to \verb+high+, endpoints included.
+This can also be called by writing \verb+[<low>..<high>]+.
+
+
+\subsubsection{acceptingWord}
+
+\verb+acceptingWord <pecan term>+ returns a list mapping variable names to accepted words of the given predicate.
+Each entry of this list is a tuple consisting of the variable name and a binary LSD representation of the prefix and cycle of the accepting word.
+Note that this is merely the internal representation of the value, and may not be easily human-readable!
+
+
+\subsubsection{compare}
+
+\verb+compare <left> <right>+ returns whether the left value is larger, smaller, or equal to the right value.
+If it is larger, it returns \verb+1+, if it is smaller it returns \verb+-1+, and if the values are equal it returns \verb+0+.
+
+
+\subsubsection{equal}
+
+\verb+equal <left> <right>+ returns whether the two values are equal or not.
+This works with all combinations of types!
+
+
+\subsubsection{mkAut}
+
+\verb+mkAut <input names> <input bases>+ returns a \verb+PralineAutomaton+ with the given input names and bases.
+The input names should be a list of strings, while the bases are a list of integers.
+
+
+\subsubsection{addState}
+
+\verb+addState <automaton> <state name> <acceptance>+ returns the given automaton with the specified state added.
+If the \verb+<acceptance>+ is \verb+true+, this will be set to be an acceptance state.
+
+
+\subsubsection{addTransition}
+
+\verb+addTransition <automaton> <source> <destination> <accepted values>+ returns the given automaton with the specified transition added.
+Note that the accepted values are given as a string containing space-separated values.
+
+
+\subsubsection{buildAut}
+
+\verb+buildAut <automaton>+ returns a \verb+PralinePecanTerm+ containing the built automaton of the given \verb+PralineAutomaton+ object.
+
+
+\subsubsection{writeFile}
+
+\verb+writeFile <filepath> <content>+ writes the contents to a file at the given filepath, then returns \verb+true+.
+
+
+\subsubsection{readFile}
+
+\verb+readFile <filepath>+ returns the contents of a file at the given filepath.
+
+
+\subsubsection{deleteFile}
+
+\verb+deleteFile <filepath>+ deletes the file at the given filepath, then returns \verb+true+.
+
+
+\subsubsection{splitStr}
+
+\verb+splitStr <separator> <input>+ returns a list of substrings of the given input, using the given separator.
+
+
+\subsubsection{plot}
+
+\verb+plot <options> <numeration systems> <pecan term>+ plots the automaton contained inside the Pecan term using the given options and numeration systems, then returns \verb+true+.
+Both the options and numeration systems should be lists of tuples.
+Note: This is primarily intended for displaying fractals, if you want an image of the given automaton use the \verb+save_aut_img+ directive instead!
+
+
+\subsubsection{set}
+
+\verb+set <setting> <value>+ sets the value of the setting to the given value, then returns \verb+true+.
+Currently the following settings can be set with this method:
+
+\begin{itemize}
+    \item \verb+output_json+
+    \item \verb+show_progress+
+    \item \verb+write_statistics+
+    \item \verb+extract_implications+
+    \item \verb+min_opt+
+    \item \verb+simplification_level+
+    \item \verb+history_file+
+    \item \verb+debug_level+
+    \item \verb+quiet+
+    \item \verb+opt_level+
+    \item \verb+heuristics+
+    \item \verb+postprocessing_preference+
+    \item \verb+postprocessing_force_sbacc+
+    \item \verb+load_stdlib+
+    \item \verb+output_hoa+
+\end{itemize}
+
+
+
+\subsection{Supplementary methods}
+
+Aside from the built-in methods which are used for actually interfacing with data, Praline also has some supplementary methods for working with regular methods.
+Keep in mind that, unlike Pecan directives, the calls for these always end with a period!
+
+
+\subsubsection{Execute}
+
+\verb+Execute <praline term> .+ is the Praline directive that causes any method given as argument to be executed.
+It is the only built-in Praline directive.
+
+
+\subsubsection{Define}
+
+\verb+Define <operator> := <term> .+ is the method used to define new methods during runtime.
+
+
+\subsubsection{Alias}
+
+\verb+Alias <string> ==> <praline directive> <praline term> .+ defines a new Praline directive with the given alias.
+Note that, since \verb+Execute+ is the only built-in Praline directive, all Praline directives defined at runtime will start with it, and hence can be used without explicitly calling it.
+
+
+
+
+
+\iffalse
 \chapter{Standard Library}
 
 \section{std}
