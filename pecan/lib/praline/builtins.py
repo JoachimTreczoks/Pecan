@@ -152,6 +152,25 @@ class Cons(Builtin):
     def evaluate(self, prog : Program) -> PralineList:
         return PralineList(prog.praline_lookup('head').evaluate(prog), prog.praline_lookup('tail').evaluate(prog))
 
+class EnumFromTo(Builtin):
+    def __init__(self):
+        super().__init__(PralineVar('enumFromTo'), [PralineVar('low'), PralineVar('high')])
+
+    def evaluate(self, prog : Program) -> PralineList:
+        low = prog.praline_lookup('low').evaluate(prog)
+        high = prog.praline_lookup('high').evaluate(prog)
+
+        if isinstance(low, PralineInt) and isinstance(high, PralineInt):
+            values = [i for i in range(low.get_int(), high.get_int() + 1)]
+            result = PralineList(None, None)
+
+            for value in values[::-1]:
+                result = PralineList(PralineInt(value), result)
+
+            return result
+        else:
+            raise PralineTypeError('Attempted enumerating values, but non-integers were given! Expected PralineInt, but got {} and {} instead.'.format(type(low), type(high)))
+
 class AcceptingWord(Builtin):
     def __init__(self):
         super().__init__(PralineVar('acceptingWord'), [PralineVar('pecanTerm')])
