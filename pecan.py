@@ -16,10 +16,7 @@ from pecan import program
 from pecan.settings import settings
 
 from pecan import utility
-
-pecan_version = '1.1.2'
-intended_python_version = '3.14.4'
-intended_spot_version = '2.15.1'
+from pecan.versions import pecan_version, intended_python_version, intended_spot_version
 
 def run_repl(env):
     from pecan.logger import Logger

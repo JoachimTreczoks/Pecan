@@ -1,16 +1,15 @@
 # Pecan
 
-[![Build Status](https://travis-ci.org/ReedOei/Pecan.svg?branch=master)](https://travis-ci.org/ReedOei/Pecan)
-
 Pecan is an automated theorem prover for Büchi automata, with additional features for making it easier to deal with expressing numbers in various numeration systems and working with automatic words.
 
-You can try Pecan online! Just go to [http://reedoei.com/pecan](http://reedoei.com/pecan).
+Although you could formerly use Pecan online at [http://reedoei.com/pecan](http://reedoei.com/pecan), this is no longer functional.
+Instead this website now serves as tribute to Reed Oei's work.
 
 ## Installation
 
 NOTE: You can also use Docker (see below), if you have it.
 
-You will need Python 3.6 or higher.
+You will need Python 3.14 or higher.
 
 Then, install [spot](https://spot.lrde.epita.fr/install.html); if you are on a Linux-y system (hopefully including MacOS), the `install-spot.sh` script in the `scripts/` directory of this repository should work for you:
 
@@ -19,8 +18,11 @@ bash scripts/install-spot.sh
 ```
 
 Otherwise, follow the instructions on the spot website.
+Keep in mind that you can use `--enable-max-accsets=...` argument to change the maximum amount of acceptance sets of an automaton.
+This accepts any integer multiple of 32. Higher values will cause automata to be larger and slower to compute!
 
-You will also need to install the libraries in `requirements.txt`:
+You will also need to install the libraries in `requirements.txt`.
+Some operating systems might require installation via packages in the OS package manager, but in general the following should suffice:
 
 ```bash
 # Use the appropriate line for your pip installation (if pip --version says 3.x, then you should be good; otherwise use/install pip3)
@@ -55,7 +57,14 @@ If you have Docker, you can run Pecan with:
 ./pecan-docker OPTIONS
 ```
 
-This will automatically build the image if you don't have it already.
+This will automatically build the image if you don't have it already, using the default Spot setting of 32 acceptance sets as maximum.
+If you need a higher maximum amount of acceptance sets, you have to build the Docker image manually using the following command:
+
+```bash
+docker build -t "pecan-prover:latest" --build-arg accsets=...
+```
+
+This accepts any integer multiple of 32. Higher values will cause automata to be larger and slower to compute!
 
 ## Examples
 
