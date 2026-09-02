@@ -24,6 +24,7 @@ RUN apt-get install -y sudo vim wget curl
 # Install spot. Run this here so that if we make changes to the stuff below, we don't have to rebuild spot
 ARG accsets=32
 
+RUN apt-get install -y build-essential
 RUN curl -sSL https://raw.githubusercontent.com/JoachimTreczoks/Pecan/master/scripts/install-spot.sh | bash -s -- --enable-max-accsets=$accsets
 
 WORKDIR /home/pecan
