@@ -1,22 +1,22 @@
 
-from pecan.lang.ir.praline.base import PralineTerm, PralineDummy
+from pecan.lang.ir.praline.base import PralineTerm, PralineDummy, PralineValueType
 from pecan.tools.labeled_aut_converter import State, Transition, build_aut
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING :
-    from typing import Any, Literal
+    from typing import Any
     from pecan.automata.buchi import BuchiAutomaton
     from pecan.lang.ir_transformer import IRTransformer
     from pecan.lang.ir.base import IRNode
     from pecan.lang.ir.prog import Program
 
 class PralineValueHolder(PralineTerm):
-    def __init__(self, value_type: Literal['bool'] | Literal['int'] | Literal['string'] | Literal['unknown'] = 'unknown'):
+    def __init__(self, value_type: PralineValueType):
         super().__init__(value_type)
 
 class PralineVar(PralineValueHolder):
     def __init__(self, var_name : str):
-        super().__init__()
+        super().__init__('Variable')
         self.var_name : str = var_name
 
     def evaluate(self, prog : Program) -> PralineTerm:
@@ -120,7 +120,7 @@ class PralineBool(PralineValueHolder):
 
 class PralineTuple(PralineValueHolder):
     def __init__(self, vals : list[PralineTerm]):
-        super().__init__()
+        super().__init__('tuple')
         self.vals : list[PralineTerm] = vals
 
     def transform(self, transformer : IRTransformer) -> PralineTuple:
@@ -143,7 +143,7 @@ class PralineTuple(PralineValueHolder):
 
 class PralineList(PralineValueHolder):
     def __init__(self, head : None | PralineTerm, tail : None | PralineTerm):
-        super().__init__()
+        super().__init__('list')
         self.head : PralineTerm = head or PralineDummy()
         self.tail : PralineTerm = tail or PralineDummy()
 
@@ -191,7 +191,7 @@ class PralineList(PralineValueHolder):
 
 class PralinePecanLiteral(PralineValueHolder):
     def __init__(self, pecan_term : IRNode):
-        super().__init__()
+        super().__init__('PecanLiteral')
         self.pecan_term : IRNode = pecan_term
 
     def get_term(self) -> IRNode:
@@ -212,9 +212,9 @@ class PralinePecanLiteral(PralineValueHolder):
     def __hash__(self) -> int:
         return hash((self.pecan_term))
 
-class PralineAutomaton(PralineValueHolder):
+class PralineAutomatonBuilder(PralineValueHolder):
     def __init__(self, input_names : list[str], input_bases : list[int], states : list[State], state_map : dict[str, int]):
-        super().__init__()
+        super().__init__('AutomatonBuilder')
         self.input_names : list[str] = input_names
         self.input_bases : list[int] = input_bases
         self.alphabet_line : str = ' '.join('{' + ', '.join(map(str, range(base))) + '}' for base in input_bases)
@@ -223,11 +223,11 @@ class PralineAutomaton(PralineValueHolder):
         self.state_map : dict[str, int] = state_map
         self.state_idx : int = len(self.states)
 
-    def transform(self, transformer : IRTransformer) -> PralineAutomaton:
-        return transformer.transform_PralineAutomaton(self)
+    def transform(self, transformer : IRTransformer) -> PralineAutomatonBuilder:
+        return transformer.transform_PralineAutomatonBuilder(self)
 
     def __str__(self) -> str:
-        return 'PralineAutomaton({}, {}, {}, {})'.format(self.input_names, self.input_bases, self.state_map, self.states)
+        return 'PralineAutomatonBuilder({}, {}, {}, {})'.format(self.input_names, self.input_bases, self.state_map, self.states)
 
     def __eq__(self, other : Any) -> bool:
         return other is not None and isinstance(other, self.__class__) and self.input_bases == other.input_bases and self.alphabet_line == other.alphabet_line and self.states == other.states and self.state_idx == other.state_idx and self.state_map == other.state_map and self.input_names == other.input_names
@@ -235,10 +235,10 @@ class PralineAutomaton(PralineValueHolder):
     def __hash__(self) -> int:
         return hash((self.alphabet_line, self.state_idx, len(self.states)))
 
-    def evaluate(self, prog : Program) -> PralineAutomaton:
+    def evaluate(self, prog : Program) -> PralineAutomatonBuilder:
         return self
 
-    def add_state(self, state_line : str) -> PralineAutomaton:
+    def add_state(self, state_line : str) -> PralineAutomatonBuilder:
         new_state = State(self.state_idx, state_line)
         self.states.append(new_state)
         self.state_map[new_state.label] = self.state_idx
@@ -247,7 +247,7 @@ class PralineAutomaton(PralineValueHolder):
 
         return self
 
-    def add_transition(self, state_label : str, transition_line : str) -> PralineAutomaton:
+    def add_transition(self, state_label : str, transition_line : str) -> PralineAutomatonBuilder:
         if state_label not in self.state_map:
             raise KeyError('No state "{}" in {}'.format(state_label, self))
 
