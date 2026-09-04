@@ -120,3 +120,4 @@ spot-2.15.1.tar
 *.log
 *.synctex.gz
 *.toc
+*.out
