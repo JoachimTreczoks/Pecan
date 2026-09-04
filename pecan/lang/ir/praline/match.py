@@ -1,8 +1,7 @@
 
 from pecan.lang.ir.base import UnaryIRExpression, UnaryIRPredicate, BinaryIRExpression, BinaryIRPredicate, IRComparison
 from pecan.lang.ir.praline.base import PralineIRNode, PralineTerm, PralineDummy
-from pecan.lang.ir.praline.variables import PralineTuple, PralineList
-from pecan.lang.ir.praline.functional import PralinePecanLiteral
+from pecan.lang.ir.praline.variables import PralineTuple, PralineList, PralinePecanLiteral
 
 from pecan.exceptions import MatchingError
 
