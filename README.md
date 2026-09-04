@@ -61,7 +61,7 @@ This will automatically build the image if you don't have it already, using the 
 If you need a higher maximum amount of acceptance sets, you have to build the Docker image manually using the following command:
 
 ```bash
-docker build -t "pecan-prover:latest" --build-arg accsets=...
+docker build -t "pecan-prover:latest" --build-arg accsets=... .
 ```
 
 This accepts any integer multiple of 32. Higher values will cause automata to be larger and slower to compute!
