@@ -5,7 +5,6 @@ import itertools as it
 from collections import deque
 
 from pecan.automata.automaton import Automaton
-from pecan.settings import settings
 
 import PySimpleAutomata.NFA as NFA
 
@@ -34,30 +33,6 @@ class FiniteAutomaton(Automaton):
     special_attr : Literal['false', 'true', None]
                    Whether the given automaton is the finite version of `TrueAutomaton`, `FalseAutomaton`, or neither
     """
-    _id = 0
-    @staticmethod
-    def fresh_ap() -> str:
-        """Returns a unique label to ensure unique atomic proposition names."""
-        label = f"__finvar{FiniteAutomaton._id}"
-        FiniteAutomaton._id += 1
-        return label
-
-    @staticmethod
-    def update_counter(ap_name : str) -> None:
-        """
-        This exists so that we ensure all names generated are fresh.
-        It gets called by the various methods that may create an automaton which already uses one of the reserved `__ap#N` names,
-        such as loading an automaton from a file.
-
-        Parameters
-        ----------
-        ap_name : str
-                  Name of an atomic proposition
-        """
-        if ap_name.startswith('var'):
-            ap_num = int(ap_name.split('var')[1])
-            FiniteAutomaton._id = max(FiniteAutomaton._id, ap_num) + 1
-
     @classmethod
     def as_finite(cls, aut : Automaton) -> FiniteAutomaton:
         """Turns automata into finite automata."""

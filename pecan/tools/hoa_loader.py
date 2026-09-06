@@ -5,10 +5,11 @@ import ast
 
 import spot
 
+from pecan.automata.automaton import Automaton
 from pecan.automata.buchi import BuchiAutomaton
 from pecan.utility import VarMap
 
-def from_spot_aut(base_aut : spot.automaton) -> BuchiAutomaton:
+def from_spot_aut(base_aut : spot.twa_graph) -> BuchiAutomaton:
     # In this case, we have no information about the encoding, so we just assume that each variable maps 1-1 in the HOA file specified.
     var_map = VarMap()
 
@@ -29,7 +30,7 @@ def load_hoa(path : str) -> BuchiAutomaton:
 
             for k, vs in var_map.items():
                 for v in vs:
-                    BuchiAutomaton.update_counter(v)
+                    Automaton.update_counter(v)
 
             return BuchiAutomaton(spot.automaton('\n'.join(lines[1:])), var_map)
     except ValueError:

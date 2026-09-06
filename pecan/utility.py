@@ -26,6 +26,21 @@ def unzip(xs : map) -> tuple[list, list]:
 
     return lefts, rights
 
+class Counter:
+    """Utility class to ensure access to globally unique integer IDs"""
+    _count = 0
+
+    @staticmethod
+    def get() -> int:
+        """Returns a unique integer value"""
+        Counter._count += 1
+        return Counter._count
+
+    @staticmethod
+    def update_counter(new_min : int) -> None:
+        """Updates the internal counter to skip forward to `new_min`"""
+        Counter._count = max(Counter._count, new_min)
+
 class VarMap:
     def __init__(self, var_reps : dict[str, list[str]] | None=None):
         self.var_reps : dict = var_reps or {}

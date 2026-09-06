@@ -37,22 +37,6 @@ def merge_maps(aut : spot.twa_graph, map_a: VarMap, map_b: VarMap) -> BuchiAutom
     return BuchiAutomaton(aut, merged_var_map).ap_substitute(subs)
 
 class BuchiAutomaton(Automaton):
-    id = 0
-    @staticmethod
-    def fresh_ap() -> str:
-        label = f"__ap{BuchiAutomaton.id}"
-        BuchiAutomaton.id += 1
-        return label
-
-    # This exists so that we ensure all names generated are fresh.
-    # It gets called by the various methods that may create an automaton which already uses of the reserved __ap#N names
-    # such as loading an automaton from a file.
-    @staticmethod
-    def update_counter(ap_name : str) -> None:
-        if ap_name.startswith('__ap'):
-            ap_num = int(ap_name.split('__ap')[1])
-            BuchiAutomaton.id = max(BuchiAutomaton.id, ap_num) + 1
-
     @classmethod
     def as_buchi(cls, aut : Automaton) -> BuchiAutomaton:
         if aut.get_aut_type() == 'buchi':

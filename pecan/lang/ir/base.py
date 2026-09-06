@@ -5,6 +5,7 @@ import time
 
 from pecan.settings import settings
 from pecan.logger import Logger
+from pecan.utility import Counter
 from pecan.automata.automaton import Automaton
 
 from typing import TYPE_CHECKING
@@ -16,11 +17,9 @@ if TYPE_CHECKING :
     from pecan.utility import VarMap
 
 class IRNode:
-    id = 0
     @staticmethod
     def fresh_name() -> str:
-        label = f"__pecan_var{IRNode.id}"
-        IRNode.id += 1
+        label = f"__pecan_var{Counter.get()}"
         return label
 
     def __init__(self):

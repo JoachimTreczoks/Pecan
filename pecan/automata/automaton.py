@@ -1,6 +1,8 @@
 #!/usr/bin/env python3.6
 # -*- coding=utf-8 -*-
 
+from pecan.utility import Counter
+
 from typing import TYPE_CHECKING
 if TYPE_CHECKING :
     from typing import Literal, Self, Iterable
@@ -10,6 +12,28 @@ if TYPE_CHECKING :
 class Automaton:
     def __init__(self, aut_type_name : str):
         self.aut_type_name = aut_type_name
+
+    @staticmethod
+    def fresh_ap() -> str:
+        """Returns a unique label to ensure unique atomic proposition names."""
+        label = "__ap{}".format(Counter.get())
+        return label
+
+    @staticmethod
+    def update_counter(ap_name : str) -> None:
+        """
+        This exists so that we ensure all names generated are fresh.
+        It gets called by the various methods that may create an automaton which already uses one of the reserved `__ap#N` names,
+        such as loading an automaton from a file.
+
+        Parameters
+        ----------
+        ap_name : str
+                  Name of an atomic proposition
+        """
+        if ap_name.startswith('__ap'):
+            ap_num = int(ap_name.split('__ap')[1])
+            Counter.update_counter(ap_num)
 
     def get_aut_type(self) -> str:
         return self.aut_type_name
