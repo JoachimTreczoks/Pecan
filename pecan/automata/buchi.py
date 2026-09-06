@@ -17,20 +17,22 @@ if TYPE_CHECKING :
     from pecan.lang.ir.prog import VarRef
 
 def merge(merge_f : Callable[[spot.twa_graph, spot.twa_graph], spot.twa_graph], aut_a : BuchiAutomaton, aut_b : BuchiAutomaton) -> BuchiAutomaton:
+    merged_var_map : VarMap
+    subs : dict[str, str]
     if aut_a.num_states() < aut_b.num_states():
         merged_var_map, subs = aut_b.get_var_map().merge_with(aut_a.get_var_map())
-        # print('merge(a into b)', merged_var_map, subs)
-        new_a = BuchiAutomaton(aut_a.get_aut(), aut_a.get_var_map()).ap_substitute(subs)
-        new_b = aut_b
+        new_a : BuchiAutomaton = BuchiAutomaton(aut_a.get_aut(), aut_a.get_var_map()).ap_substitute(subs)
+        new_b : BuchiAutomaton = aut_b
     else:
         merged_var_map, subs = aut_a.get_var_map().merge_with(aut_b.get_var_map())
-        # print('merge(b into a)', merged_var_map, subs)
-        new_a = aut_a
-        new_b = BuchiAutomaton(aut_b.get_aut(), aut_b.get_var_map()).ap_substitute(subs)
+        new_a : BuchiAutomaton = aut_a
+        new_b : BuchiAutomaton = BuchiAutomaton(aut_b.get_aut(), aut_b.get_var_map()).ap_substitute(subs)
 
     return BuchiAutomaton(merge_f(new_a.get_aut(), new_b.get_aut()), merged_var_map)
 
 def merge_maps(aut : spot.twa_graph, map_a: VarMap, map_b: VarMap) -> BuchiAutomaton:
+    merged_var_map : VarMap
+    subs : dict[str, str]
     merged_var_map, subs = map_a.merge_with(map_b)
     return BuchiAutomaton(aut, merged_var_map).ap_substitute(subs)
 
@@ -87,39 +89,39 @@ class BuchiAutomaton(Automaton):
         return BuchiAutomaton.as_buchi(FalseAutomaton()).with_var_map(self.var_map)
 
     def conjunction(self, other : BuchiAutomaton) -> BuchiAutomaton:
-        result = merge(spot.product, self, other)
+        result : BuchiAutomaton = merge(spot.product, self, other)
         result.dump_aut()
         return result
 
     def disjunction(self, other : BuchiAutomaton) -> BuchiAutomaton:
-        result = merge(spot.product_or, self, other)
+        result : BuchiAutomaton = merge(spot.product_or, self, other)
         result.dump_aut()
         return result
 
     def complement(self) -> BuchiAutomaton:
         if settings.get_simplification_level() > 0:
             self.postprocess()
-        result = BuchiAutomaton(spot.complement(self.get_aut()), self.var_map)
+        result : BuchiAutomaton = BuchiAutomaton(spot.complement(self.get_aut()), self.var_map)
         result.dump_aut()
         return result
 
     def dump_aut(self) -> None:
-        hoa_file = settings.get_output_hoa()
+        hoa_file : str | None = settings.get_output_hoa()
         if hoa_file:
             with open(hoa_file, "a") as fd:
                 fd.write(self.get_aut().to_str() + "\n\n")
 
     def relabel(self) -> BuchiAutomaton:
-        level_before = settings.get_simplification_level()
+        level_before : int = settings.get_simplification_level()
         settings.set_simplification_level(0)
 
-        ap_set = set(map(str, self.aut.ap()))
+        ap_set : set[str] = set(map(str, self.aut.ap()))
 
-        new_aps = {}
+        new_aps : dict[str, str] = {}
         for ap in self.aut.ap():
             # Make sure that we don't try to relabel with an AP that's already in the automaton.
             # This can happen when we load an automaton from a file.
-            new_ap = self.fresh_ap()
+            new_ap : str = self.fresh_ap()
             while new_ap in ap_set:
                 new_ap = self.fresh_ap()
 
@@ -127,21 +129,21 @@ class BuchiAutomaton(Automaton):
 
         Logger.log('Relabeling: {}'.format(new_aps), 3)
 
-        res = self.ap_substitute(new_aps)
+        res : BuchiAutomaton = self.ap_substitute(new_aps)
 
         settings.set_simplification_level(level_before)
         return res
 
     def substitute(self, arg_map : dict[str, str], env_var_map : VarMap) -> BuchiAutomaton:
-        new_var_map = VarMap()
-        ap_subs = {}
+        new_var_map : VarMap = VarMap()
+        ap_subs : dict[str, str] = {}
 
         for formal_arg, actual_arg in arg_map.items():
             # Get the aps for the formal argument in this automaton
-            formal_aps = self.var_map[formal_arg]
+            formal_aps : list[str] = self.var_map[formal_arg]
 
             # Get the aps for the actual argument in the current environment
-            actual_aps = env_var_map.get_or_gen(actual_arg, self.fresh_ap, len(formal_aps))
+            actual_aps : list[str] = env_var_map.get_or_gen(actual_arg, self.fresh_ap, len(formal_aps))
 
             # Set up the substitutions we need to do
             for formal_ap, actual_ap in zip(formal_aps, actual_aps):
@@ -150,38 +152,36 @@ class BuchiAutomaton(Automaton):
             # Rename the formal arg to the actual arg, but leave the aps as the formal aps because that'll be done by `ap_substitute` below
             new_var_map[actual_arg] = formal_aps
 
-        # print('substitute()', arg_map, new_var_map, env_var_map, ap_subs)
-
         return BuchiAutomaton(self.aut, new_var_map).ap_substitute(ap_subs)
 
     def ap_substitute(self, ap_subs : dict[str, str]) -> BuchiAutomaton:
         # If we try something like [x/x]P, just don't do anything
-        ap_subs = {k: v for k, v in ap_subs.items() if k != v}
+        ap_subs : dict[str, str] | None = {k: v for k, v in ap_subs.items() if k != v}
 
         if not ap_subs:
             return self
 
-        bdd_subs = {self.aut.register_ap(k): v for k, v in ap_subs.items()}
+        bdd_subs : dict[str, str] = {self.aut.register_ap(k): v for k, v in ap_subs.items()}
 
         Logger.log('ap_subs: {}'.format(ap_subs), 3)
 
         if settings.get_simplification_level() > 0:
             self.postprocess()
 
-        new_var_map = VarMap()
-        to_register = []
+        new_var_map : VarMap = VarMap()
+        to_register : list[str] = []
         for v, aps in self.var_map.items():
             new_var_map[v] = []
             for ap in aps:
                 # Get the new name of this ap, or just the ap if the name didn't get
-                new_ap = ap_subs.get(ap, ap)
+                new_ap : str = ap_subs.get(ap, ap)
 
                 new_var_map[v].append(new_ap)
                 to_register.append(new_ap)
 
         Logger.log('ap_subs: {}, {}, {}'.format(ap_subs, self.var_map, new_var_map), 3)
 
-        new_aut = buchi_transform(self.aut, Substitution(bdd_subs))
+        new_aut : spot.twa_graph = buchi_transform(self.aut, Substitution(bdd_subs))
 
         for new_ap in to_register:
             new_aut.register_ap(new_ap)
@@ -201,7 +201,7 @@ class BuchiAutomaton(Automaton):
                 else:
                     raise AutomatonArithmeticError('Failed projecting {}, missing entry in the variable map ({})'.format(v, self.var_map))
 
-        result = self.ap_project(aps)
+        result : BuchiAutomaton = self.ap_project(aps)
 
         if settings.get_simplification_level() > 0:
             result.merge_states()
@@ -229,11 +229,11 @@ class BuchiAutomaton(Automaton):
         if self.aut.is_empty():
             return self.make_empty_aut()
 
-        remover = spot.remove_ap()
+        remover : spot.remove_ap = spot.remove_ap()
         for ap in aps:
             remover.add_ap(ap)
 
-        res_aut = remover.strip(self.get_aut())
+        res_aut : spot.twa_graph = remover.strip(self.get_aut())
 
         return BuchiAutomaton(res_aut, self.get_var_map())
 
@@ -254,7 +254,8 @@ class BuchiAutomaton(Automaton):
     def num_edges(self) -> int:
         return self.aut.num_edges()
 
-    def show(self): # Should return a string of SVG data. **Not a String object!!!**
+    def show(self):
+        """Returns a string of SVG data. **Not a String object!**"""
         return self.postprocess().aut.show()
 
     def get_aut(self):
@@ -301,7 +302,7 @@ class BuchiAutomaton(Automaton):
 
         # Both Spot and the HOA format use TBA, so SBA is not necessarily required for anything.
         # Because of that we make it opt-in via a command line argument
-        postprocess_settings = ['Buchi', 'SBAcc'] if settings.get_postprocessing_force_sbacc() else ['Buchi']
+        postprocess_settings : list[str] = ['Buchi', 'SBAcc'] if settings.get_postprocessing_force_sbacc() else ['Buchi']
         
         if level is not None:
             postprocess_settings.append(level)
@@ -342,7 +343,7 @@ class BuchiAutomaton(Automaton):
 
     def merge_states(self) -> BuchiAutomaton:
         if settings.get_simplification_level() > 1:
-            ran = False
+            ran : bool = False
             while self.get_aut().merge_states() > 0:
                 ran = True
                 Logger.log('after merge_states: {}'.format(self.num_states()), 3)
@@ -360,7 +361,7 @@ class BuchiAutomaton(Automaton):
         self.get_aut().merge_edges()
         return self
 
-    def accepting_word(self) -> dict | None:
+    def accepting_word(self) -> dict[str, list[tuple[list[bool], list[bool]]]] | None:
         acc_word = self.get_aut().accepting_word()
 
         if acc_word is None:
@@ -368,7 +369,7 @@ class BuchiAutomaton(Automaton):
 
         acc_word.simplify()
 
-        var_names = []
+        var_names : list[str] = []
         for formula in list(acc_word.prefix) + list(acc_word.cycle):
             for f in spot.atomic_prop_collect(spot.bdd_to_formula(formula)):
                 var_names.append(f.ap_name())
@@ -379,26 +380,26 @@ class BuchiAutomaton(Automaton):
                     var_names.append(ap)
 
         var_names = sorted(list(set(var_names)))
-        prefixes = self.to_binary(var_names, acc_word.prefix)
-        cycles = self.to_binary(var_names, acc_word.cycle)
+        prefixes : dict[str, list[bool]] = self.to_binary(var_names, acc_word.prefix)
+        cycles : dict[str, list[bool]] = self.to_binary(var_names, acc_word.cycle)
 
-        ap_result = {}
+        ap_result : dict[str, tuple[list[bool], list[bool]]] = {}
         for var_name in var_names:
             ap_result[var_name] = (prefixes[var_name], cycles[var_name])
 
-        result = {}
+        result : dict[str, list[tuple[list[bool], list[bool]]]] = {}
         for var, aps in self.var_map.items():
             result[var] = [ap_result[ap] for ap in aps]
 
         return result
 
-    def to_binary(self, var_names : list[str], bdd_list : list[buddy.bdd]) -> dict:
-        var_vals = {k: [] for k in var_names}
+    def to_binary(self, var_names : list[str], bdd_list : list[buddy.bdd]) -> dict[str, list[bool]]:
+        var_vals : dict[str, list[bool]] = {k: [] for k in var_names}
 
         for bdd in bdd_list[::-1]:
             formula = spot.bdd_to_formula(bdd)
 
-            next_vals = {}
+            next_vals : dict[str, bool] = {}
             self.process_formula(next_vals, formula)
 
             # If we didn't find a value for a variable in this part of the formula, that means it can be either True or False.
@@ -426,8 +427,8 @@ class BuchiAutomaton(Automaton):
 
     def shuffle(self, is_disj : bool, other : Automaton):
         # Don't need to convert ourselves, but may need to convert other aut to Buchi
-        aut_a = self
-        aut_b = self.convert(other)
+        aut_a : BuchiAutomaton = self
+        aut_b : BuchiAutomaton = self.convert(other)
 
         return merge_maps(ShuffleAutomata(aut_a.get_aut(), aut_b.get_aut()).shuffle(is_disj), aut_a.get_var_map(), aut_b.get_var_map())
 
@@ -438,9 +439,9 @@ class BuchiAutomaton(Automaton):
         with open(filename, 'w') as f:
             f.write(str(self))
 
-def buchi_transform(original_aut : spot.twa_graph, builder : Builder):
+def buchi_transform(original_aut : spot.twa_graph, builder : Builder) -> spot.twa_graph:
     # Build a new automata with different edges
-    new_aut = spot.make_twa_graph()
+    new_aut : spot.twa_graph = spot.make_twa_graph()
 
     # Set the acceptance condition to be same as the input automata
     acc = original_aut.get_acceptance()
@@ -450,7 +451,7 @@ def buchi_transform(original_aut : spot.twa_graph, builder : Builder):
 
     builder.pre_build(new_aut)
 
-    ne = original_aut.num_edges()
+    ne : int = original_aut.num_edges()
 
     if settings.get_debug_level() > 2:
         import sys
@@ -487,8 +488,8 @@ class Builder:
         return cond
 
 class Substitution(Builder):
-    def __init__(self, subs : dict):
-        self.subs = subs
+    def __init__(self, subs : dict[str, str]):
+        self.subs : dict[str, str] = subs
 
     def pre_build(self, new_aut : spot.twa_graph):
         for k, v in self.subs.items():
@@ -501,7 +502,6 @@ class Substitution(Builder):
         for var, new_formula in self.subs.items():
             # old = cond
             cond = buddy.bdd_compose(cond, new_formula, var)
-            # print('after ({} |-> {}), is now {}, was {}'.format(spot.bdd_to_formula(buddy.bdd_ithvar(var)), spot.bdd_to_formula(new_formula), spot.bdd_to_formula(cond), spot.bdd_to_formula(old)))
 
         return cond
 
