@@ -48,6 +48,8 @@ def run_repl(env):
             break
         except UnexpectedToken as e:
             print(e)
+        except FileNotFoundError as e:
+            Logger.error('No file of name "{}" could be found!'.format(e))
         except Exception as e:
             Logger.error('An exception occured: {}'.format(e))
 
