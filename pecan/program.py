@@ -34,12 +34,12 @@ def make_search_paths(filename : str | None=None) -> list[str]:
 
     return search_paths
 
-def load(pecan_file : str, *args : tuple, **kwargs : Any) -> Program:
+def load(pecan_file : str, *args : tuple, **kwargs : dict) -> Program:
     with open(pecan_file, 'r', encoding='utf-8') as f:
         kwargs['filename'] = pecan_file
         return from_source(f.read(), *args, **kwargs)
 
-def from_source(source_code : str, *args : tuple, **kwargs : Any) -> Program:
+def from_source(source_code : str, *args : tuple, **kwargs : dict) -> Program:
     astprog : ASTProgram = pecan_parser.parse(source_code)
 
     Logger.log('Parsed program:', 4)
