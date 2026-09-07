@@ -13,15 +13,15 @@ import spot
 
 from pecan import program
 
-from pecan.settings import settings
+from pecan.settings import Settings
 
 from pecan import utility
 from pecan.versions import pecan_version, intended_python_version, intended_spot_version
 
 def run_repl(env):
     from pecan.logger import Logger
-    utility.touch(settings.get_history_file())
-    readline.read_history_file(settings.get_history_file())
+    utility.touch(Settings.get_history_file())
+    readline.read_history_file(Settings.get_history_file())
 
     while True:
         try:
@@ -34,7 +34,7 @@ def run_repl(env):
                 parts = prog_str.split(' ')
                 if len(parts) > 1:
                     if parts[1] == 'debug':
-                        settings.set_debug_level(1 if settings.get_debug_level() <= 0 else 0)
+                        Settings.set_debug_level(1 if Settings.get_debug_level() <= 0 else 0)
             else:
                 prog = program.from_source(prog_str)
                 Logger.log(str(prog), 0)
@@ -53,11 +53,11 @@ def run_repl(env):
         except Exception as e:
             Logger.error('An exception occured: {}'.format(e))
 
-            if settings.debug_level > 0: # Swallowing the error is bad for debugging purposes, so we print the traceback if using debug mode
+            if Settings.get_debug_level() > 0: # Swallowing the error is bad for debugging purposes, so we print the traceback if using debug mode
                 import traceback
                 traceback.print_exc()
 
-    readline.write_history_file(settings.get_history_file())
+    readline.write_history_file(Settings.get_history_file())
 
     return env
 
@@ -88,23 +88,23 @@ def main():
         print('Pecan {}, made for Python {} and Spot {}'.format(pecan_version, intended_python_version, intended_spot_version))
         exit(0)
 
-    settings.set_quiet(args.quiet)
-    settings.set_opt_level(0 if args.no_opt else 1)
-    settings.set_load_stdlib(args.no_stdlib)
-    settings.set_use_heuristics(args.heuristics)
-    settings.set_postprocessing_preference(args.postprocessing_preference)
-    settings.set_postprocessing_force_sbacc(args.postprocessing_force_sbacc)
-    settings.set_min_opt(args.min_opt)
-    settings.set_extract_implications(args.extract_implications)
-    settings.set_write_statistics(args.stats)
-    settings.set_output_hoa(args.output_hoa)
-    settings.set_output_json(args.output_json)
-    settings.set_show_progress(not args.no_progress)
+    Settings.set_quiet(args.quiet)
+    Settings.set_opt_level(0 if args.no_opt else 1)
+    Settings.set_load_stdlib(args.no_stdlib)
+    Settings.set_use_heuristics(args.heuristics)
+    Settings.set_postprocessing_preference(args.postprocessing_preference)
+    Settings.set_postprocessing_force_sbacc(args.postprocessing_force_sbacc)
+    Settings.set_min_opt(args.min_opt)
+    Settings.set_extract_implications(args.extract_implications)
+    Settings.set_write_statistics(args.stats)
+    Settings.set_output_hoa(args.output_hoa)
+    Settings.set_output_json(args.output_json)
+    Settings.set_show_progress(not args.no_progress)
 
     if args.debug is None:
-        settings.set_debug_level(0)
+        Settings.set_debug_level(0)
     else:
-        settings.set_debug_level(args.debug)
+        Settings.set_debug_level(args.debug)
 
     if args.use_var_map is not None:
         if args.file is None:
@@ -136,7 +136,7 @@ def main():
     if args.file is not None:
         try:
             prog = program.load(args.file)
-            if not settings.get_extract_implications():
+            if not Settings.get_extract_implications():
                 env = prog.evaluate_prog()
         except UnexpectedToken as e:
             print(e)
@@ -162,9 +162,9 @@ def main():
     elif args.file is None and args.expand_definition is None:
         parser.print_help()
 
-    if settings.get_output_json():
+    if Settings.get_output_json():
         if prog is not None:
-            print(json.dumps({'output': settings.get_output(), 'files': prog.get_generated_files()}))
+            print(json.dumps({'output': Settings.get_output(), 'files': prog.get_generated_files()}))
         else:
             print(json.dumps({'output': '', 'files': []}))
 

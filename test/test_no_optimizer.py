@@ -2,15 +2,15 @@
 # -*- coding=utf-8 -*-
 
 from pecan import program
-from pecan.settings import settings
+from pecan.settings import Settings
 
 def run_file(filename):
-    settings.set_quiet(True)
-    orig_level = settings.get_opt_level()
-    settings.set_opt_level(0)
+    Settings.set_quiet(True)
+    orig_level = Settings.get_opt_level()
+    Settings.set_opt_level(0)
     prog = program.load(filename)
     assert prog.evaluate_prog().result.succeeded()
-    settings.set_opt_level(orig_level)
+    Settings.set_opt_level(orig_level)
 
 def test_load_pred():
     run_file('examples/test_load_aut.pn')

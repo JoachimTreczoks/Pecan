@@ -7,9 +7,10 @@ import os
 from typing import TYPE_CHECKING
 if TYPE_CHECKING :
     from collections.abc import Callable, ItemsView
+    from pathlib import Path
 
 # From: https://stackoverflow.com/a/6222692/1498618
-def touch(filename : str) -> None:
+def touch(filename : str | Path) -> None:
     try:
         os.utime(filename, None)
     except OSError:

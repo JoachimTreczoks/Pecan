@@ -1,5 +1,5 @@
 
-from pecan.settings import settings
+from pecan.settings import Settings
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING :
@@ -9,8 +9,8 @@ class Logger:
 
     @staticmethod
     def log(msg : str, level : int = -1, respect_quiet : bool = False):
-        if settings.get_debug_level() > level and (settings.is_quiet() or not respect_quiet):
-            settings.print(msg)
+        if Settings.get_debug_level() > level and (Settings.is_quiet() or not respect_quiet):
+            Settings.print(msg)
 
     @staticmethod
     def info(msg : str, level : int = -1, respect_quiet : bool = False):

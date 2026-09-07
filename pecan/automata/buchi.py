@@ -7,7 +7,7 @@ import spot
 from pecan.automata.automaton import Automaton, FalseAutomaton
 from pecan.tools.shuffle_automata import ShuffleAutomata
 from pecan.utility import VarMap
-from pecan.settings import settings
+from pecan.settings import Settings
 from pecan.logger import Logger
 from pecan.exceptions import AutomatonArithmeticError
 
@@ -83,21 +83,21 @@ class BuchiAutomaton(Automaton):
         return result
 
     def complement(self) -> BuchiAutomaton:
-        if settings.get_simplification_level() > 0:
+        if Settings.get_simplification_level() > 0:
             self.postprocess()
         result : BuchiAutomaton = BuchiAutomaton(spot.complement(self.get_aut()), self.var_map)
         result.dump_aut()
         return result
 
     def dump_aut(self) -> None:
-        hoa_file : str | None = settings.get_output_hoa()
+        hoa_file : str | None = Settings.get_output_hoa()
         if hoa_file:
             with open(hoa_file, "a") as fd:
                 fd.write(self.get_aut().to_str() + "\n\n")
 
     def relabel(self) -> BuchiAutomaton:
-        level_before : int = settings.get_simplification_level()
-        settings.set_simplification_level(0)
+        level_before : int = Settings.get_simplification_level()
+        Settings.set_simplification_level(0)
 
         ap_set : set[str] = set(map(str, self.aut.ap()))
 
@@ -115,7 +115,7 @@ class BuchiAutomaton(Automaton):
 
         res : BuchiAutomaton = self.ap_substitute(new_aps)
 
-        settings.set_simplification_level(level_before)
+        Settings.set_simplification_level(level_before)
         return res
 
     def substitute(self, arg_map : dict[str, str], env_var_map : VarMap) -> BuchiAutomaton:
@@ -149,7 +149,7 @@ class BuchiAutomaton(Automaton):
 
         Logger.log('ap_subs: {}'.format(ap_subs), 3)
 
-        if settings.get_simplification_level() > 0:
+        if Settings.get_simplification_level() > 0:
             self.postprocess()
 
         new_var_map : VarMap = VarMap()
@@ -187,7 +187,7 @@ class BuchiAutomaton(Automaton):
 
         result : BuchiAutomaton = self.ap_project(aps)
 
-        if settings.get_simplification_level() > 0:
+        if Settings.get_simplification_level() > 0:
             result.merge_states()
             result.postprocess()
 
@@ -263,7 +263,7 @@ class BuchiAutomaton(Automaton):
             self.aut = spot.sat_minimize(self.get_aut())
             Logger.log('after sat_minimize: {}'.format(self.num_states()), 3)
 
-        if settings.use_heuristics():
+        if Settings.use_heuristics():
             self.merge_states()
         else:
             if self.num_states() < 50000:
@@ -286,12 +286,12 @@ class BuchiAutomaton(Automaton):
 
         # Both Spot and the HOA format use TBA, so SBA is not necessarily required for anything.
         # Because of that we make it opt-in via a command line argument
-        postprocess_settings : list[str] = ['Buchi', 'SBAcc'] if settings.get_postprocessing_force_sbacc() else ['Buchi']
+        postprocess_settings : list[str] = ['Buchi', 'SBAcc'] if Settings.get_postprocessing_force_sbacc() else ['Buchi']
         
         if level is not None:
             postprocess_settings.append(level)
 
-        if settings.use_heuristics():
+        if Settings.use_heuristics():
             if level is None:
                 # Somewhat counter-intuitively, it can be beneficial to do _less_ optimization on large automata,
                 # since more complicated optimizations may not always be successful enough to justify the effort.
@@ -313,7 +313,7 @@ class BuchiAutomaton(Automaton):
                     postprocess_settings.append('Deterministic')
         else:
             postprocess_settings.append('High')
-            postprocess_settings.append(settings.get_postprocessing_preference())
+            postprocess_settings.append(Settings.get_postprocessing_preference())
 
         Logger.log('Postprocessing (before) using {}: {} states and {} edges'.format(postprocess_settings, self.num_states(), self.num_edges()), 1)
 
@@ -326,7 +326,7 @@ class BuchiAutomaton(Automaton):
         return self.postprocess()
 
     def merge_states(self) -> BuchiAutomaton:
-        if settings.get_simplification_level() > 1:
+        if Settings.get_simplification_level() > 1:
             ran : bool = False
             while self.get_aut().merge_states() > 0:
                 ran = True
@@ -437,7 +437,7 @@ def buchi_transform(original_aut : spot.twa_graph, builder : Builder) -> spot.tw
 
     ne : int = original_aut.num_edges()
 
-    if settings.get_debug_level() > 2:
+    if Settings.get_debug_level() > 2:
         import sys
 
         for i, e in enumerate(original_aut.edges()):

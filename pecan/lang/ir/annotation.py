@@ -3,7 +3,7 @@
 
 from pecan.lang.ir import *
 
-from pecan.settings import settings
+from pecan.settings import Settings
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING :
@@ -20,22 +20,22 @@ class Annotation(IRPredicate):
 
     def evaluate_node(self, prog : Program) -> IREvaluation:
         if self.annotation_name == '@no_simplify':
-            orig_level = settings.get_simplification_level()
-            settings.set_simplification_level(0)
+            orig_level = Settings.get_simplification_level()
+            Settings.set_simplification_level(0)
             res = self.body.evaluate(prog)
-            settings.set_simplification_level(orig_level)
+            Settings.set_simplification_level(orig_level)
             return res
         elif self.annotation_name == '@simplify':
-            orig_level = settings.get_simplification_level()
-            settings.set_simplification_level(1)
+            orig_level = Settings.get_simplification_level()
+            Settings.set_simplification_level(1)
             res = self.body.evaluate(prog)
-            settings.set_simplification_level(orig_level)
+            Settings.set_simplification_level(orig_level)
             return res
         elif self.annotation_name == '@simplify_high':
-            orig_level = settings.get_simplification_level()
-            settings.set_simplification_level(2)
+            orig_level = Settings.get_simplification_level()
+            Settings.set_simplification_level(2)
             res = self.body.evaluate(prog)
-            settings.set_simplification_level(orig_level)
+            Settings.set_simplification_level(orig_level)
             return res
         elif self.annotation_name == '@postprocess':
             return self.body.evaluate(prog).postprocess()

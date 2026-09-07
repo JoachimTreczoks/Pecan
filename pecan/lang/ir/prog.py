@@ -12,7 +12,7 @@ from typing import TypedDict
 
 from pecan.tools.hoa_loader import from_spot_aut
 from pecan.lang.ir.base import *
-from pecan.settings import settings
+from pecan.settings import Settings
 from pecan.logger import Logger
 from pecan.utility import VarMap
 from pecan.exceptions import CallResolvingError, MatchingError, UnificationError
@@ -262,12 +262,12 @@ class NamedPred(Call):
         try:
             if self.body_evaluated is None:
                 # TODO: START AND FINISH HERE!!!!
-                if settings.should_write_statistics():
+                if Settings.should_write_statistics():
                     prog.start_max_aut(self.name)
 
                 self.body_evaluated = self.body.evaluate(prog).relabel()
 
-                if settings.should_write_statistics():
+                if Settings.should_write_statistics():
                     sn, en, runtime = prog.finish_max_aut(self.name)
                     sn = max(self.body_evaluated.num_states(), sn)
                     en = max(self.body_evaluated.num_edges(), en)
@@ -298,7 +298,7 @@ class NamedPred(Call):
         return hash((self.name, tuple(self.args)))
 
 class Program(IRNode):
-    def __init__(self, defs, *args, **kwargs):
+    def __init__(self, defs, *args : tuple, **kwargs : dict):
         super().__init__()
 
         self.defs : list[IRNode] = defs
@@ -440,7 +440,7 @@ class Program(IRNode):
             Logger.debug('Type inference and IR lowering for: {}'.format(d.name), 1)
             transformed_def = TypedIRLowering(self).transform(self.type_infer(d))
 
-            if settings.opt_enabled():
+            if Settings.opt_enabled():
                 Logger.debug('Performing typed optimization on: {}'.format(d.name), 1)
                 transformed_def = Optimizer(self).optimize(transformed_def)
 
@@ -682,7 +682,7 @@ class Result:
         return self.msg
 
     def result_str(self) -> str:
-        if settings.get_show_progress():
+        if Settings.get_show_progress():
             if self.succeeded():
                 return '{}{}{}'.format(Fore.GREEN, self.msg, Style.RESET_ALL)
             else:

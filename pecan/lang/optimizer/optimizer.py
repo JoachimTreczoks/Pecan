@@ -8,7 +8,7 @@ from pecan.lang.optimizer.redundant_variable_optimizer import RedundantVariableO
 from pecan.lang.optimizer.unused_variable_optimizer import UnusedVariableOptimizer
 from pecan.lang.ir import *
 
-from pecan.settings import settings
+from pecan.settings import Settings
 from pecan.logger import Logger
 
 class UntypedOptimizer:
@@ -25,7 +25,7 @@ class UntypedOptimizer:
     def run_optimizations(self, node, pred):
         Logger.log('Optimizing: {}'.format(node), 2)
 
-        if settings.min_opt():
+        if Settings.min_opt():
             optimization_pass = [ ArithmeticOptimizer(self), BooleanOptimizer(self) ]
         else:
             optimization_pass = [ ArithmeticOptimizer(self), BooleanOptimizer(self) ] # RedundantVariableOptimizer(self) ]
@@ -55,7 +55,7 @@ class Optimizer:
     def run_optimizations(self, node : IRNode, pred):
         Logger.log('Optimizing: {}'.format(node), 2)
 
-        if settings.min_opt():
+        if Settings.min_opt():
             optimization_pass = [ ArithmeticOptimizer(self), BooleanOptimizer(self) ]
         else:
             # optimization_pass = [ ArithmeticOptimizer(self), CSEOptimizer(self), BooleanOptimizer(self), RedundantVariableOptimizer(self), UnusedVariableOptimizer(self) ]

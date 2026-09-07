@@ -11,7 +11,7 @@ from pecan.lang.ir.prog import AutLiteral
 from pecan.lib.plot import BuchiPlotter
 from pecan.lib.praline.praline_utils import lookup_term, lookup_value_holder, lookup_int, lookup_string, lookup_bool, lookup_list, lookup_pecan_literal, lookup_automaton
 
-from pecan.settings import settings
+from pecan.settings import Settings
 from pecan.logger import Logger
 from pecan.exceptions import PralineConversionError, PralineTypeError
 
@@ -340,21 +340,21 @@ class SetSettings(Builtin):
         value = as_python(lookup_value_holder('value', prog))
 
         settings_dict = {
-            'output_json': settings.set_output_json,
-            'show_progress': settings.set_show_progress,
-            'write_statistics': settings.set_write_statistics,
-            'extract_implications': settings.set_extract_implications,
-            'min_opt': settings.set_min_opt,
-            'simplification_level': settings.set_simplification_level,
-            'history_file': settings.set_history_file,
-            'debug_level': settings.set_debug_level,
-            'quiet': settings.set_quiet,
-            'opt_level': settings.set_opt_level,
-            'heuristics': settings.set_use_heuristics,
-            'postprocessing_preference': settings.set_postprocessing_preference,
-            'postprocessing_force_sbacc': settings.set_postprocessing_force_sbacc,
-            'load_stdlib': settings.set_load_stdlib,
-            'output_hoa': settings.set_output_hoa,
+            'output_json': Settings.set_output_json,
+            'show_progress': Settings.set_show_progress,
+            'write_statistics': Settings.set_write_statistics,
+            'extract_implications': Settings.set_extract_implications,
+            'min_opt': Settings.set_min_opt,
+            'simplification_level': Settings.set_simplification_level,
+            'history_file': Settings.set_history_file,
+            'debug_level': Settings.set_debug_level,
+            'quiet': Settings.set_quiet,
+            'opt_level': Settings.set_opt_level,
+            'heuristics': Settings.set_use_heuristics,
+            'postprocessing_preference': Settings.set_postprocessing_preference,
+            'postprocessing_force_sbacc': Settings.set_postprocessing_force_sbacc,
+            'load_stdlib': Settings.set_load_stdlib,
+            'output_hoa': Settings.set_output_hoa,
         }
 
         if name.get_string() in settings_dict:
