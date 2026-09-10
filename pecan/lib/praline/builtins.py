@@ -38,7 +38,7 @@ def as_python(val, expected = None) -> list | str | bool | int | tuple | IRNode:
     if isinstance(val, PralineList):
         if expected is None or isinstance(val, expected):
             result = []
-            while not isinstance(val.head, PralineDummy):
+            while not isinstance(val.head, PralineNull):
                 result.append(as_python(val.head))
                 if isinstance(val.tail, PralineList):
                     val = val.tail

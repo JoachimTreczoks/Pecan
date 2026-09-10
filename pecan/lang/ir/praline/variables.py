@@ -1,5 +1,5 @@
 
-from pecan.lang.ir.praline.base import PralineTerm, PralineDummy, PralineValueType
+from pecan.lang.ir.praline.base import PralineTerm, PralineValueType
 from pecan.tools.labeled_aut_converter import State, Transition, build_aut
 
 from typing import TYPE_CHECKING
@@ -13,6 +13,20 @@ if TYPE_CHECKING :
 class PralineValueHolder(PralineTerm):
     def __init__(self, value_type: PralineValueType):
         super().__init__(value_type)
+
+class PralineNull(PralineValueHolder):
+    """Null-value for Praline"""
+    def __init__(self):
+        super().__init__('Null')
+
+    def match(self, term : PralineTerm, prog : Program) -> dict | None: # For using PralineNull instead of PralineMatchPat objects
+        raise NotImplementedError
+    
+    def __str__(self) -> str:
+        return '<Empty>'
+    
+    def __eq__(self, other : Any) -> bool:
+        return other is not None and isinstance(other, self.__class__)
 
 class PralineVar(PralineValueHolder):
     def __init__(self, var_name : str):
@@ -144,11 +158,11 @@ class PralineTuple(PralineValueHolder):
 class PralineList(PralineValueHolder):
     def __init__(self, head : None | PralineTerm, tail : None | PralineTerm):
         super().__init__('list')
-        self.head : PralineTerm = head or PralineDummy()
-        self.tail : PralineTerm = tail or PralineDummy()
+        self.head : PralineTerm = head or PralineNull()
+        self.tail : PralineTerm = tail or PralineNull()
 
         # Sanity check: self.tail is only non-trivial if self.head is non-trivial
-        assert not (isinstance(self.head, PralineDummy) and not isinstance(self.tail, PralineDummy))
+        assert not (isinstance(self.head, PralineNull) and not isinstance(self.tail, PralineNull))
 
     def transform(self, transformer : IRTransformer) -> PralineList:
         return transformer.transform_PralineList(self)
@@ -157,7 +171,7 @@ class PralineList(PralineValueHolder):
         elems = []
         cur : PralineList = self
 
-        while not isinstance(cur.head, PralineDummy):
+        while not isinstance(cur.head, PralineNull):
             elems.append(cur.head)
             if isinstance(cur.tail, PralineList):
                 cur = cur.tail
@@ -168,18 +182,18 @@ class PralineList(PralineValueHolder):
         return '[{}]'.format(', '.join([str(e) for e in elems]))
 
     def __repr__(self) -> str:
-        if isinstance(self.tail, PralineDummy):
+        if isinstance(self.tail, PralineNull):
             return '[]'
         else:
             return '({} :: {})'.format(self.head, self.tail)
 
     def evaluate(self, prog : Program) -> PralineList:
-        if not isinstance(self.head, PralineDummy):
+        if not isinstance(self.head, PralineNull):
             new_a = self.head.evaluate(prog)
         else:
             new_a = None
 
-        if not isinstance(self.tail, PralineDummy):
+        if not isinstance(self.tail, PralineNull):
             new_b = self.tail.evaluate(prog)
         else:
             new_b = None

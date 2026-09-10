@@ -1,6 +1,6 @@
 
-from pecan.lang.ir.praline.base import PralineBinaryOp, PralineUnaryOp, PralineDummy, PralineTerm
-from pecan.lang.ir.praline.variables import PralineInt, PralineString
+from pecan.lang.ir.praline.base import PralineBinaryOp, PralineUnaryOp, PralineTerm
+from pecan.lang.ir.praline.variables import PralineInt, PralineString, PralineNull
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING :

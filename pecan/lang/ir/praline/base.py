@@ -1,6 +1,5 @@
 
 from pecan.lang.ir.base import IRNode
-
 from pecan.lang.ir.prog import Program
 from pecan.tools.labeled_aut_converter import *
 
@@ -8,14 +7,14 @@ from typing import TYPE_CHECKING, Literal
 if TYPE_CHECKING :
     from typing import Any, Literal
 
-PralineValueType = Literal['Variable', 'int', 'string', 'bool', 'tuple', 'list', 'PecanLiteral', 'AutomatonBuilder',  'unknown']
+PralineValueType = Literal['Null', 'Variable', 'int', 'string', 'bool', 'tuple', 'list', 'PecanLiteral', 'AutomatonBuilder',  'unknown']
 
 class PralineIRNode(IRNode):
     def __init__(self):
         super().__init__()
     
     def evaluate(self, prog: Program) -> PralineTerm:
-        return PralineDummy()
+        raise NotImplementedError
 
     def __str__(self) -> str:
         raise NotImplementedError # We force every PralineIRNode to have a canonical string representation
@@ -49,22 +48,6 @@ class PralineTerm(PralineIRNode):
 
     def get_value_type(self) -> str:
         return self.value_type
-
-class PralineDummy(PralineTerm):
-    """
-    Dummy class for making PralineTerms non-optional
-    """
-    def __init__(self):
-        super().__init__()
-
-    def match(self, term : PralineTerm, prog : Program) -> dict | None: # For using the PralineDummy instead of PralineMatchPat objects
-        raise NotImplementedError
-    
-    def __str__(self) -> str:
-        return '<Empty>'
-    
-    def __eq__(self, other : Any) -> bool:
-        return other is not None and isinstance(other, self.__class__)
 
 class PralineBinaryOp(PralineTerm):
     def __init__(self, a : PralineTerm, b : PralineTerm):

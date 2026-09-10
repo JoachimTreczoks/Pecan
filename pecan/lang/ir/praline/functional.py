@@ -1,6 +1,6 @@
 
-from pecan.lang.ir.praline.base import PralineIRNode, PralineTerm, PralineDummy
-from pecan.lang.ir.praline.variables import PralinePecanLiteral
+from pecan.lang.ir.praline.base import PralineIRNode, PralineTerm
+from pecan.lang.ir.praline.variables import PralinePecanLiteral, PralineNull
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING :
@@ -17,9 +17,9 @@ class PralineAlias(PralineIRNode):
         self.directive_name : str = directive_name
         self.term : PralineApp | PralineVar = term
 
-    def evaluate(self, prog : Program) -> PralineDummy:
+    def evaluate(self, prog : Program) -> PralineNull:
         prog.define_alias(self.name, self)
-        return PralineDummy()
+        return PralineNull()
 
     def with_term(self, new_term : PralineTerm) -> PralineDirective:
         return PralineDirective(self.directive_name, PralineApp(self.term, new_term))
@@ -47,7 +47,7 @@ class PralineDirective(PralineIRNode):
             prog.enter_praline_env()
             self.term.evaluate(prog)
             prog.exit_praline_env()
-            return PralineDummy()
+            return PralineNull()
         else:
             return prog.lookup_alias(self.name).with_term(self.term).evaluate(prog)
 
@@ -70,10 +70,10 @@ class PralineDef(PralineIRNode):
         self.args : list[PralineVar] = args
         self.body : PralineTerm = body
 
-    def evaluate(self, prog : Program) -> PralineDummy:
+    def evaluate(self, prog : Program) -> PralineNull:
         res = Closure({}, self.args, self.body)
         prog.praline_define(self.name.var_name, res)
-        return PralineDummy()
+        return PralineNull()
 
     def transform(self, transformer : IRTransformer) -> PralineDef:
         return transformer.transform_PralineDef(self)
@@ -299,7 +299,7 @@ class PralineDo(PralineTerm):
         return hash((self.terms))
 
     def evaluate(self, prog : Program) -> PralineTerm:
-        result = PralineDummy()
+        result = PralineNull()
 
         for term in self.terms:
             result = term.evaluate(prog)

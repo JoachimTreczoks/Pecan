@@ -1,7 +1,7 @@
 
 from pecan.lang.ir.base import UnaryIRExpression, UnaryIRPredicate, BinaryIRExpression, BinaryIRPredicate, IRComparison
-from pecan.lang.ir.praline.base import PralineIRNode, PralineTerm, PralineDummy
-from pecan.lang.ir.praline.variables import PralineTuple, PralineList, PralinePecanLiteral
+from pecan.lang.ir.praline.base import PralineIRNode, PralineTerm
+from pecan.lang.ir.praline.variables import PralineTuple, PralineList, PralinePecanLiteral, PralineNull
 
 from pecan.exceptions import MatchingError
 
@@ -217,16 +217,16 @@ class PralineMatchString(PralineMatchPat):
 class PralineMatchList(PralineMatchPat):
     def __init__(self, head : PralineMatchPat, tail : PralineMatchPat):
         super().__init__()
-        self.head : PralineMatchPat | PralineDummy = head or PralineDummy()
-        self.tail : PralineMatchPat | PralineDummy = tail or PralineDummy()
+        self.head : PralineMatchPat | PralineNull = head or PralineNull()
+        self.tail : PralineMatchPat | PralineNull = tail or PralineNull()
 
     def match(self, term : PralineList, prog : Program) -> dict | None:
 
         if not isinstance(term, PralineList):
             return None
 
-        if isinstance(self.head, PralineDummy) or isinstance(term.head, PralineDummy):
-            if isinstance(self.head, PralineDummy) and isinstance(term.head, PralineDummy):
+        if isinstance(self.head, PralineNull) or isinstance(term.head, PralineNull):
+            if isinstance(self.head, PralineNull) and isinstance(term.head, PralineNull):
                 return {}
             else:
                 return None
