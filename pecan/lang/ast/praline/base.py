@@ -1,4 +1,5 @@
 
+from pecan.utility import Counter
 from pecan.lang.ast.base import ASTNode
 
 from typing import TYPE_CHECKING
@@ -16,11 +17,9 @@ class PralineASTNode(ASTNode):
         return self.__str__() # Fallback for list printing
 
 class PralineTerm(PralineASTNode):
-    var_counter = 0
     @staticmethod
     def fresh_name() -> str:
-        label = "__arg{}".format(PralineTerm.var_counter)
-        PralineTerm.var_counter += 1
+        label = "__arg{}".format(Counter.get())
         return label
 
     def __init__(self):
