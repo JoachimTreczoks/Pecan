@@ -7,9 +7,10 @@ import os
 from typing import TYPE_CHECKING
 if TYPE_CHECKING :
     from collections.abc import Callable, ItemsView
+    from pathlib import Path
 
 # From: https://stackoverflow.com/a/6222692/1498618
-def touch(filename : str) -> None:
+def touch(filename : str | Path) -> None:
     try:
         os.utime(filename, None)
     except OSError:
@@ -25,6 +26,21 @@ def unzip(xs : map) -> tuple[list, list]:
         rights.append(r)
 
     return lefts, rights
+
+class Counter:
+    """Utility class to ensure access to globally unique integer IDs"""
+    _count = 0
+
+    @staticmethod
+    def get() -> int:
+        """Returns a unique integer value"""
+        Counter._count += 1
+        return Counter._count
+
+    @staticmethod
+    def update_counter(new_min : int) -> None:
+        """Updates the internal counter to skip forward to `new_min`"""
+        Counter._count = max(Counter._count, new_min)
 
 class VarMap:
     def __init__(self, var_reps : dict[str, list[str]] | None=None):

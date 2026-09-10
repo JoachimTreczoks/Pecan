@@ -91,17 +91,17 @@ class NamedPred(ASTNode):
         return '{}({}) := {}'.format(self.name, ', '.join(map(str, self.args)), self.body)
 
 class Program(ASTNode):
-    def __init__(self, defs, *args, **kwargs : dict[str, Any]): # TODO: Add type hinting for the args and kwargs
+    def __init__(self, defs, *args : tuple, **kwargs : dict):
         super().__init__()
 
-        self.defs = defs
-        self.preds : dict = kwargs.get('preds', {})
-        self.context : dict = kwargs.get('context', {})
-        self.restrictions : list[dict[VarRef, Restriction]] = kwargs.get('restrictions', [{}])
-        self.types : dict = kwargs.get('types', {})
+        self.defs : list[ASTNode] = defs
+        self.preds : dict[str, NamedPred] = kwargs.get('preds', {})
+        self.context : dict[str, str] = kwargs.get('context', {})
+        self.restrictions : list[dict[str, list[Call]]] = kwargs.get('restrictions', [{}])
+        self.types : dict[Restriction, dict[str, Call]] = kwargs.get('types', {})
         self.eval_level : int = kwargs.get('eval_level', 0)
-        self.result = kwargs.get('result', None)
-        self.search_paths : list = kwargs.get('search_paths', [])
+        self.result : None = kwargs.get('result', None)
+        self.search_paths : list[str] = kwargs.get('search_paths', [])
 
     def copy_defaults(self, other_prog : Program) -> Program:
         self.context = other_prog.context

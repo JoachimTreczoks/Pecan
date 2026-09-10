@@ -110,8 +110,8 @@ venv.bak/
 .vscode/
 
 # Spot installation files
-/spot-2.15.1/
-spot-2.15.1.tar
+/spot-2.16/
+spot-2.16.tar
 
 # TeX compilation files
 *.aux
@@ -120,3 +120,4 @@ spot-2.15.1.tar
 *.log
 *.synctex.gz
 *.toc
+*.out

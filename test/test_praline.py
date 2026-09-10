@@ -5,11 +5,11 @@ from contextlib import redirect_stdout
 import io
 
 from pecan import program
-from pecan.settings import settings
+from pecan.settings import Settings
 
 def run_file(filename, expected_output):
-    orig_quiet = settings.is_quiet()
-    settings.set_quiet(True)
+    orig_quiet = Settings.is_quiet()
+    Settings.set_quiet(True)
 
     f = io.StringIO()
     with redirect_stdout(f):
@@ -17,7 +17,7 @@ def run_file(filename, expected_output):
         assert prog.evaluate_prog().result.succeeded()
     assert f.getvalue().strip() == expected_output.strip()
 
-    settings.set_quiet(orig_quiet)
+    Settings.set_quiet(orig_quiet)
 
 def test_praline_simple():
     run_file('examples/test_praline_simple.pn', '1\n16\n')

@@ -16,6 +16,8 @@
 \usepackage[noEnd=false]{algpseudocodex}
 \usepackage{listings}
 
+\usepackage{hyperref}
+
 \usepackage{titlesec}
 
 \title{Pecan User Documentation}
@@ -227,6 +229,18 @@ This can be done by writing:
 wherein the variables are in a comma-separated list.
 
 
+\subsubsection{LTL formulas}
+
+Pecan provides the ability to parse \emph{Linear Temporal Logic} (LTL) formulas directly via Spot, which can be used as predicates in Pecan formulas.
+
+\begin{verbatim}
+    "<LTL formula>"
+\end{verbatim}
+
+Note that LTL formulas require use of Spot syntax.
+See \href{https://spot.lre.epita.fr/tl.pdf}{https://spot.lre.epita.fr/tl.pdf} for reference.
+
+
 
 \subsection{Annotations}
 
@@ -424,9 +438,9 @@ These can be created with arbitrarily many elements
 It can hold any Pecan term, be it a predicate, an expression, or directive, by wrapping it in curly brackets \verb+{<pecan term>}+.
 
 
-\subsubsection{PralineAutomaton}
+\subsubsection{PralineAutomatonBuilder}
 
-\verb+PralineAutomaton+ is a factory object to create automatons for Praline.
+\verb+PralineAutomatonBuilder+ is a factory object to create automatons for Praline.
 It can be created and modified by using built-in methods.
 
 
@@ -504,7 +518,7 @@ This works with all combinations of types!
 
 \subsubsection{mkAut}
 
-\verb+mkAut <input names> <input bases>+ returns a \verb+PralineAutomaton+ with the given input names and bases.
+\verb+mkAut <input names> <input bases>+ returns a \verb+PralineAutomatonBuilder+ with the given input names and bases.
 The input names should be a list of strings, while the bases are a list of integers.
 
 
@@ -522,7 +536,7 @@ Note that the accepted values are given as a string containing space-separated v
 
 \subsubsection{buildAut}
 
-\verb+buildAut <automaton>+ returns a \verb+PralinePecanTerm+ containing the built automaton of the given \verb+PralineAutomaton+ object.
+\verb+buildAut <automaton>+ returns a \verb+PralinePecanTerm+ containing the built automaton of the given \verb+PralineAutomatonBuilder+ object.
 
 
 \subsubsection{writeFile}

@@ -4,9 +4,11 @@ from pecan.lang.ir.base import IRNode
 from pecan.lang.ir.prog import Program
 from pecan.tools.labeled_aut_converter import *
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 if TYPE_CHECKING :
     from typing import Any, Literal
+
+PralineValueType = Literal['Variable', 'int', 'string', 'bool', 'tuple', 'list', 'PecanLiteral', 'AutomatonBuilder',  'unknown']
 
 class PralineIRNode(IRNode):
     def __init__(self):
@@ -22,9 +24,9 @@ class PralineIRNode(IRNode):
         return self.__str__() # Fallback for list printing
 
 class PralineTerm(PralineIRNode):
-    def __init__(self, value_type : Literal['bool', 'int', 'string', 'unknown'] = 'unknown'):
+    def __init__(self, value_type : PralineValueType = 'unknown'):
         super().__init__()
-        self.value_type : Literal['bool', 'int', 'string', 'unknown'] = value_type
+        self.value_type : PralineValueType = value_type
 
     # If an `is_X()` method returns true, the corresponding `get_X()` method should be implemented!
     def is_bool(self) -> bool:
@@ -44,6 +46,9 @@ class PralineTerm(PralineIRNode):
     
     def get_string(self) -> str:
         raise NotImplementedError
+
+    def get_value_type(self) -> str:
+        return self.value_type
 
 class PralineDummy(PralineTerm):
     """

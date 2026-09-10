@@ -1,6 +1,8 @@
 #!/usr/bin/env python3.6
 # -*- coding=utf-8 -*-
 
+from pecan.utility import Counter
+
 from typing import TYPE_CHECKING
 if TYPE_CHECKING :
     from typing import Literal, Self, Iterable
@@ -11,6 +13,28 @@ class Automaton:
     def __init__(self, aut_type_name : str):
         self.aut_type_name = aut_type_name
 
+    @staticmethod
+    def fresh_ap() -> str:
+        """Returns a unique label to ensure unique atomic proposition names."""
+        label = "__ap{}".format(Counter.get())
+        return label
+
+    @staticmethod
+    def update_counter(ap_name : str) -> None:
+        """
+        This exists so that we ensure all names generated are fresh.
+        It gets called by the various methods that may create an automaton which already uses one of the reserved `__ap#N` names,
+        such as loading an automaton from a file.
+
+        Parameters
+        ----------
+        ap_name : str
+                  Name of an atomic proposition
+        """
+        if ap_name.startswith('__ap'):
+            ap_num = int(ap_name.split('__ap')[1])
+            Counter.update_counter(ap_num)
+
     def get_aut_type(self) -> str:
         return self.aut_type_name
 
@@ -20,22 +44,22 @@ class Automaton:
 
     # To implement an automaton, we only need implement either conjunction or disjunction, and complement
     # In practice, it will probably be more efficient to implement all three
-    def conjunction(self, other : Automaton) -> Automaton:
+    def conjunction(self, other : Self) -> Self:
         """Returns an automaton representing the conjunction of this automaton and `other`"""
         return self.complement().disjunction(other.complement()).complement()
 
-    def disjunction(self, other : Automaton) -> Automaton:
+    def disjunction(self, other : Self) -> Self:
         """Returns an automaton representing the disjunction of this automaton and `other`"""
         return self.complement().conjunction(other.complement()).complement()
 
-    def complement(self) -> Automaton:
+    def complement(self) -> Self:
         """Returns an automaton representing the complement of this automaton"""
         raise NotImplementedError
 
-    def substitute(self, arg_map : dict[str, str], env_var_map : VarMap) -> Automaton:
+    def substitute(self, arg_map : dict[str, str], env_var_map : VarMap) -> Self:
         raise NotImplementedError
 
-    def project(self, var_refs : Iterable[VarRef], env_var_map : VarMap) -> Automaton:
+    def project(self, var_refs : Iterable[VarRef], env_var_map : VarMap) -> Self:
         raise NotImplementedError
 
     def is_empty(self) -> bool:
@@ -56,8 +80,8 @@ class Automaton:
     def __str__(self) -> str:
         raise NotImplementedError
 
-    # Should return a string of SVG data
-    def show(self) -> str: # TODO: not literally str, check type
+    def show(self):
+        """Returns a string of SVG data. **Not a String object!**"""
         raise NotImplementedError
 
     def save(self, filename : str) -> None:
@@ -70,47 +94,47 @@ class Automaton:
     # -------------------------------------------------------------------
     # Optional methods (e.g., for simplification, minimization, etc):
     # -------------------------------------------------------------------
-    def simplify_edges(self) -> Automaton:
+    def simplify_edges(self) -> Self:
         return self
 
-    def simplify_states(self) -> Automaton:
+    def simplify_states(self) -> Self:
         return self
 
-    def merge_edges(self) -> Automaton:
+    def merge_edges(self) -> Self:
         return self
 
-    def merge_states(self) -> Automaton:
+    def merge_states(self) -> Self:
         return self
     
     def postprocess(self, level : str | None = None) -> Self:
         return self
 
     # Allows conversion between types of automata, if desired
-    def custom_convert(self, other : Automaton) -> Automaton:
+    def custom_convert(self, other : Automaton) -> Self:
         raise NotImplementedError
 
-    def shuffle(self, is_disj : bool, other : Automaton) -> Automaton:
+    def shuffle(self, is_disj : bool, other : Automaton) -> Self:
         raise NotImplementedError
 
-    def relabel(self) -> Automaton:
+    def relabel(self) -> Self:
         return self
 
-    def simplify(self) -> Automaton:
+    def simplify(self) -> Self:
         return self
 
     # -------------------------------------------------------
     # Default implementations:
     # -------------------------------------------------------
-    def __and__(self, other : Automaton) -> Automaton:
+    def __and__(self, other : Automaton) -> Self:
         return self.conjunction(self.convert(other))
 
-    def __or__(self, other : Automaton) -> Automaton:
+    def __or__(self, other : Automaton) -> Self:
         return self.disjunction(self.convert(other))
 
     def contains(self, other : Automaton) -> bool:
         return (self.complement() | other).truth_value() == 'true'
 
-    def convert(self, other : Automaton) -> Automaton:
+    def convert(self, other : Automaton) -> Self:
         if self.get_aut_type() == other.get_aut_type():
             return other
         else:

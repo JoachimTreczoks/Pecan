@@ -10,7 +10,8 @@ RUN git --version
 
 # Install python
 RUN apt-get update
-RUN apt-get install -y python3 python3-dev python3-pip graphviz
+RUN apt-get install -y python3 python3-dev python3-pip
+RUN apt-get install -y graphviz=14.1.2-1ubuntu1
 # Since this is a docker environment, there is no real danger of actually breaking the system install by using pip for installing packages
 RUN pip3 install --break-system-packages pytest
 RUN rm -rf /var/lib/apt/lists/*
@@ -36,6 +37,5 @@ WORKDIR /home/pecan/JoachimTreczoks/Pecan
 
 RUN pip3 install --break-system-packages -r requirements.txt
 # Install my custom version of PySimpleAutomata
-RUN ( cd PySimpleAutomata; pip3 install --break-system-packages . )
+RUN ( cd PySimpleAutomata; pip3 install --break-system-packages -r requirements.txt; pip3 install --break-system-packages . )
 RUN pytest --verbose test
-

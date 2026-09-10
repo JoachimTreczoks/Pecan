@@ -3,8 +3,9 @@
 
 import time
 
-from pecan.settings import settings
+from pecan.settings import Settings
 from pecan.logger import Logger
+from pecan.utility import Counter
 from pecan.automata.automaton import Automaton
 
 from typing import TYPE_CHECKING
@@ -16,11 +17,9 @@ if TYPE_CHECKING :
     from pecan.utility import VarMap
 
 class IRNode:
-    id = 0
     @staticmethod
     def fresh_name() -> str:
-        label = f"__pecan_var{IRNode.id}"
-        IRNode.id += 1
+        label = f"__pecan_var{Counter.get()}"
         return label
 
     def __init__(self):
@@ -89,10 +88,10 @@ class IRNode:
 
         end_time = time.time()
 
-        if settings.should_write_statistics():
+        if Settings.should_write_statistics():
             prog.update_max_aut(sn, en, end_time - start_time)
 
-        if settings.get_debug_level() > 0 and sn >= 0 and en >= 0:
+        if Settings.get_debug_level() > 0 and sn >= 0 and en >= 0:
             Logger.log(self.indented(prog, '{} has {} states and {} edges ({:.2f} seconds)'.format(self.get_display_node(prog), sn, en, end_time - start_time)), 0)
 
         return result

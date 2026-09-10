@@ -239,7 +239,7 @@ class IRTransformer:
     def transform_PralineDo(self, node : PralineDo) -> PralineDo:
         return PralineDo([self.transform(t) for t in node.terms])
 
-    def transform_PralineAutomaton(self, node : PralineAutomaton) -> PralineAutomaton:
+    def transform_PralineAutomatonBuilder(self, node : PralineAutomatonBuilder) -> PralineAutomatonBuilder:
         return node
 
     def transform_Annotation(self, node : Annotation) -> Annotation:

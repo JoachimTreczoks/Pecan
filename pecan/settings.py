@@ -1,183 +1,219 @@
 #!/usr/bin/env python3.6
 # -*- coding=utf-8 -*-
 
-# This module provides an infrastructure for configuring Pecan
-# All uses of various config options like debug mode, quiet mode, etc. are managed from here
-
 import os
 
 from pathlib import Path
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from typing import Literal, Callable
+    from pecan.lang.ir.prog import Program
+
 class Settings:
-    def __init__(self):
-        self.debug_level = 0
-        self.quiet = False
-        self.opt_level = 1
-        self.load_stdlib = True
-        self.pecan_path_var = 'PECAN_PATH'
-        self.history_file = 'pecan_history'
-        self.simplification_level = 1
-        self.should_use_heuristics = False
-        self.postprocessing_preference = 'Small'
-        self.postprocessing_force_sbacc = False
-        self.only_min_opt = False
-        self.extract_implications = False
-        self.write_statistics = False
-        self.output_hoa = None
-        self.output_json = False
-        self.show_progress = True
+    """Static settings holder class, to interface with the program settings from anywhere in the code"""
 
-        self.output = ''
+    """Regular settings. Can be fully read and written to via getters and setters from outside"""
+    _debug_level : int = 0
+    _quiet : bool = False
+    _opt_level : int = 1
+    _load_stdlib : bool = True
+    _history_file : str = 'pecan_history'
+    _simplification_level : int = 1
+    _should_use_heuristics : bool = False
+    _postprocessing_preference : Literal['Small', 'Deterministic'] = 'Small'
+    _postprocessing_force_sbacc : bool = False
+    _only_min_opt : bool = False
+    _extract_implications : bool = False
+    _write_statistics : bool = False
+    _output_hoa : str | None = None
+    _output_json : bool = False
+    _show_progress : bool = True
 
-        self.stdlib_prog = None
+    """Internal settings. Cannot be written to from outside"""
+    _output : str = ''
+    _stdlib_prog : Program | None = None
+    _pecan_path_var : str = 'PECAN_PATH'
 
-    def get_output(self):
-        return self.output
-
-    def set_output_json(self, output_json):
-        self.output_json = output_json
-        return self
-
-    def print(self, s):
-        if self.get_output_json():
-            self.output += s + "\n"
-        else:
-            print(s)
-        return self
-
-    def set_show_progress(self, show_progress):
-        self.show_progress = show_progress
-        return self
-
-    def get_show_progress(self):
-        return self.show_progress and not self.quiet
-
-    def get_output_json(self):
-        return self.output_json
-
-    def should_write_statistics(self):
-        return self.write_statistics
-
-    def set_write_statistics(self, write_statistics):
-        self.write_statistics = write_statistics
-        return self
-
-    def get_extract_implications(self):
-        return self.extract_implications
-
-    def set_extract_implications(self, b):
-        self.extract_implications = b
-        return self
-
-    def min_opt(self):
-        return self.only_min_opt
-
-    def set_min_opt(self, min_opt):
-        self.only_min_opt = min_opt
-        return self
-
-    def get_simplification_level(self):
-        return self.simplification_level
-
-    def set_simplification_level(self, new_level):
-        self.simplification_level = new_level
-        return self
-
-    def get_history_file(self):
-        return Path.home() / self.history_file
-
-    def set_history_file(self, filename):
-        self.history_file = filename
-        return self
-
-    def get_pecan_path(self):
-        if self.pecan_path_var in os.environ:
-            return os.getenv(self.pecan_path_var).split(os.pathsep)
+    @staticmethod
+    def get_output() -> str:
+        return Settings._output
+    
+    @staticmethod
+    def get_pecan_path() -> list[str]:
+        if Settings._pecan_path_var in os.environ:
+            return os.getenv(Settings._pecan_path_var).split(os.pathsep)
         else:
             return []
 
-    def set_debug_level(self, level):
-        self.debug_level = max(0,level)
-        return self
-
-    def get_debug_level(self):
-        return self.debug_level
-
-    def set_quiet(self, val):
-        self.quiet = val
-        return self
-
-    def is_quiet(self):
-        return self.quiet
-
-    def set_opt_level(self, level):
-        assert level >= 0
-        self.opt_level = level
-        return self
-
-    def get_opt_level(self):
-        return self.opt_level
-
-    def opt_enabled(self):
-        return self.opt_level > 0
-
-    def set_use_heuristics(self, use_heuristics):
-        self.should_use_heuristics = use_heuristics
-        return self
-
-    def use_heuristics(self):
-        return self.should_use_heuristics
-
-    def set_load_stdlib(self, val):
-        self.load_stdlib = val
-        return self
-
-    def should_load_stdlib(self):
-        return self.load_stdlib
-
-    def set_output_hoa(self, hoa_file):
-        self.output_hoa = hoa_file
-        return self
-
-    def get_output_hoa(self):
-        return self.output_hoa
-
-    def include_stdlib(self, prog, loader, args, kwargs):
-        if self.should_load_stdlib():
-            orig_debug_level = self.get_debug_level()
-            before = self.should_load_stdlib()
-            before_quiet = self.is_quiet()
+    @staticmethod
+    def include_stdlib(prog : Program, loader : Callable[[str, tuple, dict], Program], args : tuple, kwargs : dict):
+        if Settings.should_load_stdlib():
+            orig_debug_level = Settings.get_debug_level()
+            before = Settings.should_load_stdlib()
+            before_quiet = Settings.is_quiet()
             try:
                 # Don't want to load stdlib while loading stdlib
-                self.set_load_stdlib(False)
-                self.set_quiet(True)
-                self.set_debug_level(orig_debug_level - 1)
+                Settings.set_load_stdlib(False)
+                Settings.set_quiet(True)
+                Settings.set_debug_level(orig_debug_level - 1)
 
-                if self.stdlib_prog is None:
-                    self.stdlib_prog = loader(prog.locate_file('std.pn'), *args, **kwargs)
-                    self.stdlib_prog.evaluate_prog()
+                if Settings._stdlib_prog is None:
+                    Settings._stdlib_prog = loader(prog.locate_file('std.pn'), *args, **kwargs)
+                    Settings._stdlib_prog.evaluate_prog()
 
-                prog.include(self.stdlib_prog)
+                prog.include(Settings._stdlib_prog)
             finally:
-                self.set_load_stdlib(before)
-                self.set_quiet(before_quiet)
-                self.set_debug_level(orig_debug_level)
+                Settings.set_load_stdlib(before)
+                Settings.set_quiet(before_quiet)
+                Settings.set_debug_level(orig_debug_level)
 
         return prog
+    
+    @staticmethod
+    def print(s : str) -> None:
+        if Settings.get_output_json():
+            Settings._output += s + "\n"
+        else:
+            print(s)
+        return None
 
-    def set_postprocessing_preference(self, val : str) -> Settings:
-        self.postprocessing_preference = val
-        return self
+    @staticmethod
+    def set_output_json(output_json : bool) -> None:
+        Settings._output_json = output_json
+        return None
 
-    def get_postprocessing_preference(self) -> str:
-        return self.postprocessing_preference
+    @staticmethod
+    def get_output_json() -> bool:
+        return Settings._output_json
 
-    def set_postprocessing_force_sbacc(self, val : bool) -> Settings:
-        self.postprocessing_force_sbacc = val
-        return self
+    @staticmethod
+    def set_show_progress(show_progress : bool) -> None:
+        Settings._show_progress = show_progress
+        return None
 
-    def get_postprocessing_force_sbacc(self) -> bool:
-        return self.postprocessing_force_sbacc
+    @staticmethod
+    def get_show_progress() -> bool:
+        return Settings._show_progress and not Settings._quiet
 
-settings = Settings()
+    @staticmethod
+    def set_write_statistics(write_statistics : bool) -> None:
+        Settings._write_statistics = write_statistics
+        return None
 
+    @staticmethod
+    def should_write_statistics() -> bool:
+        return Settings._write_statistics
+
+    @staticmethod
+    def set_extract_implications(b : bool) -> None:
+        Settings._extract_implications = b
+        return None
+
+    @staticmethod
+    def get_extract_implications() -> bool:
+        return Settings._extract_implications
+
+    @staticmethod
+    def set_min_opt(min_opt : bool) -> None:
+        Settings._only_min_opt = min_opt
+        return None
+
+    @staticmethod
+    def min_opt() -> bool:
+        return Settings._only_min_opt
+
+    @staticmethod
+    def set_simplification_level(new_level : int) -> None:
+        Settings._simplification_level = new_level
+        return None
+
+    @staticmethod
+    def get_simplification_level() -> int:
+        return Settings._simplification_level
+
+    @staticmethod
+    def set_history_file(filename : str) -> None:
+        Settings._history_file = filename
+        return None
+
+    @staticmethod
+    def get_history_file() -> Path:
+        return Path.home() / Settings._history_file
+
+    @staticmethod
+    def set_debug_level(level : int) -> None:
+        Settings._debug_level = max(0, level)
+        return None
+
+    @staticmethod
+    def get_debug_level() -> int:
+        return Settings._debug_level
+
+    @staticmethod
+    def set_quiet(val : bool) -> None:
+        Settings._quiet = val
+        return None
+
+    @staticmethod
+    def is_quiet() -> bool:
+        return Settings._quiet
+
+    @staticmethod
+    def set_opt_level(level : int) -> None:
+        assert level >= 0
+        Settings._opt_level = level
+        return None
+
+    @staticmethod
+    def get_opt_level() -> int:
+        return Settings._opt_level
+
+    @staticmethod
+    def opt_enabled() -> bool:
+        return Settings._opt_level > 0
+
+    @staticmethod
+    def set_use_heuristics(use_heuristics : bool) -> None:
+        Settings._should_use_heuristics = use_heuristics
+        return None
+
+    @staticmethod
+    def use_heuristics() -> bool:
+        return Settings._should_use_heuristics
+
+    @staticmethod
+    def set_load_stdlib(val : bool) -> None:
+        Settings._load_stdlib = val
+        return None
+
+    @staticmethod
+    def should_load_stdlib() -> bool:
+        return Settings._load_stdlib
+
+    @staticmethod
+    def set_output_hoa(hoa_file : str) -> None:
+        Settings._output_hoa = hoa_file
+        return None
+
+    @staticmethod
+    def get_output_hoa() -> str | None:
+        return Settings._output_hoa
+
+    @staticmethod
+    def set_postprocessing_preference(val : Literal['Small', 'Deterministic']) -> None:
+        Settings._postprocessing_preference = val
+        return None
+
+    @staticmethod
+    def get_postprocessing_preference() -> Literal['Small', 'Deterministic']:
+        return Settings._postprocessing_preference
+
+    @staticmethod
+    def set_postprocessing_force_sbacc(val : bool) -> None:
+        Settings._postprocessing_force_sbacc = val
+        return None
+
+    @staticmethod
+    def get_postprocessing_force_sbacc() -> bool:
+        return Settings._postprocessing_force_sbacc

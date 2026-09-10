@@ -2,16 +2,16 @@
 # -*- coding=utf-8 -*-
 
 from pecan import program
-from pecan.settings import settings
+from pecan.settings import Settings
 
 def run_file(filename):
-    orig_quiet = settings.is_quiet()
-    settings.set_quiet(True)
+    orig_quiet = Settings.is_quiet()
+    Settings.set_quiet(True)
 
     prog = program.load(filename)
     assert prog.evaluate_prog().result.succeeded()
 
-    settings.set_quiet(orig_quiet)
+    Settings.set_quiet(orig_quiet)
 
 def test_free_var_regression0():
     run_file('examples/free-var-regression-0.pn')
