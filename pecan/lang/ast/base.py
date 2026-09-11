@@ -2,7 +2,7 @@
 # -*- coding=utf-8 -*-
 
 from typing import TYPE_CHECKING
-if TYPE_CHECKING :
+if TYPE_CHECKING:
     from typing import Self
     from pecan.lang.ast_transformer import AstTransformer;
     from pecan.lang.ast.prog import Program, VarRef

@@ -10,7 +10,7 @@ from pecan.logger import Logger
 from pecan.exceptions import PlottingError
 
 from typing import TYPE_CHECKING
-if TYPE_CHECKING :
+if TYPE_CHECKING:
     from pecan.lang.ir.prog import Program
 
 # A multidimensional bitmap

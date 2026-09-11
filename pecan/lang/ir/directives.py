@@ -3,26 +3,20 @@
 
 import time
 
-from pecan.tools.shuffle_automata import ShuffleAutomata
-from pecan.tools.walnut_converter import convert_aut
-from pecan.tools.hoa_loader import load_hoa
-from pecan.tools.labeled_aut_converter import convert_labeled_aut
-from pecan.tools.hoa_loader import load_hoa
-from pecan.tools.finite_loader import load_finite
-from pecan.automata.buchi import BuchiAutomaton
-from pecan.lang.ir import *
-
 from pecan.logger import Logger
-
+from pecan.automata.buchi import BuchiAutomaton
 from pecan.lang.ir.base import IRNode
 from pecan.lang.ir.prog import AutLiteral, Call, NamedPred, Program, Result
+from pecan.tools.finite_loader import load_finite
+from pecan.tools.hoa_loader import load_hoa
+from pecan.tools.labeled_aut_converter import convert_labeled_aut
+from pecan.tools.walnut_converter import convert_aut
 
 from typing import TYPE_CHECKING
-if TYPE_CHECKING :
+if TYPE_CHECKING:
     from typing import Any, Literal
     from pecan.lang.ir_transformer import IRTransformer
     from pecan.lang.type_inference import RestrictionType
-    from pecan.lang.ir.prog import Program
 
 class DirectiveIRNode(IRNode):
     def __init__(self):

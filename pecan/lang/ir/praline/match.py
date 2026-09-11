@@ -6,7 +6,7 @@ from pecan.lang.ir.praline.variables import PralineTuple, PralineList, PralinePe
 from pecan.exceptions import MatchingError
 
 from typing import TYPE_CHECKING
-if TYPE_CHECKING :
+if TYPE_CHECKING:
     from typing import Any
     from pecan.lang.ir_transformer import IRTransformer
     from pecan.lang.ir.base import IRExpression, IRPredicate

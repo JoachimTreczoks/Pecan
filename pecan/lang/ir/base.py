@@ -3,18 +3,18 @@
 
 import time
 
-from pecan.settings import Settings
 from pecan.logger import Logger
+from pecan.settings import Settings
 from pecan.utility import Counter
 from pecan.automata.automaton import Automaton
 
 from typing import TYPE_CHECKING
-if TYPE_CHECKING :
+if TYPE_CHECKING:
     from typing import Any, Literal, Self, Iterable
+    from pecan.utility import VarMap
     from pecan.lang.ir_transformer import IRTransformer
     from pecan.lang.type_inference import Type
     from pecan.lang.ir.prog import Program, VarRef
-    from pecan.utility import VarMap
 
 class IRNode:
     @staticmethod

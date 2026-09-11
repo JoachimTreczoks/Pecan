@@ -1,12 +1,11 @@
 #!/usr/bin/env python3.6
 # -*- coding=utf-8 -*-
 
-from pecan.lang.ir import *
-
 from pecan.settings import Settings
+from pecan.lang.ir.base import IRPredicate
 
 from typing import TYPE_CHECKING
-if TYPE_CHECKING :
+if TYPE_CHECKING:
     from typing import Any
     from pecan.lang.ir_transformer import IRTransformer
     from pecan.lang.ir.base import IREvaluation, IRNode, IRPredicate

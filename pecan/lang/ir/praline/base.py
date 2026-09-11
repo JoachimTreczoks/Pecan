@@ -1,11 +1,10 @@
 
 from pecan.lang.ir.base import IRNode
 from pecan.lang.ir.prog import Program
-from pecan.tools.labeled_aut_converter import *
 
 from typing import TYPE_CHECKING, Literal
-if TYPE_CHECKING :
-    from typing import Any, Literal
+if TYPE_CHECKING:
+    from typing import Any
 
 PralineValueType = Literal['Null', 'Variable', 'int', 'string', 'bool', 'tuple', 'list', 'PecanLiteral', 'AutomatonBuilder',  'unknown']
 

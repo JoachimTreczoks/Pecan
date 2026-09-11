@@ -1,12 +1,11 @@
 
+from pecan.exceptions import PralineLogicError
 from pecan.lang.ast.praline.base import PralineTerm, PralineASTNode
 from pecan.lang.ast.praline.match import PralineMatch, PralineMatchArm
 from pecan.lang.ast.praline.variables import PralineVar, PralineTuple
 
-from pecan.exceptions import PralineLogicError
-
 from typing import TYPE_CHECKING
-if TYPE_CHECKING :
+if TYPE_CHECKING:
     from pecan.lang.ast_transformer import AstTransformer
     from pecan.lang.ast.base import ASTNode
     from pecan.lang.ast.praline.match import PralineMatchPecan

@@ -4,15 +4,15 @@
 import buddy
 import spot
 
+from pecan.exceptions import AutomatonArithmeticError
+from pecan.logger import Logger
+from pecan.settings import Settings
+from pecan.utility import VarMap
 from pecan.automata.automaton import Automaton, FalseAutomaton
 from pecan.tools.shuffle_automata import ShuffleAutomata
-from pecan.utility import VarMap
-from pecan.settings import Settings
-from pecan.logger import Logger
-from pecan.exceptions import AutomatonArithmeticError
 
 from typing import TYPE_CHECKING
-if TYPE_CHECKING :
+if TYPE_CHECKING:
     from typing import Literal, Iterable, Callable
     from pecan.lang.ir.prog import VarRef
 

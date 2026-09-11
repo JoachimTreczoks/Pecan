@@ -1,10 +1,9 @@
 
 from pecan.lang.ir.praline.base import PralineBinaryOp, PralineUnaryOp, PralineTerm
-from pecan.lang.ir.praline.variables import PralineInt, PralineString, PralineNull
+from pecan.lang.ir.praline.variables import PralineInt, PralineString
 
 from typing import TYPE_CHECKING
-if TYPE_CHECKING :
-    from typing import Any
+if TYPE_CHECKING:
     from pecan.lang.ir_transformer import IRTransformer
     from pecan.lang.ir.prog import Program
 

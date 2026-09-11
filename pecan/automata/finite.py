@@ -1,17 +1,14 @@
 #!/usr/bin/env python3.6
 # -*- coding=utf-8 -*-
 
-import itertools as it
 from collections import deque
+import itertools as it
+import PySimpleAutomata.NFA as NFA
 
 from pecan.automata.automaton import Automaton
 
-import PySimpleAutomata.NFA as NFA
-
-# import foma.foma.python.foma as foma
-
 from typing import TYPE_CHECKING, TypedDict
-if TYPE_CHECKING :
+if TYPE_CHECKING:
     from typing import Literal, Iterable
     from pecan.lang.ir.prog import VarRef
 

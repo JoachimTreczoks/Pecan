@@ -4,10 +4,10 @@
 from pecan.utility import Counter
 
 from typing import TYPE_CHECKING
-if TYPE_CHECKING :
+if TYPE_CHECKING:
     from typing import Literal, Self, Iterable
-    from pecan.lang.ir.prog import VarRef
     from pecan.utility import VarMap
+    from pecan.lang.ir.prog import VarRef
 
 class Automaton:
     def __init__(self, aut_type_name : str):

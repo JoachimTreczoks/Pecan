@@ -2,7 +2,16 @@
 # -*- coding=utf-8 -*-
 
 from pecan.lang.ir_transformer import IRTransformer
-from pecan.lang.ir import *
+from pecan.lang.ir.arith import Equals, Add
+from pecan.lang.ir.bool import Complement, Conjunction, Disjunction
+from pecan.lang.ir.prog import VarRef, Call
+from pecan.lang.ir.quant import Exists
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from pecan.lang.ir.base import IRPredicate
+    from pecan.lang.ir.prog import Program
+    from pecan.lang.ir.words import EqualsCompareRange
 
 def implies(a : IRPredicate, b : IRPredicate) -> Disjunction:
     return Disjunction(Complement(a), b)
@@ -23,9 +32,6 @@ class TypedIRLowering(IRTransformer):
         for arg in node.args:
             # If it's not just a variable, we need to actually do something
             if not isinstance(arg, VarRef):
-                # For some reason we need to import again here?
-                from pecan.lang.ir.arith import Equals, FunctionExpression
-
                 new_var = VarRef(self.current_program.fresh_name()).with_type(arg.get_type())
                 arg_preds.append((Equals(arg, new_var), new_var))
 
@@ -53,7 +59,8 @@ class TypedIRLowering(IRTransformer):
         # Only do bounds check on the first index, because we've verified the bounds are the same
         bounds_checks = node.index_a.bounds_check(idx_var)
         equality_check = self.transform(iff(node.index_a.index_expr(idx_var), node.index_b.index_expr(idx_var)))
-        all_equal = Complement(Exists([idx_var], [None], Conjunction(bounds_checks, Complement(equality_check))))
+        restriction = idx_var.get_type().get_restriction()
+        all_equal = Complement(Exists([idx_var], [restriction.subs_last(idx_var) if restriction is not None else None], Conjunction(bounds_checks, Complement(equality_check))))
         base_pred = Conjunction(same_range, all_equal)
 
         if node.is_equals:

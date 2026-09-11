@@ -3,14 +3,13 @@
 
 from functools import reduce
 
-from pecan.lang.ast.bool import BoolConst, Conjunction, Implies
 from pecan.lang.ast.base import Predicate
-from pecan.lang.ast.prog import VarRef
-from pecan.lang.ast.prog import Call
+from pecan.lang.ast.bool import BoolConst, Conjunction, Implies
+from pecan.lang.ast.prog import VarRef, Call
 from pecan.utility import unzip
 
 from typing import TYPE_CHECKING
-if TYPE_CHECKING :
+if TYPE_CHECKING:
     from pecan.lang.ast_transformer import AstTransformer
 
 def to_ref(var_ref : str | VarRef) -> VarRef:

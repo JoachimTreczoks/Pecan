@@ -2,11 +2,10 @@
 # -*- coding=utf-8 -*-
 
 from functools import reduce
-
 from lark import Transformer, v_args
 
-from pecan.lang.ast import *
 from pecan.exceptions import AutomatonArithmeticError
+from pecan.lang.ast import *
 
 @v_args(inline=True)
 class PecanTransformer(Transformer):

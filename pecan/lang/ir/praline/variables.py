@@ -3,7 +3,7 @@ from pecan.lang.ir.praline.base import PralineTerm, PralineValueType
 from pecan.tools.labeled_aut_converter import State, Transition, build_aut
 
 from typing import TYPE_CHECKING
-if TYPE_CHECKING :
+if TYPE_CHECKING:
     from typing import Any
     from pecan.automata.buchi import BuchiAutomaton
     from pecan.lang.ir_transformer import IRTransformer

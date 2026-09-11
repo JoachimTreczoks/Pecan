@@ -3,7 +3,7 @@ from pecan.lang.ir.praline.base import PralineIRNode, PralineTerm
 from pecan.lang.ir.praline.variables import PralinePecanLiteral, PralineNull
 
 from typing import TYPE_CHECKING
-if TYPE_CHECKING :
+if TYPE_CHECKING:
     from typing import Any
     from pecan.lang.ir_transformer import IRTransformer
     from pecan.lang.ir.base import IRNode

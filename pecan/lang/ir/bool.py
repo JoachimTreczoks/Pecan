@@ -5,7 +5,7 @@ from pecan.automata.automaton import TrueAutomaton, FalseAutomaton
 from pecan.lang.ir.base import BinaryIRPredicate, IREvaluation, IRPredicate, UnaryIRPredicate
 
 from typing import TYPE_CHECKING
-if TYPE_CHECKING :
+if TYPE_CHECKING:
     from typing import Any
     from pecan.lang.ir_transformer import IRTransformer
     from pecan.lang.ir.prog import Program

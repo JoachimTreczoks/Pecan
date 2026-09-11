@@ -6,11 +6,10 @@ from functools import reduce
 from pecan.lang.ast.base import ASTNode, Expression, Predicate
 
 from typing import TYPE_CHECKING
-if TYPE_CHECKING :
-    from typing import Any
+if TYPE_CHECKING:
     from pecan.automata.automaton import Automaton
-    from pecan.lang.ast.bool import Conjunction
     from pecan.lang.ast_transformer import AstTransformer
+    from pecan.lang.ast.bool import Conjunction
 
 class VarRef(Expression):
     def __init__(self, var_name : str):

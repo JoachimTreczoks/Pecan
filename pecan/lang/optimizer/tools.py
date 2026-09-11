@@ -2,8 +2,15 @@
 # -*- coding=utf-8 -*-
 
 from pecan.lang.ir_transformer import IRTransformer
+from pecan.lang.ir.arith import FunctionExpression
+from pecan.lang.ir.base import IRNode, IRExpression
 
-from pecan.lang.ir import *
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from pecan.lang.ir.arith import PredicateExpr
+    from pecan.lang.ir.bool import Conjunction, Disjunction
+    from pecan.lang.ir.prog import VarRef
+    from pecan.lang.ir.quant import Exists
 
 class FreeVars(IRTransformer):
     def __init__(self):

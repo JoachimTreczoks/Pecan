@@ -1,21 +1,23 @@
 #!/usr/bin/env python3.6
 # -*- coding=utf-8 -*-
 
-from pecan.lang.ir_transformer import IRTransformer
-from pecan.lang.ir import *
-
-from pecan.logger import Logger
 from pecan.exceptions import CallResolvingError, UnificationError
+from pecan.lang.ir_transformer import IRTransformer
+from pecan.lang.ir.arith import IntConst, Less, PredicateExpr, FunctionExpression, Equals, Add, Sub, Mul
+from pecan.lang.ir.prog import VarRef, Call
 
 from typing import TYPE_CHECKING
-if TYPE_CHECKING :
+if TYPE_CHECKING:
     from typing import Any
+    from pecan.lang.ir.base import IRNode, TypeHint
+    from pecan.lang.ir.prog import Program, NamedPred
+    from pecan.lang.ir.quant import Exists
 
 class Type:
     def __init__(self):
         pass
 
-    def get_restriction(self):
+    def get_restriction(self) -> Call | None:
         return None
 
     def restrict(self, var : VarRef) -> Call | VarRef | None:

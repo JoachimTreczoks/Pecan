@@ -1,9 +1,11 @@
 #!/usr/bin/env python3.6
 # -*- coding=utf-8 -*-
 
-from pecan.lang.ast import *
-
 from pecan.lang.ast_transformer import AstTransformer
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from pecan.lang.ast.prog import VarRef
 
 class ASTSubstitution(AstTransformer):
     def __init__(self, subs : dict[str, VarRef]):

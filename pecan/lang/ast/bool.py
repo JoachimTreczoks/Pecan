@@ -4,9 +4,9 @@
 from pecan.lang.ast.base import Predicate
 
 from typing import TYPE_CHECKING
-if TYPE_CHECKING :
-    from pecan.lang.ast.base import ASTNode
+if TYPE_CHECKING:
     from pecan.lang.ast_transformer import AstTransformer
+    from pecan.lang.ast.base import ASTNode
 
 class Conjunction(Predicate):
     def __init__(self, a : ASTNode, b : ASTNode):

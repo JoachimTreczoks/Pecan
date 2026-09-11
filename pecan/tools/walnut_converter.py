@@ -10,7 +10,7 @@ from pecan.utility import VarMap
 from pecan.exceptions import AutomatonReadingError
 
 from typing import TYPE_CHECKING
-if TYPE_CHECKING :
+if TYPE_CHECKING:
     from collections.abc import Iterator
 
 class Transition:
