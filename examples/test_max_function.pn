@@ -1,11 +1,51 @@
-Restrict n, m, a, b, c ∈ binary.
+#import("reals.pn")
 
-purchasable(n) := n ∈ binary ∧ ∃a. ∃b. ∃c. n = 6*a + 9*b + 20*c
-non_purchasable(n) := n ∈ binary ∧ ¬purchasable(n)
+Restrict x, y, z are real.
 
-largest_non_purchasable(n) := non_purchasable(n) ∧ ∀m. if non_purchasable(m) then m ≤ n
+is_max_0() := max { x : x <= 0 } = 0
+is_max_1() := max { x : x <= 1 } = 1
+is_max_neg_1() := max { x : x <= -1 } = -1
+is_max_any() := forall y. max { x : x <= y } = y
 
-Prove that {
-    largest_non_purchasable() = max { n : non_purchasable(n) }
-}.
+not_max_0() := !(exists z. max { x : x > 0 } = z)
+not_max_1() := !(exists z. max { x : x > 1 } = z)
+not_max_neg_1() := !(exists z. max { x : x > -1 } = z)
+not_max_any() := forall y. !(exists z. max { x : x > y } = z)
 
+is_inf_not_max_0() := !(max { x : x < 0 } = 0)
+is_inf_not_max_1() := !(max { x : x < 1 } = 1)
+is_inf_not_max_neg_1() := !(max { x : x < -1 } = -1)
+is_inf_not_max_any() := forall y. !(max { x : x < y } = y)
+
+#assert_prop(true, is_max_0)
+#assert_prop(true, is_max_1)
+#assert_prop(true, is_max_neg_1)
+#assert_prop(true, is_max_any)
+
+#assert_prop(true, not_max_0)
+#assert_prop(true, not_max_1)
+#assert_prop(true, not_max_neg_1)
+#assert_prop(true, not_max_any)
+
+#assert_prop(true, is_inf_not_max_0)
+#assert_prop(true, is_inf_not_max_1)
+#assert_prop(true, is_inf_not_max_neg_1)
+#assert_prop(true, is_inf_not_max_any)
+
+
+
+Restrict n, m, a, b, c are binary.
+
+custom_less_than_m() := forall a. (if forall m. m < a & forall n. (if n < a then m >= n) then m + 1 = a)
+builtin_less_than_m() := forall a. if a > 0 then max { b : b < a } + 1 = a
+
+#assert_prop(true, custom_less_than_m)
+#assert_prop(true, builtin_less_than_m)
+
+purchasable(n) := binary(n) & ∃a. ∃b. ∃c. n = 6*a + 9*b + 20*c
+non_purchasable(n) := binary(n) & !purchasable(n)
+
+largest_non_purchasable(n) := non_purchasable(n) & forall m. if non_purchasable(m) then m <= n
+largest_non_purchasable_matches() := largest_non_purchasable() = max { n : non_purchasable(n) }
+
+#assert_prop(true, largest_non_purchasable_matches)

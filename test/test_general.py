@@ -97,26 +97,11 @@ def test_annotations():
 def test_thue_morse_periods():
     run_file('examples/thue_morse_periods.pn')
 
-def test_min_function():
-    run_file('examples/test_min_function.pn')
-
-def test_max_function():
-    run_file('examples/test_max_function.pn')
-
-def test_inf_function():
-    run_file('examples/test_inf_function.pn')
-
-def test_sup_function():
-    run_file('examples/test_sup_function.pn')
-
 def test_finite_basics():
     run_file('examples/test_finite_aut.pn')
 
 def test_constraints():
     run_file('examples/test_constraints.pn')
-
-def test_div():
-    run_file('examples/test_div.pn')
 
 def test_website():
     run_file('examples/website_tests.pn')

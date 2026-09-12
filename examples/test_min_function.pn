@@ -1,13 +1,43 @@
-Restrict n,m are binary.
+#import("reals.pn")
 
-gt6(n) := n > 6
-custom_min(m) := gt6(m) & forall n. if gt6(n) then m <= n
+Restrict x, y, z are real.
 
-Prove that {
-    min { n : gt6(n) } = custom_min()
-}.
+is_min_0() := min { x : x >= 0 } = 0
+is_min_1() := min { x : x >= 1 } = 1
+is_min_neg_1() := min { x : x >= -1 } = -1
+is_min_any() := forall y. min { x : x >= y } = y
 
-Prove that {
-    min { n : gt6(n) } = 7
-}.
+not_min_0() := !(exists z. min { x : x < 0 } = z)
+not_min_1() := !(exists z. min { x : x < 1 } = z)
+not_min_neg_1() := !(exists z. min { x : x < -1 } = z)
+not_min_any() := forall y. !(exists z. min { x : x < y } = z)
 
+is_inf_not_min_0() := !(min { x : x > 0 } = 0)
+is_inf_not_min_1() := !(min { x : x > 1 } = 1)
+is_inf_not_min_neg_1() := !(min { x : x > -1 } = -1)
+is_inf_not_min_any() := forall y. !(min { x : x > y } = y)
+
+#assert_prop(true, is_min_0)
+#assert_prop(true, is_min_1)
+#assert_prop(true, is_min_neg_1)
+#assert_prop(true, is_min_any)
+
+#assert_prop(true, not_min_0)
+#assert_prop(true, not_min_1)
+#assert_prop(true, not_min_neg_1)
+#assert_prop(true, not_min_any)
+
+#assert_prop(true, is_inf_not_min_0)
+#assert_prop(true, is_inf_not_min_1)
+#assert_prop(true, is_inf_not_min_neg_1)
+#assert_prop(true, is_inf_not_min_any)
+
+
+
+Restrict n, m, a, b are binary.
+
+custom_greater_than_m() := forall a. (if forall m. m > a & forall n. (if n > a then m <= n) then m = a + 1)
+builtin_greater_than_m() := forall a. min { b : b > a } = a + 1
+
+#assert_prop(true, custom_greater_than_m)
+#assert_prop(true, builtin_greater_than_m)
