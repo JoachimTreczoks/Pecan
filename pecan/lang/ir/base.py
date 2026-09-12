@@ -225,18 +225,18 @@ class UnaryIRPredicate(IRPredicate):
     def __hash__(self) -> int:
         return hash(self.a)
 
-class TypeHint(IRNode):
-    def __init__(self, expr_a: IRExpression, expr_b : IRExpression, body : IRPredicate):
+class TypeHint(IRPredicate):
+    def __init__(self, type_sink: VarRef, type_source : VarRef, body : IRPredicate | TypeHint):
         super().__init__()
-        self.expr_a : IRExpression = expr_a
-        self.expr_b : IRExpression = expr_b
-        self.body : IRPredicate = body
+        self.type_sink : VarRef = type_sink
+        self.type_source : VarRef = type_source
+        self.body : IRPredicate | TypeHint = body
 
     def transform(self, transformer : IRTransformer) -> TypeHint:
         return transformer.transform_TypeHint(self)
 
     def __str__(self) -> str:
-        return '(typ({}) = typ({}) in {})'.format(self.expr_a, self.expr_b, self.body)
+        return '(typ({}) = typ({}) in {})'.format(self.type_sink, self.type_source, self.body)
 
 class IREvaluation:
     def __init__(self, aut : Automaton, ref : None | VarRef = None):

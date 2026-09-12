@@ -46,15 +46,15 @@ class Predicate(ASTNode):
         super().__init__()
 
 class TypeHint(ASTNode):
-    def __init__(self, expr_a : Expression, expr_b : Expression, body : Predicate):
+    def __init__(self, type_sink : VarRef, type_source : VarRef, body : Predicate | TypeHint):
         super().__init__()
-        self.expr_a : Expression = expr_a
-        self.expr_b : Expression = expr_b
-        self.body : Predicate = body
+        self.type_sink : VarRef = type_sink
+        self.type_source : VarRef = type_source
+        self.body : Predicate | TypeHint = body
 
     def transform(self, transformer : AstTransformer) -> TypeHint:
         return transformer.transform_TypeHint(self)
 
     def __str__(self) -> str:
-        return '(typ({}) = typ({}) in {})'.format(self.expr_a, self.expr_b, self.body)
+        return '(typ({}) = typ({}) in {})'.format(self.type_sink, self.type_source, self.body)
 

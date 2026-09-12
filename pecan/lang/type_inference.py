@@ -2,8 +2,10 @@
 # -*- coding=utf-8 -*-
 
 from pecan.exceptions import CallResolvingError, UnificationError
+from pecan.logger import Logger
 from pecan.lang.ir_transformer import IRTransformer
 from pecan.lang.ir.arith import IntConst, Less, PredicateExpr, FunctionExpression, Equals, Add, Sub, Mul
+from pecan.lang.ir.base import IRPredicate
 from pecan.lang.ir.prog import VarRef, Call
 
 from typing import TYPE_CHECKING
@@ -327,17 +329,31 @@ class TypeInferer(IRTransformer):
 
         return FunctionExpression(new_call.name, new_call.args, new_idx).with_type(res_type)
 
-    def transform_TypeHint(self, node : TypeHint) -> TypeHint:
-        a = self.transform(node.expr_a)
-        b = self.transform(node.expr_b)
+    def transform_TypeHint(self, node : TypeHint) -> IRPredicate | TypeHint:
+        a = self.transform(node.type_sink)
+        b = self.transform(node.type_source)
 
-        if isinstance(node.expr_a, VarRef):
+        if isinstance(node.type_sink, VarRef):
             # Do this instead of the standard unify because we want to allow it to
             #  work even if node.expr_a.get_type() == AnyType().
-            res_type = self.type_env.try_unify_type(a,a.get_type().get_restriction(),b,b.get_type().get_restriction())
-            self.type_env[node.expr_a.var_name] = res_type
+            res_type = self.type_env.try_unify_type(a, a.get_type().get_restriction(), b, b.get_type().get_restriction())
+            self.type_env[node.type_sink.var_name] = res_type
+
+            restriction : Call | None = b.get_type().get_restriction()
+            if restriction is not None:
+                # We need to restrict the variable here, otherwise quantifiers will not properly apply these restrictions!
+                # Note that we specifically do a *global* restriction, to ensure this works even if in cases where definition and evaluation happen at different points in time, such as
+                # > pred() := 0 = sup { x : x < 0}
+                # > #assert_prop(true, pred)
+                # This could cause issues if used on a non-unique variable, but that does not occur in Pecan at the time of writing.
+                # If the use of `TypeHint` is revised in the future, it should happen after a type rework that makes this a non-issue
+                self.prog.global_restrict(a.var_name, restriction.subs_last(a))
+                Logger.debug('Restricted {} globally to have same type as {} ({}), based on TypeHint'.format(a, b, restriction), 2)
         else:
+            # This case will never happen with how Pecan currently utilizes `TypeHint`s, at time of writing.
+            # It only serves as a reminder if this usage is revised in the future, probably after a rework of how types are handled.
             self.type_env.unify(a, b)
+            Logger.warn('Interpreting TypeHint using a non-VarRef expression. This may cause missing type restrictions for quantifiers!')
 
         # Intentionally delete the TypeHint because we don't need it anymore
         return self.transform(node.body)
