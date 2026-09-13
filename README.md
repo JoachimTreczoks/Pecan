@@ -7,6 +7,8 @@ Instead this website now serves as tribute to Reed Oei's work.
 
 ## Installation
 
+NOTE: These instructions assume you do everything from a terminal / shell located in the same folder as this README file.
+
 NOTE: You can also use Docker (see below), if you have it.
 
 You will need Python 3.14 or higher.
@@ -51,20 +53,34 @@ export PATH=/path/to/Pecan/bin:$PATH
 
 ### Using Docker
 
-If you have Docker, you can run Pecan with:
+NOTE: If you already have a Docker image for an older Pecan version installed, you will need to manually build it again using the `--no-cache` argument to get an image of the latest version.
+
+If you do not have Docker yet, you need to install it first (see [https://docs.docker.com/get-started/get-docker/](https://docs.docker.com/get-started/get-docker/)).
+
+If you are on a Unix-like system, you can run Pecan with:
 
 ```bash
-./pecan-docker OPTIONS
+./pecan-docker <PECAN OPTIONS>
 ```
 
 This will automatically build the image if you don't have it already, using the default Spot setting of 32 acceptance sets as maximum.
-If you need a higher maximum amount of acceptance sets, you have to build the Docker image manually using the following command:
+
+If you are instead using Windows, you have to use
+```bash
+docker build -t "pecan-prover:latest" .
+```
+to build the Docker image, then run it by entering
+```bash
+docker run -it pecan-prover python3 /home/pecan/JoachimTreczoks/Pecan/pecan.py <PECAN OPTIONS>
+```
+Wherein the `<PECAN OPTIONS>` are the Pecan command line arguments you want to use.
+
+If you need a higher maximum amount of acceptance sets than 32, you have to build the Docker image manually using the following command:
 
 ```bash
-docker build -t "pecan-prover:latest" --build-arg accsets=... .
+docker build -t "pecan-prover:latest" --build-arg accsets=<AMOUNT> .
 ```
-
-This accepts any integer multiple of 32. Higher values will cause automata to be larger and slower to compute!
+Wherein `<AMOUNT>` is any integer multiple of 32. Higher values will cause automata to be larger hence and slower to compute!
 
 ## Examples
 
