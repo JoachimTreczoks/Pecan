@@ -1,0 +1,8 @@
+// This script is used as an example for the _Developing and using Pecan_ thesis.
+
+#import("reals.pn")
+Restrict x is real.
+
+Theorem("0 is the supremum of real numbers less than 0",
+        {0 = sup {x : x < 0}}
+).
