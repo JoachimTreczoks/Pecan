@@ -32,6 +32,7 @@ WORKDIR /home/pecan
 
 RUN git clone --recursive "https://github.com/JoachimTreczoks/Pecan/" "JoachimTreczoks/Pecan"
 RUN git clone --recursive "https://github.com/ReedOei/SturmianWords" "JoachimTreczoks/Pecan/SturmianWords"
+RUN git clone --recursive "https://github.com/PecanMR/thesis-files" "JoachimTreczoks/Pecan/MixedRadix"
 
 WORKDIR /home/pecan/JoachimTreczoks/Pecan
 
