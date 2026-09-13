@@ -1,15 +1,14 @@
 #!/usr/bin/env python3.6
 # -*- coding=utf-8 -*-
 
+from pecan.exceptions import AutomatonArithmeticError
 from pecan.lang.ast.base import BinaryExpression, Expression, Predicate, UnaryExpression
 
-from pecan.exceptions import AutomatonArithmeticError
-
 from typing import TYPE_CHECKING
-if TYPE_CHECKING :
+if TYPE_CHECKING:
+    from pecan.lang.ast_transformer import AstTransformer
     from pecan.lang.ast.base import TypeHint
     from pecan.lang.ast.prog import Program
-    from pecan.lang.ast_transformer import AstTransformer
 
 class Add(BinaryExpression):
     def __init__(self, a : Expression, b : Expression):

@@ -1,12 +1,23 @@
 #import("reals.pn")
 
-Restrict x,y are real.
+Restrict x, y, z are real.
 
-Prove that {
-    inf { x : x > 6 } = 6
-}.
+is_inf_0() := inf { x : x > 0 } = 0
+is_inf_1() := inf { x : x > 1 } = 1
+is_inf_neg_1() := inf { x : x > -1 } = -1
+is_inf_any() := forall y. inf { x : x > y } = y
 
-Prove that {
-    !(exists y. y = min { x : x > 6 })
-}.
+not_inf_0() := !(exists z. inf { x : x < 0 } = z)
+not_inf_1() := !(exists z. inf { x : x < 1 } = z)
+not_inf_neg_1() := !(exists z. inf { x : x < -1 } = z)
+not_inf_any() := forall y. !(exists z. inf { x : x < y } = z)
 
+#assert_prop(true, is_inf_0)
+#assert_prop(true, is_inf_1)
+#assert_prop(true, is_inf_neg_1)
+#assert_prop(true, is_inf_any)
+
+#assert_prop(true, not_inf_0)
+#assert_prop(true, not_inf_1)
+#assert_prop(true, not_inf_neg_1)
+#assert_prop(true, not_inf_any)

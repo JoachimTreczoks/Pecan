@@ -7,11 +7,11 @@ from pecan.lang.ir.base import IRPredicate
 from pecan.lang.ir.bool import Conjunction
 
 from typing import TYPE_CHECKING
-if TYPE_CHECKING :
+if TYPE_CHECKING:
     from typing import Any
     from pecan.lang.ir_transformer import IRTransformer
-    from pecan.lang.ir.prog import Program, VarRef, Call
     from pecan.lang.ir.base import IREvaluation
+    from pecan.lang.ir.prog import Program, VarRef, Call
 
 class Exists(IRPredicate):
     def __init__(self, var_refs : list[VarRef], conds : list[Call | None], pred : IRPredicate):

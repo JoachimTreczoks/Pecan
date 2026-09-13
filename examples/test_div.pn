@@ -1,10 +1,7 @@
 Restrict x,y are nat.
 
-Prove that {
-    forall x. if x is even then exists y. x/2 = y
-}.
+even_divisible() := forall x. if x is even then exists y. x/2 = y
+odd_indivisible() := forall x. if x is not even then !(exists y. x/2 = y)
 
-Prove that {
-    forall x. if x is not even then !(exists y. x/2 = y)
-}.
-
+#assert_prop(true, even_divisible)
+#assert_prop(true, odd_indivisible)

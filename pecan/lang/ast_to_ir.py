@@ -364,5 +364,5 @@ class ASTToIR(AstTransformer):
         return ir.Annotation(node.annotation_name, self.transform(node.body))
 
     def transform_TypeHint(self, node : TypeHint) -> ir.TypeHint:
-        return ir.TypeHint(self.transform(node.expr_a), self.transform(node.expr_b), self.transform(node.body))
+        return ir.TypeHint(self.transform(node.type_sink), self.transform(node.type_source), self.transform(node.body))
 

@@ -2,11 +2,11 @@
 # -*- coding=utf-8 -*-
 
 from pecan.lang.ir.arith import Add, Less
-from pecan.lang.ir.base import IREvaluation, IRPredicate
+from pecan.lang.ir.base import IRPredicate
 from pecan.lang.ir.prog import Call
 
 from typing import TYPE_CHECKING
-if TYPE_CHECKING :
+if TYPE_CHECKING:
     from pecan.lang.ir_transformer import IRTransformer
     from pecan.lang.ir.base import IRExpression
     from pecan.lang.ir.prog import VarRef

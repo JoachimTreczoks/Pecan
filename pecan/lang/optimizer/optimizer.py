@@ -1,19 +1,22 @@
 #!/usr/bin/env python3.6
 # -*- coding=utf-8 -*-
 
+from pecan.logger import Logger
+from pecan.settings import Settings
+from pecan.lang.ir.prog import NamedPred
 from pecan.lang.optimizer.boolean import BooleanOptimizer
 from pecan.lang.optimizer.arithmetic import ArithmeticOptimizer
 from pecan.lang.optimizer.cse import CSEOptimizer
-from pecan.lang.optimizer.redundant_variable_optimizer import RedundantVariableOptimizer
 from pecan.lang.optimizer.unused_variable_optimizer import UnusedVariableOptimizer
-from pecan.lang.ir import *
 
-from pecan.settings import Settings
-from pecan.logger import Logger
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from pecan.lang.ir.base import IRPredicate
+    from pecan.lang.ir.prog import Program
 
 class UntypedOptimizer:
     def __init__(self, prog : Program):
-        self.prog = prog
+        self.prog : Program = prog
 
     def optimize(self) -> Program:
         for i, d in enumerate(self.prog.defs):
@@ -22,7 +25,7 @@ class UntypedOptimizer:
 
         return self.prog
 
-    def run_optimizations(self, node, pred):
+    def run_optimizations(self, node : IRPredicate, pred: NamedPred) -> IRPredicate:
         Logger.log('Optimizing: {}'.format(node), 2)
 
         if Settings.min_opt():
@@ -47,12 +50,12 @@ class UntypedOptimizer:
 
 class Optimizer:
     def __init__(self, prog : Program):
-        self.prog = prog
+        self.prog : Program = prog
 
-    def optimize(self, pred) -> NamedPred:
+    def optimize(self, pred : NamedPred) -> NamedPred:
         return NamedPred(pred.name, pred.args, pred.arg_restrictions, self.run_optimizations(pred.body, pred), restriction_env=pred.restriction_env, arg_name_map=pred.arg_name_map)
 
-    def run_optimizations(self, node : IRNode, pred):
+    def run_optimizations(self, node : IRPredicate, pred : NamedPred) -> IRPredicate:
         Logger.log('Optimizing: {}'.format(node), 2)
 
         if Settings.min_opt():

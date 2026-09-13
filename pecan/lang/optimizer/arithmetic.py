@@ -1,10 +1,14 @@
 #!/usr/bin/env python3.6
 # -*- coding=utf-8 -*-
 
-from pecan.lang.ir_transformer import IRTransformer
+from pecan.lang.ir.arith import IntConst, Add, Sub
+from pecan.lang.ir.prog import VarRef, Call
 from pecan.lang.optimizer.basic_optimizer import BasicOptimizer
 
-from pecan.lang.ir import *
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from pecan.lang.ir.arith import Equals
+    from pecan.lang.ir.base import IRNode, IRExpression, IRPredicate
 
 class ArithmeticOptimizer(BasicOptimizer):
     def constant_eq(self, node : IRNode, val : int) -> bool:

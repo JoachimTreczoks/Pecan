@@ -1,16 +1,23 @@
 #import("reals.pn")
 
-Restrict x,y,z are real.
+Restrict x, y, z are real.
 
-Prove that {
-    sup { x : x < -1 } = -1
-}.
+is_sup_0() := sup { x : x < 0 } = 0
+is_sup_1() := sup { x : x < 1 } = 1
+is_sup_neg_1() := sup { x : x < -1 } = -1
+is_sup_any() := forall y. sup { x : x < y } = y
 
-Prove that {
-    !(exists y. y = sup { x : x > 6 })
-}.
+not_sup_0() := !(exists z. sup { x : x > 0 } = z)
+not_sup_1() := !(exists z. sup { x : x > 1 } = z)
+not_sup_neg_1() := !(exists z. sup { x : x > -1 } = z)
+not_sup_any() := forall y. !(exists z. sup { x : x > y } = z)
 
-Prove that {
-    !(exists y. y = max { x : x < -1 })
-}.
+#assert_prop(true, is_sup_0)
+#assert_prop(true, is_sup_1)
+#assert_prop(true, is_sup_neg_1)
+#assert_prop(true, is_sup_any)
 
+#assert_prop(true, not_sup_0)
+#assert_prop(true, not_sup_1)
+#assert_prop(true, not_sup_neg_1)
+#assert_prop(true, not_sup_any)

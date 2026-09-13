@@ -9,7 +9,7 @@ from pecan.lang.ast_to_ir import ASTToIR
 from pecan.lang.ast import *
 
 from typing import TYPE_CHECKING
-if TYPE_CHECKING :
+if TYPE_CHECKING:
     from typing import Never
     from pecan.lang.ast.base import ASTNode
     from pecan.lang.ir.base import IRNode

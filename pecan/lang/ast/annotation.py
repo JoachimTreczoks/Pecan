@@ -4,7 +4,7 @@
 from pecan.lang.ast.base import Predicate
 
 from typing import TYPE_CHECKING
-if TYPE_CHECKING :
+if TYPE_CHECKING:
     from pecan.lang.ast_transformer import AstTransformer;
 
 class Annotation(Predicate):

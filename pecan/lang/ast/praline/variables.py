@@ -3,7 +3,7 @@ from pecan.lang.ast.praline.base import PralineTerm
 from pecan.lang.ast.praline.match import PralineMatchVar, PralineMatchInt, PralineMatchString, PralineMatchTuple, PralineMatchList
 
 from typing import TYPE_CHECKING
-if TYPE_CHECKING :
+if TYPE_CHECKING:
     from pecan.lang.ast_transformer import AstTransformer
 
 class PralineValueHolder(PralineTerm):

@@ -1,12 +1,13 @@
 #!/usr/bin/env python3.6
 # -*- coding=utf-8 -*-
 
-from pecan.lang.ir_transformer import IRTransformer
 from pecan.logger import Logger
+from pecan.lang.ir_transformer import IRTransformer
 
 from typing import TYPE_CHECKING
-if TYPE_CHECKING :
+if TYPE_CHECKING:
     from pecan.lang.ir.base import IRNode
+    from pecan.lang.ir.prog import Program, NamedPred
     from pecan.lang.optimizer.optimizer import Optimizer
 
 class BasicOptimizer(IRTransformer):
@@ -14,8 +15,8 @@ class BasicOptimizer(IRTransformer):
         super().__init__()
         self.changed : bool = False
         self.master_optimizer : Optimizer = master_optimizer
-        self.prog = master_optimizer.prog
-        self.pred = None
+        self.prog : Program = master_optimizer.prog
+        self.pred : NamedPred | None = None
 
     def pre_optimize(self, node : IRNode):
         pass
@@ -23,7 +24,7 @@ class BasicOptimizer(IRTransformer):
     def post_optimize(self, node : IRNode):
         pass
 
-    def optimize(self, node : IRNode, pred) -> tuple[bool, IRNode]:
+    def optimize(self, node : IRNode, pred : NamedPred) -> tuple[bool, IRNode]:
         self.changed = False
 
         self.pred = pred

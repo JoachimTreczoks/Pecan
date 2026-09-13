@@ -2,7 +2,7 @@
 from pecan.lang.ast.praline.base import PralineBinaryOp, PralineUnaryOp
 
 from typing import TYPE_CHECKING
-if TYPE_CHECKING :
+if TYPE_CHECKING:
     from pecan.lang.ast_transformer import AstTransformer
     from pecan.lang.ast.praline.base import PralineTerm
 

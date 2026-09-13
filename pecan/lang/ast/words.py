@@ -6,7 +6,7 @@ from pecan.lang.ast.base import Predicate
 from pecan.lang.ast.bool import BoolConst
 
 from typing import TYPE_CHECKING
-if TYPE_CHECKING :
+if TYPE_CHECKING:
     from pecan.lang.ast_transformer import AstTransformer
     from pecan.lang.ast.base import Expression
 

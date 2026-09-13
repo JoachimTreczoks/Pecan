@@ -1,13 +1,18 @@
 #!/usr/bin/env python3.6
 # -*- coding=utf-8 -*-
 
-from pecan.lang.ir_transformer import IRTransformer
-from pecan.lang.optimizer.basic_optimizer import BasicOptimizer
-from pecan.lang.optimizer.tools import ExpressionFrequency, NodeSubstitution
-
-from pecan.lang.ir import *
-
 from functools import reduce
+
+from pecan.lang.ir.arith import Equals
+from pecan.lang.ir.bool import Complement, Conjunction
+from pecan.lang.ir.prog import VarRef
+from pecan.lang.ir.quant import Exists
+from pecan.lang.optimizer.basic_optimizer import BasicOptimizer
+from pecan.lang.optimizer.tools import NodeSubstitution
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from pecan.lang.ir.base import IRNode
 
 class CustomNodeSubstitution(NodeSubstitution):
     def transform_Exists(self, node: Exists):

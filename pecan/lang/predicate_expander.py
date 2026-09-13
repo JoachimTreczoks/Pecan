@@ -1,10 +1,14 @@
 #!/usr/bin/env python3.6
 # -*- coding=utf-8 -*-
 
-from pecan.lang.ir import *
-
 from pecan.lang.ir_transformer import IRTransformer
 from pecan.lang.ir_substitution import IRSubstitution
+from pecan.lang.ir.prog import AutLiteral
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from pecan.lang.ir.base import IRNode
+    from pecan.lang.ir.prog import Program, Call
 
 class PredicateExpander(IRTransformer):
     def __init__(self, prog : Program):

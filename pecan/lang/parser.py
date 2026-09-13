@@ -2,11 +2,10 @@
 # -*- coding=utf-8 -*-
 
 from functools import reduce
-
 from lark import Transformer, v_args
 
-from pecan.lang.ast import *
 from pecan.exceptions import AutomatonArithmeticError
+from pecan.lang.ast import *
 
 @v_args(inline=True)
 class PecanTransformer(Transformer):
@@ -26,7 +25,7 @@ class PecanTransformer(Transformer):
         fresh_pred = ASTSubstitution(subs).transform(pred)
         return PredicateExpr(var_name,
                     TypeHint(temp, var,
-                        Conjunction(pred, Forall([temp], Implies(fresh_pred, LessEquals(var, temp))))))
+                        Conjunction(pred, Complement(Exists([temp], Conjunction(fresh_pred, Greater(var, temp)))))))
 
     def max_func(self, var_name, pred):
         from pecan.lang.ast_substitution import ASTSubstitution
@@ -37,7 +36,7 @@ class PecanTransformer(Transformer):
         fresh_pred = ASTSubstitution(subs).transform(pred)
         return PredicateExpr(var_name,
                     TypeHint(temp, var,
-                        Conjunction(pred, Forall([temp], Implies(fresh_pred, GreaterEquals(var, temp))))))
+                        Conjunction(pred, Complement(Exists([temp], Conjunction(fresh_pred, Less(var, temp)))))))
 
     def inf_func(self, var_name, pred):
         from pecan.lang.ast_substitution import ASTSubstitution
@@ -46,7 +45,7 @@ class PecanTransformer(Transformer):
         temp = VarRef(IRNode.fresh_name())
         subs = {var_name: temp}
         fresh_pred = ASTSubstitution(subs).transform(pred)
-        lower_bound = TypeHint(temp, var, Forall([temp], Implies(fresh_pred, LessEquals(var, temp))))
+        lower_bound = TypeHint(temp, var, Complement(Exists([temp], Conjunction(fresh_pred, Greater(var, temp)))))
         return self.max_func(var_name, lower_bound)
 
     def sup_func(self, var_name, pred):
@@ -56,7 +55,7 @@ class PecanTransformer(Transformer):
         temp = VarRef(IRNode.fresh_name())
         subs = {var_name: temp}
         fresh_pred = ASTSubstitution(subs).transform(pred)
-        upper_bound = TypeHint(temp, var, Forall([temp], Implies(fresh_pred, GreaterEquals(var, temp))))
+        upper_bound = TypeHint(temp, var, Complement(Exists([temp], Conjunction(fresh_pred, Less(var, temp)))))
         return self.min_func(var_name, upper_bound)
 
     def distinct(self, varlist):

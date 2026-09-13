@@ -1,10 +1,14 @@
 #!/usr/bin/env python3.6
 # -*- coding=utf-8 -*-
 
-from pecan.lang.ir_transformer import IRTransformer
+from pecan.lang.ir.annotation import Annotation
+from pecan.lang.ir.arith import Less, Equals
+from pecan.lang.ir.bool import BoolConst, Complement, Conjunction, Disjunction
 from pecan.lang.optimizer.basic_optimizer import BasicOptimizer
 
-from pecan.lang.ir import *
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from pecan.lang.ir.base import IRPredicate
 
 class BooleanOptimizer(BasicOptimizer):
     def transform_Complement(self, node : Complement) -> IRPredicate:

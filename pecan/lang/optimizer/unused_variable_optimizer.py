@@ -1,10 +1,13 @@
 #!/usr/bin/env python3.6
 # -*- coding=utf-8 -*-
 
+from pecan.lang.ir.quant import Exists
 from pecan.lang.optimizer.basic_optimizer import BasicOptimizer
 from pecan.lang.optimizer.tools import VariableUsage
 
-from pecan.lang.ir import *
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from pecan.lang.ir.base import IRPredicate
 
 class UnusedVariableOptimizer(BasicOptimizer):
     def transform_Exists(self, node: Exists) -> IRPredicate:

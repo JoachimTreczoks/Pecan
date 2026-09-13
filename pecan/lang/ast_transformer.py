@@ -136,7 +136,7 @@ class AstTransformer:
     def transform_Call(self, node : Call) -> Call:
         return Call(node.name, [self.transform(arg) for arg in node.args])
 
-    def transformExpr(self, node : PredicateExpr) -> PredicateExpr:
+    def transform_PredicateExpr(self, node : PredicateExpr) -> PredicateExpr:
         return PredicateExpr(self.transform_str(node.var_name), self.transform_TypeHint(node.pred))
 
     def transform_NamedPred(self, node : NamedPred) -> NamedPred:
@@ -249,5 +249,5 @@ class AstTransformer:
         return Annotation(node.annotation_name, self.transform(node.body))
 
     def transform_TypeHint(self, node : TypeHint) -> TypeHint:
-        return TypeHint(self.transform(node.expr_a), self.transform(node.expr_b), self.transform(node.body))
+        return TypeHint(self.transform(node.type_sink), self.transform(node.type_source), self.transform(node.body))
 

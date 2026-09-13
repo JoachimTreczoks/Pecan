@@ -1,0 +1,13 @@
+// This script is used as an example for the _Developing and using Pecan_ thesis.
+// It requires the Sturmian words repository to be installed.
+
+#import("SturmianWords/ostrowski_defs.pn")
+Restrict a is bco_standard.
+Restrict p, i, n are ostrowski(a).
+
+eventually_periodic(a, p) :=
+    p > 0 & exists n. forall i. i > n => $C[i] = $C[i + p]
+
+Theorem("Sturmian words are aperiodic",
+        {forall a. forall p. !eventually_periodic(a, p)}
+).

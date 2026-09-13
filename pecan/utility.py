@@ -5,7 +5,7 @@ import copy
 import os
 
 from typing import TYPE_CHECKING
-if TYPE_CHECKING :
+if TYPE_CHECKING:
     from collections.abc import Callable, ItemsView
     from pathlib import Path
 

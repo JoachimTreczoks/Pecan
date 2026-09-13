@@ -5,7 +5,7 @@ from pecan.lang.ast.base import ASTNode
 from pecan.lang.ast.prog import VarRef, Call
 
 from typing import TYPE_CHECKING
-if TYPE_CHECKING :
+if TYPE_CHECKING:
     from typing import Literal
     from pecan.lang.ast_transformer import AstTransformer
 

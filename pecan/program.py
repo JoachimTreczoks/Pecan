@@ -4,16 +4,14 @@
 import os
 
 from pecan.lang.parser import pecan_parser
-from pecan.lang.type_inference import TypeInferer
 from pecan.lang.ast_to_ir import ASTToIR
-from pecan.lang.typed_ir_lowering import TypedIRLowering
-from pecan.lang.optimizer.optimizer import UntypedOptimizer, Optimizer
+from pecan.lang.optimizer.optimizer import UntypedOptimizer
 
 from pecan.settings import Settings
 from pecan.logger import Logger
 
 from typing import TYPE_CHECKING
-if TYPE_CHECKING :
+if TYPE_CHECKING:
     from typing import Any
     from pecan.lang.ast.prog import Program as ASTProgram
     from pecan.lang.ir.prog import Program

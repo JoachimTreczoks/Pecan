@@ -246,5 +246,5 @@ class IRTransformer:
         return Annotation(node.annotation_name, self.transform(node.body))
 
     def transform_TypeHint(self, node : TypeHint) -> TypeHint:
-        return TypeHint(self.transform(node.expr_a), self.transform(node.expr_b), self.transform(node.body))
+        return TypeHint(self.transform(node.type_sink), self.transform(node.type_source), self.transform(node.body))
 

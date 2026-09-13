@@ -2,11 +2,18 @@
 # -*- coding=utf-8 -*-
 
 from pecan.lang.ir_transformer import IRTransformer
+from pecan.lang.type_inference import InferredType, UndefinedType
+from pecan.lang.ir.arith import Equals, IntConst, Sub, Add
+from pecan.lang.ir.base import IRPredicate, BinaryIRExpression
+from pecan.lang.ir.bool import Conjunction
+from pecan.lang.ir.prog import VarRef
+from pecan.lang.ir.quant import Exists
 from pecan.lang.optimizer.basic_optimizer import BasicOptimizer
-from pecan.lang.optimizer.tools import *
-from pecan.lang.type_inference import *
+from pecan.lang.optimizer.tools import NodeSubstitution, VariableUsage, DepthAnalyzer, ExpressionFrequency
 
-from pecan.lang.ir import *
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from pecan.lang.ir.base import IRNode
 
 class ExpressionExtractor(IRTransformer):
     def __init__(self, scope, prog, expr_frequency, depth_threshold=None, frequency_threshold=None):
@@ -56,7 +63,7 @@ class ExpressionExtractor(IRTransformer):
 
         return compute_vars
 
-    def compute_vars_for(self, pred):
+    def compute_vars_for(self, pred : IRPredicate) -> IRPredicate:
         from pecan.lang.type_inference import UndefinedType
         compute_vars = self.dep_order(list(self.dep_graph.keys()))
 
@@ -165,7 +172,7 @@ class CSEOptimizer(BasicOptimizer):
         self.frequency = None
         self.frequency_threshold = 2
 
-    def worth_optimization(self, node):
+    def worth_optimization(self, node : BinaryIRExpression) -> bool:
         if isinstance(node, VarRef):
             return False
 
@@ -177,7 +184,7 @@ class CSEOptimizer(BasicOptimizer):
 
         return True
 
-    def transform_Equals(self, node):
+    def transform_Equals(self, node : Equals) -> IRPredicate:
         # frequency = ExpressionFrequency().count(node)
         extractor = ExpressionExtractor(self.current_scope, self.prog, {})
 
@@ -199,7 +206,7 @@ class CSEOptimizer(BasicOptimizer):
 
         return extractor.compute_vars_for(Equals(new_a, new_b))
 
-    def multipass_cse(self, extractors : list[ExpressionExtractor], node : IRPredicate):
+    def multipass_cse(self, extractors : list[ExpressionExtractor], node : IRPredicate) -> IRPredicate:
         new_node = node
         for extractor in extractors:
             new_node = extractor.transform(new_node)

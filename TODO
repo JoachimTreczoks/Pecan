@@ -53,7 +53,6 @@ let (x,y,z) be { x + y = z } in blah
     - This requires that we first fix CSE (see above).
 
 - Add new __repr__ functions that do a more standard repr (e.g., Class(field_1, field_2, ...)) that turn on with debug 2
-- See if we can reduce the usage of the `type` function...(either replace with isinstance or just remove altogether)
 - Combine unification code for looking up dynamic calls (in ir/prog.py and doing typechecking)
 - When we cache variable representations (in class Program's var_map), we need to make sure that we don't accidentally cahce two different represenations of the same constnat, because it may be encoded differently. To be safe, probably just don't cache constants aps at all?
 - Expand the function expressions in typed ir lowering.
@@ -66,7 +65,6 @@ let (x,y,z) be { x + y = z } in blah
 - Remove FunctionExpression from the IR and make it into a PredicateExpr
 - Optmize PredicateExprs (e.g., if we have Expr(a, P) = b, make this into P[b/a])
 - See if we can remove anything from the TypedIRLowering (and therefore from the IR entirely) by using TypeHint
-- Standardize the usage of show/__repr__/__str__ in the code.
 
 Short:
 - Add a builtin to Praline that calls the optimizer
@@ -74,6 +72,5 @@ Short:
 - Make converter warn when you try to use states that don't exist, but keep going and just map them to new, empty states
     - Also, add a setting to disable this in the context
 - Allow matching on booleans in Praline. Practically, this is useless (it's just an if expression), but it'd be nice to have for consistency's sake. Although this would let us compile if expressions into match-case expressions, which would simplify other stuff a tad.
-- Improve error messages when there is no accepting word (right now it just crashes).
 - Warn if loading an automaton with a variable map that has non-disjoint AP sets.
 

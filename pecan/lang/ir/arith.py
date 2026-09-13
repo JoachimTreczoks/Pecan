@@ -1,15 +1,14 @@
 #!/usr/bin/env python3.6
 # -*- coding=utf-8 -*-
 
+from pecan.exceptions import AutomatonArithmeticError
 from pecan.lang.ir.base import BinaryIRExpression, IREvaluation, IRExpression, IRComparison, IRPredicate
 from pecan.lang.ir.bool import BoolConst, Complement, Conjunction, Disjunction
 from pecan.lang.ir.prog import Call, VarRef
 from pecan.lang.ir.quant import Exists
 
-from pecan.exceptions import AutomatonArithmeticError
-
 from typing import TYPE_CHECKING
-if TYPE_CHECKING :
+if TYPE_CHECKING:
     from typing import Any
     from pecan.lang.ir_transformer import IRTransformer
     from pecan.lang.ir.prog import Program

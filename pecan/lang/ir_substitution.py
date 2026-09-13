@@ -1,9 +1,14 @@
 #!/usr/bin/env python3.6
 # -*- coding=utf-8 -*-
 
-from pecan.lang.ir import *
-
 from pecan.lang.ir_transformer import IRTransformer
+from pecan.lang.ir.prog import Call, NamedPred
+from pecan.lang.ir.praline.variables import PralineString, PralinePecanLiteral
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from pecan.lang.ir.base import IRNode
+    from pecan.lang.ir.prog import VarRef
 
 class IRSubstitution(IRTransformer):
     def __init__(self, subs : dict[str, IRNode]):

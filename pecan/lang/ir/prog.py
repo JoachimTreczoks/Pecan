@@ -2,29 +2,24 @@
 # -*- coding=utf-8 -*-
 
 from colorama import Fore, Style
-
-import os
 from functools import reduce
-
 import spot
+import os
 
-from typing import TypedDict
-
-from pecan.tools.hoa_loader import from_spot_aut
-from pecan.lang.ir.base import *
-from pecan.settings import Settings
-from pecan.logger import Logger
-from pecan.utility import VarMap
 from pecan.exceptions import CallResolvingError, MatchingError, UnificationError
-
+from pecan.logger import Logger
+from pecan.settings import Settings
+from pecan.utility import VarMap
+from pecan.automata.automaton import Automaton
+from pecan.lang.ir.base import IRNode, IRExpression, IRPredicate, IREvaluation
 from pecan.lang.ir.bool import BoolConst
+from pecan.tools.hoa_loader import from_spot_aut
 
-from typing import TYPE_CHECKING
-if TYPE_CHECKING :
+from typing import TYPE_CHECKING, TypedDict
+if TYPE_CHECKING:
     from typing import Any
     from pecan.lang.ir_transformer import IRTransformer
     from pecan.lang.type_inference import RestrictionType
-    from pecan.lang.ir.base import IREvaluation
     from pecan.lang.ir.praline.base import PralineTerm
     from pecan.lang.ir.praline.functional import Closure, PralineAlias
 
@@ -36,7 +31,6 @@ class VarRef(IRExpression):
 
     def evaluate(self, prog : Program) -> IREvaluation:
         # The automata accepts everything (because this isn't a predicate)
-        from pecan.lang.ir.bool import BoolConst
         return BoolConst(True).evaluate(prog).with_ref(self)
 
     def transform(self, transformer : IRTransformer) -> VarRef:
